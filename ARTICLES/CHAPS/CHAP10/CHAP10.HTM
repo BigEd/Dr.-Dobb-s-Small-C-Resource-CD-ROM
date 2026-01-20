@@ -1,0 +1,571 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>CROSS-REFERENCE GENERATOR IN C: A PROGRAM CONVERSION AID
+</H1> <p>
+
+by Jeff Taylor<p>
+</CENTER>
+</B>
+
+
+<i>This article originally appeared in Dr. Dobb's Journal #68 (June 1982).<p></i>
+
+
+Cross-reference listings are of little use to the person who wrote the program, so most such programs just gather dust on the back shelf. But those of us who do not own Apples or IBM PCs get much of our software by converting programs written for some other computer. Cross-reference listings save hours of debugging effort during conversion. When I started to convert Ron Cain's Small-C compiler (see &quot;A Small-C Compiler for the 8080s,&quot; <i>Dr. Dobb's Journal</i> #45, excerpted in this volume) to my LSI-11, I hauled my program XREF off the back shelf  where it had been resting. Ron's different coding style turned up a few errors 
+in XREF that I had missed. More troublesome was the overflow of the symbol 
+table. There wasn't enough memory with that symbol table organization. CREF, 
+the program described in this article, is a test bed for a more compact symbol table organization. Eventually, I will fold this symbol table organization back into XREF.<p>
+
+CREF (<a href="#list10-1">Listing 10-1</a>) is written in C for the Unix 4.2 BSD compiler and runtime library. It accepts a list of filenames from the command line; if no 
+filenames are present, input is taken from the standard input. The cross-reference 
+listing is printed on the standard output. The listing consists of all filenames in 
+<i>#include</i> statements, and all function, variable, and macro names in 
+alphabetical order. Under each name is a list of files it appears in. To the right of each 
+filename is a list of the lines in that file where the name appears.<p>
+
+The three-level hierarchy in the listing is reflected in the symbol table organization. At the top is the name table, next a file table for each name, and at the bottom, lists of line numbers for each 
+name and file. Each name entry is unique, and there is a file entry for each 
+name in the file. This is where the symbol table was reorganized; how it was 
+changed is explained later.<p>
+
+Binary search trees are used for the name and file symbol tables. Each entry contains the text for the symbol and pointers (possibly NULL) to the right and left descendents. A binary tree grows from the root down, with new entries added at the tips or leaves. The function <i>lookup()</i> finds the entry for a symbol, or if it is not present, where it should go. To search a binary search tree, start at the root and compare the symbol against the one stored in the 
+entry. If it doesn't match, move to the left for symbols less than the entry, 
+otherwise move to the right. Repeat until the symbol is found or a NULL pointer is encountered.
+If the symbol is not found, that NULL pointer is where it should be added. The tree is always kept in alphabetical order. The function <i>tree_walk()</i> traverses a binary tree in alphabetical order.<p>
+
+Both recursive and iterative implementations exist for <i>lookup()</i> and
+<i>tree_walk()</i>. Recursive code for recursive data structures is short,
+straightforward, and stack-intensive. The iterative version of <i>tree_walk()</i> is longer and not
+as readable. Instead of using C's built-in stack to keep track of the binary tree
+traversal, CREF uses an explicit stack. The algorithm is taken from <i>The Art of
+Computer Programming</i> by Donald Knuth (Addison-Wesley, 1968, volume 1,
+page 317). Instead of using a separate stack, the binary tree entries are turned
+into a stack, using the left fields to point to the next entry in the stack. Note that this destroys the binary tree.<p>
+
+The list of line numbers is kept in a circularly linked list. The pointer into
+the list points to the last line number. The initialization for the <i>do ... while</i>
+loop in <i>list_file()</i> moves the pointer to the start of the list. Line numbers are
+added to the end of the list. A new line number is added to the list only if it is
+not already at the end of the list. This is adequate to keep duplicates out, unless a file is listed twice.<p>
+
+This symbol table organization works fine. For large programs, however, there is considerable redundancy. A separate copy of the filename is kept for each name in the file. Instead of keeping the text for a symbol in the entry, a pointer to the text is kept in the entry. A tree rooted at 
+<i>file_root</i> keeps track of the text for all filenames to avoid duplicates. The same 
+structure is kept for all binary trees. The code to manipulate binary trees is the same for 
+all the trees.<p>
+
+CREF is intended for cross-referencing C programs. By changing the
+reserved word list and the code that skips over comments and quoted strings, you
+can adapt it to most other languages. I don't currently have any programs too
+large for CREF, but sooner or later they will come along. When that happens, I
+will get to try out a new data structure to store parts of the symbol table on disk. Sounds like a good way to learn about B-trees.<p>
+
+<b><a name="list10-1">LISTING 10-1</a></b><p>
+<PRE>
+  /* CREF - C cross-reference utility
+
+     Author: Jeff Taylor, The Toolsmith (c) copyright 1982, 1985.
+     Environment: C; UNIX 4.2 BSD.
+     Algorithms:
+       Modified algorithm T from &quot;The Art of Computer Programming,&quot; Vol. 1,
+          p. 317, by D.E. Knuth used in tree_walk().
+     History:
+       22 November 1982 - remove recursion from lookup().
+       16 December 1982 - remove recursion from tree_walk().
+       26 March 1985 - port to DECUS C.
+       27 March 1985 - line # list made a circular queue: insert(), list_file().
+            reserved word search changed to binary search: keyword().
+       28 March 1985 - port to UNIX 4.2 BSD.
+  */
+
+  #include &lt;stdio.h&gt;
+  #include &lt;ctype.h&gt;
+  #include &quot;style.h&quot;
+
+  #define lower(c)      (isupper(c) ? tolower(c) : (c))
+  #define streq(a, b)   (strcmp(a, b) == 0)
+  #define WIDTH 80       /* width of output device */
+
+  struct instance {
+    struct instance *next;
+    int line;
+  };
+  union ptr {
+    struct node *files;
+    struct instance *lines;
+  };
+  struct node {
+    struct node *right, *left;
+    union ptr p;
+    char *name;
+  };
+
+  struct node *symbol_root = NULL;
+  struct node *file_root = NULL;
+  int line_count = 0;
+  #define ID 'a'  /* identifier */
+  #define INTEGER '0'     /* integer */
+
+  /*********************************
+  * Symbol Table handling routines *
+  *********************************/
+
+  /* lookup - install name at or below root */
+  struct node **lookup(root, name)
+  register struct node **root;
+  register char *name;
+  {
+    register int cond;
+
+  #ifdef RECURSIVE
+    if (*root != NULL) {
+      if ((cond = lexcmp(name, (*root)-&gt;name)) != 0)
+        root = lookup((cond &lt; 0) ? &amp;(*root)-&gt;left, &amp;(*root)-&gt;right, name);
+    }
+  #else
+    while (*root != NULL &amp;&amp; (cond = lexcmp(name, (*root)-&gt;name)))
+      root = (cond &lt; 0) ? &amp;(*root)-&gt;left : &amp;(*root)-&gt;right;
+  #endif
+    return (root);
+  }
+
+  /* add - insert entry for &quot;name&quot; in tree at &quot;root&quot; */
+  struct node *add(name)
+  char *name;
+  {
+    char *malloc();
+    register struct node *r;
+
+    r = (struct node *) malloc(sizeof(struct node));
+    r-&gt;left = r-&gt;right = NULL; r-&gt;p.lines = NULL;
+    r-&gt;name = name;
+    return (r);
+  }
+
+  /* tree_walk - call 'ftn' for each node in inorder */
+  void tree_walk(root, ftn)
+  register struct node *root;
+  register void (*ftn)();
+  {
+  #ifdef RECURSIVE
+    if (root != NULL) {
+      tree_walk(root-&gt;left, ftn);
+      (*ftn)(root);
+      tree_walk(root-&gt;right, ftn);
+    }
+  #else
+    register struct node *stack, *tmp;
+
+    stack = NULL; /* stack initially empty */
+    for ( ; ; ) {
+      if (root != NULL) {
+          tmp = root;
+        root = root-&gt;left; /* move to left */
+        tmp-&gt;left = stack; stack = tmp; /* push tmp */
+      } else if (stack !)= NULL) { /* stack not empty */
+        root = stack; stack = stack-&gt;left; /* pop*/
+        (*ftn)(root); /* visit node */
+        root = root-&gt;right; /* move right */
+      } else /* stack is empty */
+        break;
+    }
+  #endif
+  }
+
+  /* insert - add 'line_no' to the circular list, 'origin' */
+  struct instance *insert(origin, line_no)
+  register struct instance *origin;
+  int line_no;
+  {
+    char *malloc();
+    register struct instance *t;
+
+    if (origin == NULL || origin-&gt;line != line_no) {
+      t = (struct instance *) malloc(sizeof(struct instance));
+      if (origin == NULL)
+        origin = t;
+      t-&gt;line = line_no; t-&gt;next = origin-&gt;next;
+      origin-&gt;next = t;
+      origin = t;
+   }
+   return (origin);
+  }
+
+  /* use - log an occurrence of &quot;name&quot; in &quot;file&quot; at &quot;line&quot; */
+  void use(name, file, line)
+  char *name, *file;
+  int line;
+  {
+    char *newcpy();
+    register struct node **ft, **nt;
+
+    if (*(nt = lookup(&amp;symbol_root, name)) == NULL)
+      *nt = add(newcpy(name));
+    if (*(nt = lookup(&amp;((*nt)-&gt;p.files), file)) == NULL) {
+      if (*(ft = lookup(&amp;file_root, file)) == NULL)
+        *ft = add(newcpy(file));
+      *nt = add((*ft)-&gt;name);
+    }
+    (*nt)-&gt;p.lines = insert((*nt)-&gt;p.lines, line);
+  }
+  /* get_name - extract file name from line */
+  void get_name(line, file)
+  register char *line;
+  char *file;
+  {
+    void copy_until();
+    register char *delim;
+
+    while (*line == '' || *line == '\t')
+      ++line;
+      if (*line != '\n') { /* if none, use &quot;file&quot; as is */
+      if (*line == '&quot;') {
+        delim = &quot;\&quot;\n&quot;;
+        ++line;
+      } else if (*line == '&lt;') {
+        delim = &quot;&gt;\n&quot;;
+        ++line;
+      } else
+        delim = &quot; \t\n&quot;;
+      copy_until(file, line, delim);
+    }
+  }
+
+  /* new_line - return pointer to the next line */
+  char *new_line()
+  {
+    static char line[MAXLINE+1];
+
+    ++line_count;
+    return (fgets(line, MAXLINE, stdin));
+  }
+
+  /* white_space - tests for blanks, tabs and comments */
+  boolean white_space(s)
+  register char **s;
+  {
+  if (**s == '' || **s == '\t')
+    return (TRUE);
+  if (**s == '/' &amp;&amp; *(*s+1) == '*') { /* comment */
+    while (*++*s != '/') {
+     while (*++*s != '*') {
+       if (**s == EOS) {
+         if ((*s = new_line()) != NULL)
+           --*s;       /* because of pre-increment in inner while loop */
+         else {
+           fprintf(stderr, &quot;unexpected EOF\n&quot;);
+           return (FALSE);
+          }
+         }
+        }
+      }
+      return (TRUE);
+    }
+    return (FALSE);
+  }
+
+  /* ishex - is 'c' a hexadecimal digit? */
+  boolean ishex(c)
+  register char c;
+  {
+     return (('0' &lt;= c &amp;&amp; c &lt;= '9') || ('a' &lt;= c &amp;&amp; c &lt;= 'f'));
+  }
+  /* get_token - strip leading token from s */
+  char get_token(s, t)
+  register char **s, *t;
+  {
+    char esc();
+    register char class;
+
+    while (white_space(s))
+      ++*s;
+    if (isalpha(**s) || **s == '_') {    /* identifier */
+      class = ID;
+      do
+        *t++ = *(*s)++;
+      while (isdigit(**s) || isalpha(**s) || **s == '_');
+    } else if (**s == '\&quot;' || **s == '\&quot;) {     /* string or literal */
+      class = **s;
+      do {
+        esc(s);
+        ++*s;
+        if (**s == EOS) {
+          if ((*s = new_line()) == NULL)
+            goto out;
+        }
+      } while (**s != class);
+      ++*s;
+    } else if (isdigit(**s)) {
+      do {
+        class = *++*s;
+        class = lower(class);     /* n.b. lower() may be a macro */
+      } while (ishex(class) || class == 'x' || class == 'l' || class == '.');
+      class = INTEGER;
+    } else {
+      class = *(*s)++;
+    }
+  out:
+    *t = EOS;
+    return (class);
+  }
+
+  static char *reserved[] = {&quot;auto&quot;, &quot;break&quot;, &quot;case&quot;, &quot;char&quot;, &quot;continue&quot;,  &quot;default&quot;, &quot;do&quot;, quot;double&quot;, &quot;else&quot;, &quot;extern&quot;, &quot;float&quot;, &quot;for&quot;, &quot;goto&quot;,  &quot;if&quot;, &quot;int&quot;, &quot;long&quot;, &quot;register&quot;, &quot;return&quot;, &quot;short&quot;, &quot;sizeof&quot;, &quot;static&quot;,  quot;struct&quot;, &quot;switch&quot;, &quot;typedef&quot;, &quot;union&quot;, quot;unsigned&quot;,  &quot;while&quot;, &quot;void&quot;};
+
+  /* keyword - is &quot;s&quot; a reserved word in C */
+  boolean keyword(s)
+  char *s;
+  {
+    register int cond;    /* condition code of lexcmp() */
+    register int mid;
+    int hi, lo;
+
+    /* binary search; reserved[] must be in alphabetical order */
+    lo = 0; hi : sizeof(reserved) / sizeof(char *) - 1;
+    while (lo &lt;= hi) {
+      mid = (hi + lo) / 2;
+      if ((cond = lexcmp(s, reserved[mid])) == 0)
+        return (TRUE);
+      if (cond &lt; 0)
+        hi = mid - 1;
+      else
+        lo = mid + 1;
+    }
+    return (FALSE);
+  }
+
+  /* xref - cross reference */
+  void xref(file)
+  register char *file;
+  {
+    int atoi();
+    register char class;
+    char *s, token[MAXLINE+1];
+
+    line_count = 0;
+    while ((s = new_line()) != NULL) {
+      if ((class = get_token(&amp;s, token)) != '#') {
+        while (class != '\n') {
+          if (class == ID &amp;&amp; !keyword(token))
+            use(token, file, line_count);
+          class = get_token(&amp;s, token);
+        }
+      } else if (get_token(&amp;s, token) == ID) {
+        if (streq(token, &quot;include&quot;)) {
+          get_name(s, token);
+          use(token, file, line_count);
+        } else if (streq(token, &quot;define&quot;)) {
+          get_token(&amp;s, token);
+          use(token, file, line_count);
+        } else if (streq(token, &quot;ifdef&quot;) || streq(token, &quot;ifndef&quot;)) {
+          get_token(&amp;s, token);
+          use(token, file, line_count);
+        } else if (streq(token, &quot;line&quot;)) {
+          if (get_token(&amp;s, token) == INTEGER)
+            line_count = atoi(token);
+          else
+            fprintf(stderr, &quot;#line %s\n&quot;, token);
+        } else
+          ;        /* ignore #else, #endif, etc. */
+      }
+    }
+  }
+
+  /* putp - output a partial line to stdout */
+  unsigned putp(s)
+  register char *s;
+  {
+    register unsigned n;
+
+    for (n = 0; *s != EOS; ++n)
+      putchar(*s++);
+    return (n);
+  }
+
+  /* list_file - print lines within a file */
+  void list_file(ft)
+  register struct node *ft;
+  {
+    char *itoa();
+    register unsigned b;
+    register struct instance *it;
+    char buf[5];
+
+    b = putp(&quot;    &quot;);
+    b += putp(ft-&gt;name);
+    /* print line numbers */
+    it = ft-&gt;p.lines = ft-&gt;p.lines-&gt;next; /* move 'lines' to start */
+    do {
+      if (b == 0)
+        b = putp(&quot;       &quot;);      /* this and 2nd to last line must agree */
+      b += putp(&quot;   &quot;);
+      b += itoa(it-&gt;line, buf) - buf;
+      putp(buf);
+      if (b &gt; WIDTH - 8) {        /* leave a margin on right */
+        putp(&quot;/n&quot;);
+        b=0;
+      }
+      it = it-&gt;next;
+    } while (it != ft-&gt;p.lines);
+    if (b &gt; 6) /* non-blank line */
+      putp(&quot;\n&quot;);
+  }
+
+  /* print_xref - dump cross reference table to stdout */
+  void print_xref(nt)
+  struct node *nt;
+  {
+    putp(nt-&gt;name); putp(&quot;\n&quot;);
+    tree_walk(nt-&gt;p.files, list_file);
+  }
+
+  main(argc, argv)
+  register int argc;
+  register char **argv;
+  {
+    FILE *freopen();
+
+    if (argc &lt;= 1)
+      xref(&quot;&lt;stdin&gt;&quot;);
+    else {
+      while (--argc &gt; 0) {
+        if (freopen(*++argv, &quot;r&quot;, stdin) == NULL)
+          fprintf(stderr, &quot;can't open %s\n&quot;, *argv);
+        else
+          xref(*argv);
+      }
+    }
+    tree_walk(symbol_root, print_xref);
+  }<p>
+</pre>
+
+<b>LISTING 10-2<p>
+</b>
+<PRE>
+  /* esc() - escaped character processing.
+
+     Author: Jeff Taylor, The Toolsmith (c) copyright 1985
+     Environment: UNIX 4.2 BSD; CC compiler.
+  */
+
+  #include &quot;style.h&quot;
+
+  #define ESCAPE '\\'
+  char real[]: &quot;\t\f\n\010&quot;;
+  char symb[] = &quot;tfnb&quot;;
+
+  /* esc - map string into escaped character if appropriate */
+  char esc(s)
+  register char **s;
+  {
+    register int i;
+
+    if (**s == ESCAPE &amp;&amp; *(*s + 1) != EOS) {     /* not special at end */
+      ++*s;
+      for (i = 0; i &lt; sizeof(symb) - 1; ++i) {
+        if (symb[i] == **s)
+          return (real[i]);
+      }
+    }
+    return (**s);
+  }
+  /* lexcmp() - alphabetical comparison.
+
+     Author: Jeff Taylor, The Toolsmith (c) copyright 1985.
+     Environment: C; UNIX 4.2 BSD,
+  */
+
+  #include &lt;ctype.h&gt;
+  #include &quot;style.h&quot;
+
+  #define lower(c)        (isupper(c) ? tolower(c) : (c))
+
+  /* lexcmp - alphabetical comparison, similiar to strcmp() */
+  int lexcmp(aa, bb)
+  char *aa, *bb;
+  {
+    register char *a, *b;
+
+    for (a = aa, b = bb; ;a++, b++) {
+      if (lower(*a) != lower(*b))
+        return (lower(*a) - lower(*b)); /* unequal */
+      if (*a == EOS)
+        break;
+    }
+    for (a = aa, b = bb; ; a++, b++) {
+      if (*a != *b)
+        return (*a - *b); /* unequal */
+      if (*a == EOS)
+        break;
+    }
+    return (0); /* equal */
+  }<p>
+</PRE>
+<b>LISTING 10-3<p>
+</b>
+<PRE>
+  /* String package - unsigned inset(); char *newcpy();
+
+     Author: Jeff Taylor, The Toolsmith (c) copyright 1985.
+     Environment: C; UNIX 4.2 BSD.
+  */
+
+  #include &quot;style.h&quot;
+
+  /* copy_until - copy from 'src' to 'dst' until 'delimiters' */
+  void copy_until(dst, src, delimiters)
+  register char *dst, *src;
+  char *delimiters;
+  {
+    register char *d;
+
+    while (*src != EOS) {
+      for (d = delimiters; *d != EOS; ++d) {
+        if (*src == *d)
+          goto out;
+      }
+    *dst++ = *src++;
+    }
+  out:
+    *dst = EOS;
+  }
+
+  /* itoa - integer to ASCII */
+  char *itoa(n, ascii)
+  register int n;
+  register char *ascii;
+  {
+    register int power;
+
+    if (n &lt; 0) {
+      n = -n; *ascii++ = '_';
+    }
+    power = 1;
+    while (n / power &gt;= 10)
+      power = power * 10;
+    do {
+      *ascii++ = (n / power) + '0';
+      n = n % power; power = power / 10;
+    } while (power != 0);
+    *ascii = EOS;
+    return (ascii);
+  }
+  /* newcpy - copy a string into newly allocated space */
+  char *newcpy(string)
+  char *string;
+  {
+    char *malloc(), *strcpy();
+
+    /* include terminating EOS */
+    return (strcpy(malloc(strlen(string) + 1), string));
+  }<p>
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 
+

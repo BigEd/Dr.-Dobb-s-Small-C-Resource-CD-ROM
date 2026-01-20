@@ -1,0 +1,619 @@
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Introduction:
+ 
+ The Handirom was developed to enable a person with limited motor control
+to operate a microcomputer.  The  control  over  the  computer,  although
+limited,  will  present  the  user  with full control over wordprocessing
+utilities such as View 3.0 and  Wordwise  Plus,  various spreadsheets and
+databases  or  even to write and run their own  programs  in  a  language
+environment such as Basic, Comal, Pascal or Lisp etc.
+ 
+ In operation, the system claims the lower part of the screen on which it
+draws up a grid representing  the  keys  on  the computer keyboard (in an
+optimised  order).  The  grid  is scanned vertically whenever the program
+requires keyboard input. Operation of  a  button  connected to the "fire"
+button inputs on the Analogue socket at the  rear  of  the  computer will
+cause  the  grid  to  be scanned horizontally until either the button has
+been pressed again to select  a  letter  or command, or the grid has been
+scanned horizontally twice. In this case the line is assumed to have been
+wrongly selected and the vertical scan resumes.
+ 
+ A useful feature of the  Handirom  is  that  the  keyboard  operation is
+mostly unaffected and the two input devices may be used together.
+ 
+ Five grid layouts are available; lower case, upper case, common words, a
+control screen with function key  emulator and a "*" command screen. Each
+of the grids also contains a  number  of commands which will be described
+later.
+ 
+ The microcomputer system must be  fitted  with a bank of sideways ram in
+order for the Handirom to work. In this way, the whole of the user memory
+is available for documents or programs.
+ 
+ In  addition to the grids  mentioned  above,  custom  wordlists  may  be
+created as  described  under  the section "Editing wordlists" on page 9.
+These wordlists (of which three are supplied on the disc) are loaded into
+sideways ram also, again maximising the amount of user ram.
+ 
+Note:
+ As a number of sideways  ram  modules  are commercially available, it is
+unlikely that the Handirom has been tested with all of them. In the event
+of the Handirom not working please write to  the address given at the end
+of this guide giving full system details and the  type  of  sideways  ram
+fitted.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 1
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Handirom initialisation:
+ 
+Having verified that sideways ram  is  available  and  with  some form of
+switch  connected  to  the  analogue  port,  you  are ready to  load  the
+Handirom.
+ 
+ Insert the disc into the  default disc drive and, while holding down the
+SHIFT key, depress the BREAK key momentarily. If all is well, you will be
+greeted  by  the  Handirom  welcome  screen.  Operating   the  switch  or
+depressing any key (with the exception of the escape and break keys) will
+prompt you for the sideways ram bank  that  you  wish  to  use  (refer to
+manufacturers data).
+ 
+ If you do not wish to use socket 7 (Master) or socket 15 (BBC) (assuming
+that they are available) then  selecting  the  NO  option  will  list the
+sideways  firmware  installed  and  prompt  for bank 4-7 (Master) or 8-15
+(BBC).
+ 
+ Upon selection of a suitable  socket,  the  Handirom  is loaded from the
+disc and the user is asked to select the  speed  of the scan. Don't worry
+if the speed is not quite right, as it can be adjusted later.
+ 
+ The sound on/off option is  next.  This just "blips" on each step of the
+horizontal or vertical scan. Again, this option can be adjusted later.
+ 
+ Now select the wordprocessor option.  This  simply means that the system
+will automatically insert spaces after a word  has been selected from the
+wordlist or common words grid or even after  a  full  stop  (useful  when
+writing  a  letter).  In  addition,  the full stop will cause the capital
+letters screen to be selected for  one  character  only, after which, the
+lower case screen will be selected.
+ 
+ The wordlist required may now  be  loaded.  Three  examples:  W.STDWORD,
+W.TEST  and W.NEWWORD are supplied on the disc. The program "EDIT",  also
+on the  disc  will allow the editing or creation of custom wordlists with
+the Handirom active.  About 9K of a 16K bank of sideways ram is available
+for the wordlist selected.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 2
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Saving the configuration:
+ 
+  If you are unfamiliar with  the  Handirom  please  answer  no  to  this
+option.
+ 
+  A  yes  answer to save  the  configuration  will  prompt  for  a  blank
+formatted disc to  be  placed  into the current drive.  Pressing a key or
+the  switch  will  save the whole  of  the  sideways  ram  (Handirom  and
+wordlist) together with details of  socket number and options selected to
+the disc.  By copying the program  "SRLOAD"  onto  the disc (BBC B only),
+the system may be loaded in with just SHIFT-BREAK,   without  the need to
+step through the welcome and option screens again.
+ 
+  This method has the added advantage that it allows easy distribution of
+the program throughout a class,   enabling each pupil to have his/her own
+copy without the expense of multiple master copies (no,  we don't mind!).
+ 
+  The command below will work with most disc filing systems:
+ 
+          *COPY <source> <destination> <filename>
+ 
+  e.g. Assuming a single disc drive as drive number 0,  type:
+ 
+          *COPY 0 0 SRLOAD
+ 
+  followed by return.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 3
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Using the Handirom:
+ 
+  By now you should be  aware  of  a  scanning  grid at the bottom of the
+screen and have probably tried pressing the button.  The grid  looks like
+this:
+ 
+              >> :SCRN :WL :SPC :RET :DEL :CAP :ESC
+                i  t  r  o  l  p  .  ,  {  }  :REPEAT
+                e  a  c  m  x  v  :  ;  (  )  :CTRL
+                n  s  h  y  k  z  !  ?  <  >  :WWESC
+                d  f  g  q  +  -  *  /  =  &  \  ~
+                u  b  w  j  "  '  @  `  $  #  ^  |
+                0  1  2  3  4  5  6  7  8  9  [  ]
+                      Speed 8  Word-processor
+ 
+    Try selecting :SPC from the grid.  To do this,  wait until the cursor
+is  on  the  top line  and  press  the  button.   The  cursor  now  scans
+horizontally.  Press your button once when :SPC is pointed to and a space
+will be printed on the upper screen.
+ 
+Other ":" directives:
+ 
+  :RET      this is identical to pressing the RETURN key on the keyboard.
+  :DEL      DELETEs the previous character.
+  :CAP      selects the capital letters screen.
+  :ESC      emulates the ESCAPE key.
+  :REPEAT   repeats the last letter typed until the button is pressed.
+  :CTRL     followed by a  letter  allows  control  keys to be emulated.
+            This is most useful for wordprocessor operation.
+  :WWESC    generates  an ESCAPE event and turns off  the  Handirom  grid
+            until the  button  is  pressed.   Useful for returning to the
+            Handirom  after  reading  a  screen that  would  normally  be
+            corrupted.
+  :WL       after selecting the initial letter  of  a word,  this command
+            will bring up a screen consisting of words beginning with the
+            same letter unless no wordlist has been loaded.
+            e.g. after selecting "a" and ":WL";
+ 
+             >> :NL  :QL
+                after       another       august
+                afternoon   anyone        away
+                again       anything      awry
+                almost      anywhere
+                always      apple
+                angry       april
+                      Speed 8  Word-processor
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 4
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+  :NL       on  this screen will bring up the next list if there are more
+            words beginning with the letter selected.
+  :QL       quits the wordlist screen.
+  :SCRN     will  allow  you  select any of the grids below (grid 0 being
+            the lower case screen).
+ 
+  SCREEN 1 - Upper case screen
+ 
+             >> :SCRN :WL :SPC :RET :DEL :CAP :ESC
+                I  T  R  O  L  P  .  ,  {  }  :REPEAT
+                E  A  C  M  X  V  :  ;  (  )  :CTRL
+                N  S  H  Y  K  Z  !  ?  <  >  :KEY
+                D  F  G  Q  +  -  *  /  =  &  \  %
+                U  B  W  J  "  '  @  `  $  #  ^  |
+                0  1  2  3  4  5  6  7  8  9  [  ]
+                      Speed 8  Word-processor
+ 
+            You may have noticed the :KEY command that has crept in here.
+            This turns off the  grid,   clears the screen and then does a
+            RETURN.   Useful  when the whole screen  is  preferable  e.g.
+            LISTing a basic program  or  *TYPEing  text  from disc.  If a
+            CTRL-N (list in paged mode),  the button  acts like the SHIFT
+            key until the listing is finished.
+            A further press of the button will bring the grid back again.
+ 
+  SCREEN 2 - Commonly used words
+ 
+             >> :SCRN :WL :SPC :RET :DEL :CAP :ESC
+                and   cant   me    see    this  where
+                are   for    mine  that   to    will
+                be    have   my    the    we    with
+                but   know   not   then   was   would
+                can   like   of    there  what  you
+                his   her    by    their  on    off
+                      Speed 8  Word-processor
+ 
+  SCREEN 3 - Control screen (for wordprocessors etc)
+ 
+             >> :SCRN :WL :SPC :RET :DEL :CAP :ESC
+                :CU     :CD     :CL     :CR   :REPEAT
+                :SCU    :SCD    :SCL    :SCR  :CTRL
+                :CCU    :CCD    :CCL    :CCR  :WWESC
+                :FK     :SFK    :CFK    :SCFK :KEY
+                :COPY   :SCOPY  :CCOPY  :SCCOPY
+                0  1  2  3  4  5  6  7  8  9
+                      Speed 8  Word-processor
+ 
+  This  may look a little daunting but is really very simple.  When using
+a wordprocessor  such  a  View  3.0,   the function keys are used for all
+manner of things which is exactly what screen three allows you to do.
+ 
+ 
+ 
+ 
+                                  Page 5
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+ 
+Control screen directives:
+ 
+ 
+ 
+      :CU   Cursor Up           :CD   Cursor Down
+      :CL   Cursor Left         :CR   Cursor Right
+ 
+ 
+      :SCU  Shift Cursor Up     :SCD  Shift Cursor Down
+      :SCL  Shift Cursor Left   :SCR  Shift Cursor Right
+ 
+ 
+      :CCU  Control Cursor Up   :CCD  Control Cursor Down
+      :CCL  Control Cursor Left :CCR  Control Cursor Right
+ 
+ 
+      :FK   Function key        :SFK  Shift Function Key
+      :CFK  Ctrl Function Key   :SCFK Shift Control Function Key
+ 
+ 
+      :COPY   COPY key          :SCOPY  Shift COPY key
+      :CCOPY  Control COPY      :SCCOPY Guess this one yourself
+ 
+ 
+ 
+  It  is  left  up to the user to become familiar with the intricacies of
+the particular wordprocessor or spreadsheet etc which they prefer to use.
+ 
+  SCREEN 4 - Command screen.
+ 
+                :SCRN  :SPC  :RET  :DEL  :KEY  :ESC
+                *H.H.   *NOBEEP *WPON  *BEEP  *WLOAD
+                *BOOT   *SPEED  *WPOFF *OFF   *HELP
+                *CAT    *ROMS   *DISC  *TAPE  *ADFS
+                *TYPE   *INFO   *EXEC  *RUN   *LOAD
+                *BASIC  *WORD   *KEY   *SAVE  *FREE
+                *DUMP   *MOUNT  *TIME  *MOTOR *COPY
+                      Speed 8  Word-processor
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 6
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Star commands:
+ 
+  Typing *HELP HANDIROM or an  abbreviation  down  to  *H.H.  followed by
+return will bring up the help screen shown below:
+ 
+>*H.H.
+ 
+Newcastle Handirom 1.20
+ 
+  BEEP
+  NOBEEP
+  BOOT    (<drv>)
+  CATALL
+  CLOSE
+  EXPALL
+  EXPLAIN
+  FILESYS
+  ON
+  OFF
+  ROMS    (<rom>)
+  SPEED
+  WLOAD   <fsp>
+  WPON
+  WPOFF
+>
+ These commands will now be described:
+ 
+Command: *BEEP / *NOBEEP
+Description: Turns grid blip on or off.
+ 
+Command: *BOOT (<drv>)
+Description: Execute !BOOT file on disc.
+ 
+Command: *CATALL
+Description: Catalogue all files on ADFS disc.
+ 
+Command: *CLOSE
+Description: Close any open files. Equivalent to CLOSE#0 in BASIC.
+ 
+Command: *EXPLAIN
+Description: Catalogues disc and if any BASIC programs are found that
+have a REM statement in the first line, EXPLAIN will echo the associated
+text to the screen. Very useful for finding programs, latest versions etc.
+ 
+Command: *EXPALL
+Description: Performs the EXPLAIN command in all directories from the
+currently selected one on an ADFS disc.
+ 
+Command: *FILESYS
+Description: Returns currently selected filing system.
+ 
+ 
+ 
+ 
+                                  Page 7
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+ 
+Command: *ON / *OFF
+Description: Turns Handirom  on or off.
+ 
+Command: *ROMS (<rom>)
+Description: Sideways firmware lister.
+ 
+Command: *SPEED <0 - 9>
+Description: Selects scanning speed for Handirom.
+ 
+Command: *WLOAD <fsp>
+Description: Loads a custom wordlist into Handirom.
+ 
+Command: *WPON / *WPOFF
+Description: Turns wordprocessor mode on or off.
+ 
+Commands may be entered in upper or lower case and may be prefixed by the
+letter "H" if necessary (e.g. *HON etc)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 8
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Editing Wordlists:
+ 
+  The wordlists may be edited,  or new ones created,  with or without the
+Handirom active.
+ 
+  To do this,  type CHAIN"EDIT" or CH."EDIT" followed by RETURN (you must
+be in BASIC to do this).
+ 
+  The editor is easy to use and prompts the user firstly for the filename
+of  the wordlist to edit or RETURN for a new wordlist.  The wordlists are
+all kept  in  directory  W but there is no need to specify this directory
+with.
+ 
+  Try loading STDWORD then add  and  delete words to familiarise yourself
+with the editor.  Using the F)inish option will prompt for a filename.
+ 
+  Do not use the original filename or you run the risk of corrupting your
+data (assuming that the file is not locked).
+ 
+Limitations:
+ 
+  Handirom  will NOT work with the Inter Word wordprocessor,  Acornsoft's
+Basic Editor or any basic program using INKEY(n).  It is also unlikely to
+work with programs or roms which use text or graphics windows.
+ 
+  A further  limitation  is  that  the  cursor  editing  and copying keys
+produce   unpredictable  results  in  the  command  type  of  environment
+i.e.  where  a  "*"  command  may  be  issued.  The best way to return to
+normal  operation  after an anomaly has occurred is to  press  escape  or
+return from the keyboard.
+ 
+  When using a  wordprocessor  such  as  View  3.0,   which  obeys window
+definitions  on  startup,   it  is  necessary to have the Handirom active
+before entering the command *WORD and  to  issue  the *WORD command after
+each change of screen mode (within View,  of course).
+ 
+  Although  the  Handirom  is compatible with the BBC micro or the Master
+with or without the  6502  Tube,   the  Tube  itself must be switched off
+before attempting to load into sideways ram.  Once loaded,   the Tube may
+be switched on and a CTRL-BREAK issued to initialise it.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                  Page 9
+ 
+ 
+           The Newcastle Handirom - an aid for the handicapped
+ 
+ 
+ 
+ 
+Problems:
+ 
+  If  any  problems  are  experienced  with the Handirom,  please contact
+either G J Flanagan or Rob Scott at:
+ 
+ 
+ 
+ 
+ 
+                      Department of Medical Physics
+                      Medical School
+                      University of Newcastle upon Tyne
+                      Newcastle upon Tyne
+                      NE2 4HH
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                                 Page 10
+

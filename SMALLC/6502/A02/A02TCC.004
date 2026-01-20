@@ -1,0 +1,5350 @@
+sed 's/^X//' << 'SHAR_EOF' > bm_c
+X/* bm.c  01-May-89  A.J.Travis */
+X
+X/*
+X * Small-C Benchmarks
+X *
+X * Based on Chris Sadler's Pascal Benchmarks in PCW Oct 1986
+X * and the 'tak' benchmark from Acorn User, Jun 86, pp179
+X */
+X
+X#include <stdio.h>
+X
+Xint matrix[11];
+Xint j, k, l, x;
+Xint test[16];
+Xint n;
+X
+Xmain()
+X{
+X	/* set up test vectors */
+X	test[1] = magnifier;
+X	test[2] = forloop;
+X	test[3] = whileloop;
+X	test[4] = doloop;
+X	test[5] = literalassign;
+X	test[6] = memoryaccess;
+X	test[7] = arithmetic;
+X	test[8] = algebra;
+X	test[9] = vector;
+X	test[10] = equalif;
+X	test[11] = unequalif;
+X	test[12] = noparameter;
+X	test[13] = value;
+X	test[14] = reference;
+X	test[15] = dotak;
+X
+X	/* select benchmarks */
+X	do {
+X		printf("\fSmall-C Benchmarks:\n\n");
+X		printf("magnifier = 10,000 iterations\n\n");
+X		printf(" 0: quit\n");
+X		printf(" 1: magnifier\n");
+X		printf(" 2: forloop\n");
+X		printf(" 3: whileloop\n");
+X		printf(" 4: doloop\n");
+X		printf(" 5: literalassign\n");
+X		printf(" 6: memoryaccess\n");
+X		printf(" 7: arithmetic\n");
+X		printf(" 8: algebra\n");
+X		printf(" 9: vector\n");
+X		printf("10: equalif\n");
+X		printf("11: unequalif\n");
+X		printf("12: noparameter\n");
+X		printf("13: value\n");
+X		printf("14: reference\n");
+X		printf("15: tak\nn");
+X		printf("test? ");
+X		scanf("%d", &n);
+X		if (n > 0 & n < 15)
+X			test[n]();
+X	} while (n);
+X}
+X
+X/*
+X * 'for' loop magnifier
+X */
+Xmagnifier()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'for' loop benchmark
+X */
+Xforloop()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'while' loop benchmark
+X */
+Xwhileloop()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++) {
+X		j = 1;
+X		while (j <= 10)
+X			j = j + 1;
+X	}
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'do' loop benchmark
+X */
+Xdoloop()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++) {
+X		j = 1;
+X		do {
+X			j = j + 1;
+X		} 
+X		while (j <= 10);
+X	}
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'literalassign' benchmark
+X */
+Xliteralassign()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			l = 0;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'memoryaccess' loop benchmark
+X */
+Xmemoryaccess()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			l = j;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'arithmetic' benchmark
+X */
+Xarithmetic()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		x = k / 2 * 3 + 4 - 5;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'algebra' benchmark
+X */
+Xalgebra()
+X{
+X	printf("start\n");
+X	for (k = 1; k < 10001; k++)
+X		x = k / k * k + k - k;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'vector' benchmark
+X */
+Xvector()
+X{
+X	printf("start\n");
+X	matrix[0] = 0;
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			matrix[j] = matrix[j - 1];
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'equalif' benchmark
+X */
+Xequalif()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			if (j < 6)
+X				l = 1;
+X			else
+X				l = 0;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'unequalif' benchmark
+X */
+Xunequalif()
+X{
+X	printf("start\n");
+X	for (k = 0; k < 10000; k++)
+X		for (j = 0; j < 10; j++)
+X			if (j < 2)
+X				l = 1;
+X			else
+X				l = 0;
+X	printf("finish\007\n");
+X}
+X
+X/*
+X * 'noparameter' benchmark
+X */
+Xnoparameter()
+X{
+X	printf("start\n");
+X	j = 0;
+X	for (k = 0; k < 10000; k++)
+X		none1();
+X	printf("finish\007\n");
+X}
+X
+Xnone1()
+X{
+X	none2();
+X}
+X
+Xnone2()
+X{
+X	none3();
+X}
+X
+Xnone3()
+X{
+X	none4();
+X}
+X
+Xnone4()
+X{
+X	none5();
+X}
+X
+Xnone5()
+X{
+X	j = 1;
+X}
+X
+X/*
+X * 'value' benchmark
+X */
+Xvalue()
+X{
+X	printf("start\n");
+X	j = 0;
+X	for (k = 0; k < 10000; k++)
+X		value1(j);
+X	printf("finish\007\n");
+X}
+X
+Xvalue1(i)
+Xint i;
+X{
+X	value2();
+X}
+X
+Xvalue2(i)
+Xint i;
+X{
+X	value3();
+X}
+X
+Xvalue3(i)
+Xint i;
+X{
+X	value4();
+X}
+X
+Xvalue4(i)
+Xint i;
+X{
+X	value5();
+X}
+X
+Xvalue5(i)
+Xint i;
+X{
+X	j = 1;
+X}
+X
+X/*
+X * 'reference' benchmark
+X */
+Xreference()
+X{
+X	printf("start\n");
+X	j = 0;
+X	for (k = 0; k < 10000; k++)
+X		refer1(&j);
+X	printf("finish\007\n");
+X}
+X
+Xrefer1(i)
+Xint *i;
+X{
+X	refer2(i);
+X}
+X
+Xrefer2(i)
+Xint *i;
+X{
+X	refer3(i);
+X}
+X
+Xrefer3(i)
+Xint *i;
+X{
+X	refer4(i);
+X}
+X
+Xrefer4(i)
+Xint *i;
+X{
+X	refer5(i);
+X}
+X
+Xrefer5(i)
+Xint *i;
+X{
+X	j = 1;
+X}
+X
+X/*
+X * 'tak' benchmark
+X */
+Xdotak()
+X{
+X	printf("tak = %d\n", tak(18, 12, 6));
+X}
+X
+Xtak(x, y, z)
+Xint x, y, z;
+X{
+X	if (y < x)
+X		return(tak(tak(x-1, y, z), tak(y-1, z, x), tak(z-1, x, y)));
+X	else
+X		return(z);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > cmp_c
+X/* cmp.c - 19 Apr 88  A.J.Travis */
+X
+X/*
+X * Simple file comparison
+X */
+X
+X#include <stdio.h>
+X
+Xchar buf1[BUFSIZ];
+Xchar buf2[BUFSIZ];
+Xchar *bp1, *bp2;
+Xint c1, c2;
+Xint fd1, fd2;
+Xint n1, n2;
+Xint n;
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	if (argc != 3) {
+X		fprintf(stderr, "usage: cmp file1 file2\n");
+X		exit(-1);
+X	}
+X	if ((fd1 = open(argv[1], 0)) == -1) {
+X		fprintf(stderr, "cmp: can't open %s\n", argv[1]);
+X		exit(-1);
+X	}
+X	if ((fd2 = open(argv[2], 0)) == -1) {
+X		fprintf(stderr, "cmp: can't open %s\n", argv[2]);
+X		close(fd1);
+X		exit(-1);
+X	}
+X	n = 0;
+X	do {
+X		n1 = read(fd1, buf1, BUFSIZ);
+X		n2 = read(fd2, buf2, BUFSIZ);
+X		bp1 = buf1;
+X		bp2 = buf2;
+X		while ((bp1 < buf1 + n1) & (bp2 < buf2 + n2)) { 
+X			if ((c1 = *bp1++ & 0xFF) != (c2 = *bp2++ & 0xFF))
+X				printf("%4X: %02X %02X\n", n, c1, c2);
+X			n++;
+X		}
+X		if (n1 < n2)
+X			printf("cmp: end of file on %s\n", argv[1]);
+X		if (n1 > n2)
+X			printf("cmp: end of file on %s\n", argv[2]);
+X	} 
+X	while (n1 > 0 & n1 == n2);
+X	close(fd1);
+X	close(fd2);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > dehex_c
+X/* dehex.c  30-Apr-89  A.J.Travis */
+X
+X/*
+X * based on Alan Philips hex to binary converter for
+X * binaries in the Lancaster BBC Micro kermit distribution
+X */
+X
+X#include <stdio.h>
+X
+X#define TRUE	1
+X#define FALSE	0
+X#define SAME	0		/* strcmp == */
+X
+X#if MSDOS
+X#define DFS 0
+X#else
+X#define DFS 1
+X#define W_CAT 1				/* write MOS catalogue info */
+X#define RW 3				/* read/write attributes */
+X#endif
+X
+XFILE *in;
+XFILE *out;
+Xint type;
+Xint c;
+Xchar sum;
+Xint len;
+Xint rec;
+Xint base;
+Xint addr;
+Xint q;
+Xint i;
+Xint verbose;			/* print details of each record extracted */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	in = NULL;
+X	out = NULL;
+X	if (argc < 3) {
+X		fprintf(stderr, "usage: dehex [-v] infile outfile\n");
+X		fatal(-1);
+X	}
+X	if (strcmp(argv[1], "-v") == SAME) {
+X		verbose = TRUE;
+X		--argc;
+X		++argv;
+X	}
+X	else
+X		verbose = FALSE;
+X	if ((in = fopen(argv[1], "r")) == NULL) {
+X		fprintf(stderr, "Input file does not exist\n");
+X		fatal(-1);
+X	}
+X	if ((out = fopen(argv[2], "wb")) == NULL) {
+X		fprintf(stderr, "Can't open output file\n");
+X		fatal(-1);
+X	}
+X	rec = 1;
+X	while (record())
+X		++rec;
+X	fclose(in);
+X	fclose(out);
+X#if DFS
+X	attributes(argv[2], base, base);
+X#endif
+X}
+X
+X
+X
+X/*
+X * close files, and exit on fatal error
+X */
+Xfatal(stat)
+Xint stat;
+X{
+X	if (in)
+X		fclose(in);
+X	if (out)
+X		fclose(out);
+X	exit(stat);
+X}
+X
+X
+X		
+X/*
+X * read one record
+X */
+Xrecord()
+X{
+X	while ((c = getc(in)) != ':') {
+X		if (c == EOF)
+X			return 0;
+X	}
+X	sum = 0;
+X	len = getb();
+X	addr = getw();
+X	if (rec == 1)
+X		base = addr;
+X	if ((type = getb()) == 0) {
+X		unhex(len);
+X		return 1;
+X	}
+X	else if (type == 1) {
+X		if (verbose)
+X			printf("+++ End-of-file record detected\n");
+X		return 0;
+X	}
+X	else {
+X		fprintf(stderr, "*** Unknown record type %d detected\n", type);
+X		fatal(-1);
+X	}
+X	if (sum != 0) {
+X		fprintf(stderr, "*** Checksum error (%04X)\n", sum);
+X		fatal(-1);
+X	}
+X}
+X
+X
+X
+X/*
+X * get hex byte from input
+X */
+Xgetb()
+X{
+X	int val;
+X	
+X	val = toint(getc(in)) << 4;
+X	val = val + toint(getc(in));
+X	sum = sum + val;
+X	return val;
+X}
+X
+X
+X
+X/*
+X * get hex word from input
+X */
+Xgetw()
+X{
+X	int val;
+X	
+X	val = getb() << 8;
+X	val = val + getb();
+X	return val;
+X}
+X
+X
+X
+X/*
+X * convert hex char to int
+X */
+Xtoint(c)
+Xint c;
+X{
+X	if (c >= 'A')
+X		return c - 'A' + 10;
+X	else
+X		return c - '0';
+X}
+X
+X
+X
+X/*
+X * extract hex record
+X */
+Xunhex(len)
+Xint len;
+X{
+X	if (verbose)
+X		printf("Record %4d: Size %2d, address $%04X\n", rec, len, addr);
+X	addr = addr + len;
+X	while (len--)
+X		putc(getb(), out);
+X}
+X
+X
+X
+X#if DFS
+X/*
+X * set MOS load and execution attributes on object file
+X */
+Xattributes(file, load, exec)
+Xchar *file;				/* filename to set attributes on */
+Xunsigned load;				/* load address */
+Xunsigned exec;				/* execution address */
+X{
+X	int *fcb[9];			/* file control block */
+X
+X	fcb[0] = 0;
+X	fcb[1] = load;
+X	fcb[2] = 0;
+X	fcb[3] = exec;
+X	fcb[4] = 0;
+X	fcb[5] = 0;
+X	fcb[6] = 0;
+X	fcb[7] = RW;
+X	fcb[8] = 0;
+X	return(osfile(file, fcb, W_CAT));
+X}
+X#endif
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > diff_c
+X/* diff_c  09-Jan-89  A.J.Travis */
+X
+X/*
+X * 'line by line' file comparison
+X */
+X
+X#include <stdio.h>
+X
+X#define SAME 0
+X
+XFILE *fp1, *fp2;
+Xchar *bp1, *bp2;
+Xint c1, c2;
+Xint eof1, eof2;
+Xint n;
+Xchar buf1[BUFSIZ];
+Xchar buf2[BUFSIZ];
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	if (argc != 3) {
+X		fprintf(stderr, "usage: diff file1 file2\n");
+X		exit(-1);
+X	}
+X	if ((fp1 = fopen(argv[1], "r")) == NULL) {
+X		fprintf(stderr, "diff: can't open %s\n", argv[1]);
+X		exit(-1);
+X	}
+X	if ((fp2 = fopen(argv[2], "r")) == NULL) {
+X		fprintf(stderr, "diff: can't open %s\n", argv[2]);
+X		fclose(fp1);
+X		exit(-1);
+X	}
+X	n = 0;
+X	while (++n) {
+X		eof1 = (fgets(buf1, BUFSIZ, fp1) == NULL);
+X		eof2 = (fgets(buf2, BUFSIZ, fp2) == NULL);
+X		if (eof1 & eof2)
+X			break;
+X		if (eof1 & (eof2 == 0)) {
+X			printf("diff: end of file on %s\n", argv[1]);
+X			break;
+X		}
+X		if (eof2 & (eof1 == 0)) {
+X			printf("diff: end of file on %s\n", argv[2]);
+X			break;
+X		}
+X		if (strcmp(buf1, buf2) != SAME)
+X			printf("%d:\n< %s> %s", n, buf1, buf2);
+X	}
+X	fclose(fp1);
+X	fclose(fp2);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > fahr_c
+X/* fahr.c  17-Dec-88  A.J.Travis */
+X
+X/*
+X * print Fahrenheit-Celsius table
+X * ------------------------------
+X * Adapted from the tutorial example in Kernighan and Ritchie 
+X * to show how fixed-point arithmetic can be used in Small-C.
+X */
+X
+X#include <stdio.h>
+X
+X#define SCALE 10			/* fixed-point scale */
+X
+Xmain()
+X{
+X	int lower, upper, step;
+X	int fahr, celsius;
+X	int integer, fraction;
+X
+X	lower = 0;	/* lower limit of temperature table */
+X	upper = 300;	/* upper limit */
+X	step = 20;	/* step size */
+X
+X	fahr = lower;
+X	while (fahr <= upper) {
+X		celsius = (SCALE * 5 * (fahr - 32)) / 9;
+X		integer = celsius / SCALE;
+X		if ((fraction = celsius % SCALE) < 0)
+X			fraction = -fraction;
+X		printf("%4d %4d.%1d\n", fahr, integer, fraction);
+X		fahr = fahr + step;
+X	}
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > hanoi_c
+X/* hanoi.c  19-Nov-88  Modified by A.J.Travis */
+X
+X/*
+X * Towers of Hanoi in Small-C by Jon Welch
+X * ---------------------------------------
+X * The program should be run in mode 2, and
+X * shows the disks in 7 different colours.
+X */
+X 
+X#include <stdio.h>
+X
+Xint j, n;
+Xint one, two, three;
+X
+Xmain()
+X{
+X	printf("\f\nHeight (0-12): ");
+X	scanf("%d", &n);
+X	if (n > 12)
+X		n = 12;
+X	j = n; 
+X	while (j > 0) {
+X		box((j % 7) + 1, 200, (n - j + 1) * 40, j * 16);
+X		j = j - 1;
+X	}
+X	one = n * 40;
+X	two = 0;
+X	three = 0;
+X	hanoi(n, 1, 2, 3);
+X}
+X
+Xup(x)
+Xint x;
+X{
+X	if (x == 1)
+X		one = one + 40;
+X	else if (x == 2)
+X		two = two + 40;
+X	else
+X		three = three + 40;
+X}
+X
+Xdown(x)
+Xint x;
+X{
+X	if (x == 1)
+X		one = one - 40;
+X	else if (x == 2)
+X		two = two - 40;
+X	else
+X		three = three - 40;
+X}
+X
+Xheight(x)
+Xint x;
+X{
+X	if (x == 1)
+X		return(one);
+X	else if (x == 2)
+X		return(two);
+X	else
+X		return(three);
+X}
+X
+Xbytes(x)
+Xint x;
+X{
+X	vdu(x);
+X	vdu(x >> 8);
+X}
+X
+Xbox(col, x, y, size)
+Xint col, x, y, size;
+X{
+X	vdu(18);
+X	vdu(0);
+X	vdu(col + 128);
+X	vdu(24);
+X	bytes(x - size);
+X	bytes(y);
+X	bytes(x + size);
+X	bytes(y + 20);
+X	vdu(16);
+X}
+X
+Xmove(n, s, e)
+Xint n, s, e ;
+X{
+X	box(0, s * 400 - 200, height(s), n * 16);
+X	down(s);
+X	up(e);
+X	box((n % 7) + 1, e * 400 - 200, height(e), n * 16);
+X}
+X
+Xhanoi(a, b, c, d)
+Xint a, b, c, d;
+X{
+X	if (a != 0) {
+X		hanoi(a - 1, b, d, c);
+X		move(a, b, c);
+X		hanoi(a - 1, d, c, b);
+X	}
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > hex_c
+X/* hex.c  26-Jan-89  A.J.Travis */
+X
+X/*
+X * based on Alan Philips binary to hex converter for
+X * binaries in the Lancaster BBC Micro kermit distribution
+X */
+X
+X#include <stdio.h>
+X
+X#if MSDOS
+X
+X#define EOL '\n'
+X
+X#else
+X
+X#define EOL '\r'
+X
+X#endif
+X
+X#define TRUE 1
+X#define FALSE 0
+X#define SAME 0
+X
+X#define END ":00000001FF%c"
+X
+Xchar ibuf[32];
+Xint in;
+XFILE *out;
+Xunsigned addr;
+Xint i, j;
+Xint cksum;
+Xint rflag;
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	if (argc < 3) {
+X		fprintf(stderr, "usage: hex [-R] infile outfile\n");
+X		exit(-1);
+X	}
+X	rflag = 0;
+X	if (strcmp(argv[1], "-R") == SAME) {
+X		rflag++;
+X		--argc;
+X		argv++;
+X	}
+X	if ((in = open(argv[1], 0)) == -1) {
+X		fprintf(stderr, "Input file does not exist\n");
+X		exit(-1);
+X	}
+X	if ((out = fopen(argv[2], "w")) == NULL) {
+X		fprintf(stderr, "Can't open output file\n");
+X		exit(-1);
+X	}
+X	addr = loadaddress();
+X	while (record())
+X		;
+X	fprintf(out, END, EOL);
+X	close(in);
+X	fclose(out);
+X}
+X
+Xrecord()
+X{
+X	cksum = 0;
+X	if ((i = read(in, ibuf, 32)) == 0)
+X		return(FALSE);
+X	putc(':', out);
+X	hex(i);
+X	hex(addr / 256);
+X	hex(addr % 256);
+X	hex(0);
+X	for (j = 0; j < i; j++)
+X		hex(ibuf[j]);
+X	hex(-cksum);
+X	putc(EOL, out);
+X	addr = addr + i; 
+X	return(TRUE);
+X}
+X
+Xhex(byte)
+Xint byte;
+X{
+X	cksum = (cksum + byte);
+X	fprintf(out, "%02X", byte & 0xFF);
+X}
+X
+Xloadaddress()
+X{
+X	if (rflag)
+X		return(0x8000);
+X	else
+X		return(0x1902);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > ld_c
+X/* ld.c  26-Jan-89  A.J.Travis */
+X
+X/*
+X * rudimentary loader for Small-C run-time support, and compiler library
+X */
+X
+X#include <stdio.h>
+X
+X#if MSDOS
+X#define DFS 0
+X#else
+X#define DFS 1
+X#endif
+X
+X#define SAME 0				/* strcmp() equal */
+X#define UNDEFINED -1			/* file status */
+X#define W_CAT 1				/* write MOS catalogue info */
+X#define RW 3				/* read/write attributes */
+X
+Xchar buf[BUFSIZ];			/* i/o buffer */
+Xchar *ofile;				/* output filename */
+Xunsigned laddr;				/* MOS load address */
+Xunsigned eaddr;				/* MOS execution address */
+Xint in, out;				/* file descriptors */
+Xint count;				/* number of bytes read/written */
+X 
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	in = UNDEFINED;
+X	out = UNDEFINED;
+X	if (argc < 2)
+X		usage();
+X	ofile = "a_out";		/* default output file */
+X	laddr = 0x1902;			/* default load address */
+X	eaddr = 0x1902;			/* default exec address */
+X	while ((*argv[1] & 0xFF) == '-') {		/* BUG in compiler */
+X		if (strcmp(argv[1], "-o") == SAME) {
+X			if (argc < 3)
+X				usage();
+X			else {
+X				ofile = argv[2];
+X				argc = argc - 2;
+X				argv = argv + 2;
+X			}
+X		}
+X		else if (strcmp(argv[1], "-R") == SAME) {
+X			laddr = 0x8000;
+X			eaddr = 0x8000;
+X			--argc;
+X			argv++;
+X		}
+X		else
+X			usage();
+X	}
+X	if (argc < 2)
+X		usage();
+X	if ((out = creat(ofile, RW)) == -1) {
+X		fprintf(stderr, "ld: can't create %s\n", ofile);
+X		fatal(-1);
+X	}
+X	while (--argc) {
+X		if ((in = open(argv[1], 0)) == -1) {
+X			fprintf(stderr, "ld: can't open %s\n", argv[1]);
+X			fatal(-1);
+X		}
+X		while ((count = read(in, buf, BUFSIZ)) > 0)
+X			write(out, buf, count);
+X		close(in);
+X		argv++;
+X	}
+X	close(out);
+X#if DFS
+X	attributes(ofile, laddr, eaddr);
+X#endif
+X}
+X
+X/*
+X * report correct usage and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: ld [-o outfile] [-R] file1 ... [filen]\n");
+X	fatal(-1);
+X}
+X
+X/*
+X * close files and exit
+X */
+Xfatal(stat)
+Xint stat;				/* exit status */
+X{
+X	if (in > 0)
+X		close(in);
+X	if (out > 0)
+X		close(out);
+X	exit(stat);
+X}
+X
+X#if DFS
+X/*
+X * set MOS load and execution attributes on object file
+X */
+Xattributes(file, load, exec)
+Xchar *file;				/* filename to set attributes on */
+Xunsigned load;				/* load address */
+Xunsigned exec;				/* execution address */
+X{
+X	int *fcb[9];			/* file control block */
+X
+X	fcb[0] = 0;
+X	fcb[1] = load;
+X	fcb[2] = 0;
+X	fcb[3] = exec;
+X	fcb[4] = 0;
+X	fcb[5] = 0;
+X	fcb[6] = 0;
+X	fcb[7] = RW;
+X	fcb[8] = 0;
+X	return(osfile(file, fcb, W_CAT));
+X}
+X#endif
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > lpr_c
+X/* lpr.c  26-Jan-89  A.J.Travis */
+X
+X/*
+X * print files, with tabs expanded into spaces
+X */
+X
+X#include <stdio.h>
+X
+X#define TRUE 1
+X#define FALSE 0
+X#define SAME 0
+X
+X#if MSDOS
+X#define DFS 0
+X#define EOL '\n'			/* end of line */
+X#else
+X#define DFS 1
+X#define ENABLE 2			/* enable printer */
+X#define DISABLE 3			/* disable printer */
+X#define EOL '\r'			/* end of line */
+X#endif
+X
+X#define TABSIZ 8			/* tab width */
+X#define LINESIZ 81			/* line length + 1 */
+X#define LINEMAX 80			/* line length */
+X#define PAGESIZ 56			/* printed lines per page */
+X#define HALFPAGE ((PAGESIZ + 10) / 2)	/* lines per half-page */
+X#define PRINTER stdout			/* printer channel */
+X
+XFILE *in;				/* input file */
+Xchar buf[LINESIZ];			/* i/o buffer */
+Xchar *bp;				/* buffer pointer */
+Xint c;					/* ASCII character */
+Xint col;				/* print column */
+Xint line;				/* print line */
+Xint page;				/* print page */
+Xint paginate;				/* paginate output */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	if (argc < 2)
+X		usage();
+X	paginate = FALSE;		/* default is no pagination */
+X	while ((*argv[1] & 0xFF) == '-') {
+X		if (strcmp(argv[1], "-p") == SAME) {
+X			paginate++;
+X			--argc;
+X			argv++;
+X		}
+X		else
+X			usage();
+X	}
+X	if (argc < 2)
+X		usage();
+X	if ((in = fopen(argv[1], "r")) == NULL) {
+X		fprintf(stderr, "lpr: can't open %s\n", argv[1]);
+X		exit(-1);
+X	}
+X	col = 1;
+X	line = 1;
+X	page = 1;
+X	bp = buf;
+X#if DFS
+X	putc(ENABLE, PRINTER);
+X#endif
+X	if (paginate == FALSE)
+X		putc('\f', PRINTER);
+X	while ((c = getc(in)) != EOF) {
+X		if (c == '\t') {
+X			do {
+X				*bp++ = ' ';
+X			} while (++col % TABSIZ != 1 & col < LINESIZ);
+X		}
+X		else if (c == EOL | col == LINEMAX) {
+X			if (col == LINEMAX)
+X				*bp++ = c;
+X			if (line++ % PAGESIZ == 1 & paginate == TRUE) {
+X				fprintf(PRINTER, "\f\n\n%-70s", argv[1]);
+X				fprintf(PRINTER, "page %d\n\n\n", page++);
+X			}
+X			*bp = '\0';
+X			fprintf(PRINTER, "%s\n", buf);
+X			col = 1;
+X			bp = buf;
+X		}
+X		else {
+X			*bp++ = c;
+X			col++;
+X 		}
+X	}
+X	fprintf(PRINTER, "\f***** page alignment *****");
+X	for (c = 0; c < HALFPAGE; c++)
+X		putc('\n', PRINTER);
+X#if DFS
+X	putc(DISABLE, PRINTER);
+X#endif
+X	close(in);
+X}
+X
+X/*
+X * report correct usage and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: lpr [-p] file\n");
+X	exit(-1);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > plot_c
+X/* plot.c  19-Nov-88  Modified by A.J.Travis */
+X
+X/*
+X * recursive boxes in Small-C by Jon Welch
+X * ---------------------------------------
+X * The plot program should be run in graphics mode 1.
+X */
+X
+X#include <stdio.h>
+X
+X#define N 6
+X#define H0 1024
+X
+Xint h,x0,y0,x,y,loop;
+X
+Xmain()
+X{
+X        init();
+X        for (loop=1;loop<=N;loop++) {
+X                vdu(18);
+X                vdu(0);
+X                vdu(loop % 3+1);
+X                xyset();
+X                sides(loop,0);
+X        }
+X}
+X
+X#ifdef notdef
+Xmode(a)
+Xint a;
+X{
+X        vdu(22);
+X        vdu(a);
+X}
+X#endif
+X
+Xplot(k,x,y)
+Xint k,x,y;
+X{
+X        vdu(25);
+X        vdu(k);
+X        vdu(x);
+X        vdu(x >> 8);
+X        vdu(y);
+X        vdu(y >> 8);
+X}
+X
+Xaddx()
+X{
+X        x=x+h;
+X        plot(5,x,y);
+X}
+X
+Xsubx()
+X{
+X        x=x-h;
+X        plot(5,x,y);
+X}
+X
+Xaddy()
+X{
+X        y=y+h;
+X        plot(5,x,y);
+X}
+X
+Xsuby()
+X{
+X        y=y-h;
+X        plot(5,x,y);
+X}
+X
+Xor1(a)
+Xint a;
+X{
+X        sides(a,3);  subx();      
+X        sides(a,0);  suby();
+X        sides(a,0);  addx();
+X        sides(a,1);
+X}
+X
+Xor2(a)
+Xint a;
+X{
+X        sides(a,2);  addy();      
+X        sides(a,1);  addx();
+X        sides(a,1);  suby();
+X        sides(a,0);
+X}
+X
+Xor3(a)
+Xint a;
+X{
+X        sides(a,1);  addx();      
+X        sides(a,2);  addy();
+X        sides(a,2);  subx();
+X        sides(a,3);
+X}
+X
+Xor4(a)
+Xint a;
+X{
+X        sides(a,0);  suby();      
+X        sides(a,3);  subx();
+X        sides(a,3);  addy();
+X        sides(a,2);
+X}
+X
+Xsides(a,b)
+Xint a,b;
+X{
+X        if (a != 0) {
+X                a=a-1;
+X                if (b==0) or1(a);
+X                else if (b==1) or2(a);
+X                else if (b==2) or3(a);
+X                else or4(a);
+X        }
+X}
+X
+Xinit()
+X{
+X        h=H0;
+X        x0=h / 2;
+X        y0=h / 2;
+X#ifdef notdef
+X	mode(1);
+X#endif
+X}
+X
+Xxyset()
+X{
+X        h=h / 2;
+X        x0=x0+h / 2;
+X        y0=y0+h / 2;
+X        x=x0;
+X        y=y0;
+X        plot(4,x,y);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > rm_c
+X/* rm.c  07-Apr-89  A.J.Travis */
+X
+X/*
+X * remove files
+X */
+X
+X#include <stdio.h>
+X
+X#if MSDOS
+X
+X#include <dos.h>
+X#define PLAIN 0x21		/* plain file [read-only] [archive] */
+X#define CFLAG 1			/* 8086 carry flag */
+X
+X#else
+X
+X#define W_CAT 1			/* write MOS catalogue info */
+X#define MODE 0			/* file mode */
+X#define ATTRIB 7		/* file attributes */
+X#define LOCKED 0x88		/* owner + other delete locks */
+X#define UNLOCK 0x77		/* permit owner + other delete */
+X#define EXISTS 0		/* file exists */
+X#define PLAIN 1			/* plain file */
+X#define DIRECTORY 2		/* directory file */
+Xint fcb[9];			/* file control block */
+X
+X#endif
+X
+X#define ERROR -1
+X#define OK 0
+X#define SAME 0			/* strcmp() strings equal */
+X
+Xint force;			/* force removal of locked files */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	if (argc == 1)
+X		usage(-1);
+X	force = 0;
+X	while ((*argv[1] & 0xFF) == '-') {		/* BUG in compiler */
+X		if (strcmp(argv[1], "-f") == SAME)
+X			force++;
+X		else
+X			usage(-1);
+X		--argc;
+X		argv++;
+X	}
+X	while (--argc > 0) {
+X		if (force)
+X			kill(argv[1]);
+X		else
+X			delete(argv[1]);
+X		argv++;
+X	}
+X}
+X
+X/*
+X * kill file
+X * ---------
+X * delete even if locked, and don't complain about non-existent files
+X */
+Xkill(file)
+Xchar *file;				/* name of file to delete */
+X{
+X#if MSDOS
+X	union REGS reg;
+X	
+X	reg.h.ah = 0x43;		/* MSDOS chmod function */
+X	reg.h.al = 0x01;		/* set attribute mode */
+X	reg.x.cx = 0x00;		/* 'normal' attributes */
+X	reg.x.dx = file;		/* address of filename */
+X
+X	/* Carry set indicates an error */
+X	if ((intdos(&reg, &reg) & CFLAG) == OK)
+X		unlink(file);
+X#else
+X	if (stat(file, fcb) == EXISTS) {
+X		if (fcb[MODE] & PLAIN) {		
+X			fcb[ATTRIB] = fcb[ATTRIB] & UNLOCK;
+X			osfile(file, fcb, W_CAT);	/* unlock file */
+X			unlink(file);
+X		}
+X	}
+X#endif
+X}
+X
+X/*
+X * delete file
+X */
+Xdelete(file)
+Xchar *file;				/* name of file to delete */
+X{
+X#if MSDOS
+X	if (findfirst(file, PLAIN) == NULL)
+X		fprintf(stderr, "rm: %s not found\n", file);
+X	else if (unlink(file) == ERROR)
+X		fprintf(stderr, "rm: %s permission denied\n", file);
+X#else
+X	if (stat(file, fcb) != EXISTS)
+X		fprintf(stderr, "rm: %s not found\n", file);
+X	else if (fcb[MODE] & PLAIN) {
+X		if (fcb[ATTRIB] & LOCKED)
+X			fprintf(stderr, "rm: %s permission denied\n", file);
+X		else
+X			unlink(file);
+X	}
+X	else if (fcb[MODE] & DIRECTORY)
+X		fprintf(stderr, "rm: can't remove directory %s\n", file);
+X	else
+X		fprintf(stderr, "rm: %s file type error\n", file);
+X#endif
+X}
+X
+X/*
+X * report correct usage, and exit
+X */
+Xusage(stat)
+Xint stat;				/* exit status */
+X{
+X	fprintf(stderr, "usage: rm [-f] file1 ... [filen]\n");
+X	exit(stat);
+X}
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > sfa_c
+X/* sfa.c - 11 Apr 88  A.J.Travis */
+X
+X/*
+X * Set File Attributes for BBC Micro DFS/ADFS binaries
+X */
+X
+X#include <stdio.h>
+X
+X#define W_CAT 1				/* write MOS catalogue info */
+X#define RW 3				/* read/write attributes */
+X#define LOAD 0x1902			/* default load address */
+X#define EXEC 0x1902			/* default exec address */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	int *fcb[9];	/* file control block */
+X
+X	if (argc != 2)
+X		usage();
+X	if (stat(argv[1], fcb) == -1) {
+X		fprintf(stderr, "sfa: %s not found\n", argv[1]);
+X		exit(-1);
+X	}
+X	fcb[0] = 0;
+X	fcb[1] = LOAD;
+X	fcb[2] = 0;
+X	fcb[3] = EXEC;
+X	fcb[4] = 0;
+X	fcb[5] = 0;
+X	fcb[6] = 0;
+X	fcb[7] = RW;
+X	fcb[8] = 0;
+X	osfile(argv[1], fcb, W_CAT);
+X}
+X
+X/*
+X * report correct usage and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: sfa file\n");
+X	exit(-1);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > shar_c
+X/* shar.c  11-Apr-89  A.J.Travis */
+X
+X/*
+X * Unix style 'shell' archiver
+X */
+X
+X#include <stdio.h>
+X
+X#if MSDOS
+X#include <dos.h>
+X#define EOL '\n'
+Xstruct FIND *files;
+X
+X#else
+X#define EOL '\r'
+X#endif
+X
+X#define UNDEFINED NULL			/* i/o stream status */
+X
+X#define ERRTERM		"shar: parse error - \"<<\" expected\n"
+X#define ERRTO		"shar: parse error - \">\" expected\n"
+X#define ESCRIPT		"shar: sed script not recognised\n"
+X#define ELINE		"shar: error extracting %s\n", path
+X
+X#define TRUE		1
+X#define FALSE		0
+X#define SAME		0		/* strncmp() strings equal */
+X#define LINESIZE	BUFSIZ
+X
+XFILE *in;				/* input file */
+XFILE *out;				/* output file */
+Xchar line[LINESIZE];			/* i/o buffer */
+Xchar path[80];				/* pathname */
+Xchar cmd[80];				/* sed or cat command string */
+Xchar script[80];			/* sed edit script */
+Xchar term[80];				/* 'here' << document terminator */
+Xint skip;				/* length of shar prefix to skip */
+Xint terml;				/* length of terminator */
+Xint sed;				/* sed or cat command */
+Xint cflag;				/* create archive */
+Xint xflag;				/* extract files */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	in = UNDEFINED;			/* default input stream */
+X	out = UNDEFINED;		/* default output stream */
+X	cflag = FALSE;
+X	xflag = FALSE;
+X
+X	/* first argument is mandatory flag */
+X	if (argc < 3)
+X		usage();
+X	if (strcmp(argv[1], "-a") == SAME)
+X		cflag++;
+X	else if (strcmp(argv[1], "-x") == SAME)
+X		xflag++;
+X	else
+X		usage();
+X	--argc;
+X	argv++;
+X
+X	/* next argument is name of archive */
+X	if (xflag) {
+X		if ((in = fopen(argv[1], "rb")) == NULL)
+X			cant(argv[1]);
+X
+X		/* for simplicity, just extract the lot */
+X		extract();
+X	}
+X	else {
+X		if ((out = fopen(argv[1], "w")) == NULL)
+X			cant(argv[1]);
+X		--argc;
+X		argv++;
+X
+X		/* remaining arguments are files to archive */
+X		while (--argc) {
+X			archive(argv[1]);
+X			argv++;			
+X		}
+X	}
+X}
+X
+X/*
+X * report correct usage, and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: shar [-a] [-x] archive file1 ... [filen]\n");
+X	exit(-1);
+X}
+X
+X/*
+X * print file access error, and exit
+X */
+Xcant(name)
+Xchar *name;				/* name of problem file */
+X{
+X	fprintf(stderr, "shar: can't open %s\n", name);
+X	if (in != UNDEFINED)
+X		close(in);
+X	if (out != UNDEFINED & out != stdout)
+X		close(out);
+X	exit(-1);
+X}
+X
+X/*
+X * create shell archive
+X */
+Xarchive(name)
+Xchar *name;				/* name of file to archive */
+X{
+X	char *bp;			/* buffer pointer */
+X
+X	if ((in = fopen(name, "r")) == NULL)
+X		cant(name);
+X	fprintf(out, "sed 's/^X//' << 'SHAR_EOF' > %s%c", name, EOL);
+X	while (fgets(line, LINESIZE, in) != NULL) {
+X		bp = line;
+X		while (*bp) {
+X			if ((*bp == '\r') | (*bp == '\n'))
+X				break;
+X			else
+X				bp++;
+X		}
+X		*bp++ = EOL;
+X		*bp = '\0';
+X		fprintf(out, "X%s", line);
+X	}
+X	fprintf(out, "SHAR_EOF%c", EOL);
+X	fclose(in);
+X}
+X
+X/*
+X * extract files from shell archive
+X */
+Xextract()
+X{
+X	int filen;
+X	char *p;
+X	char *dp;
+X
+X	filen = 0;
+X	while (fgets(line, LINESIZE, in) != NULL) {
+X
+X		/* strip shell escape chars and quotes */
+X		p = line;
+X		dp = cmd;
+X		while (*p) {
+X			if ((*p == '\\') | (*p == '\''))
+X				p++;
+X			else
+X				*dp++ = *p++;
+X		}
+X		*--dp = '\0';
+X#if MSDOS
+X		/* check for sub-directory tree */
+X		if (strncmp(cmd, "cd", 2) == SAME) {
+X			printf("%s\n", cmd);
+X			p = cmd + 2;
+X			dp = path;
+X			while (isspace(*p))
+X				p++;
+X			while (isspace(*dp++ = *p++) == FALSE)
+X				;
+X			*--dp = '\0';
+X			if ((files = findfirst(path, 0x10)) == NULL) {
+X				printf("mkdir %s\n", path);
+X				mkdir(path);
+X			}
+X			if (chdir(path) == -1) {
+X				fprintf(stderr, "shar: %s not found\n", path);
+X				exit(-1);
+X			}
+X			continue;
+X		}
+X#endif
+X		/* parse 'sed' command */
+X		if (strncmp(cmd, "sed", 3) == SAME) {
+X			sed = TRUE;
+X			printf("%s\n", cmd);
+X
+X			/* extract 'sed' script */
+X			p = cmd + 3;
+X			dp = script;
+X			while (isspace(*p))
+X				p++;
+X			if (strncmp(p, "s/", 2) != SAME) {
+X				fprintf(stderr, ESCRIPT);
+X				exit(-1);
+X			}
+X			p = p + 2;
+X			if (*p == '^')
+X				p++;
+X			for (skip = 0; *p != '/'; skip++) {
+X				if ((*dp++ = *p++) == '\0') {
+X					fprintf(stderr, ESCRIPT);
+X					exit(-1);
+X				}
+X			}
+X			*dp = '\0';
+X		}
+X
+X		/* parse 'cat' command */
+X		else if (strncmp(cmd, "cat", 3) == SAME) {
+X			sed = FALSE;
+X			printf("%s\n", cmd);
+X			p = cmd + 3;
+X
+X		}
+X		else
+X			continue;
+X
+X		/* look for "<< terminator" in command line */
+X		p = cmd;
+X		dp = term;
+X		while (*p++ != '<')
+X			;
+X		if (*p++ != '<') {
+X			fprintf(stderr, ERRTERM);
+X			exit(-1);
+X		}
+X		while (isspace(*p))
+X			p++;
+X		while (isspace(*dp++ = *p++) == FALSE)
+X			;
+X		*--dp = '\0';
+X		terml = strlen(term);
+X
+X		/* look for "> pathname" in command line */
+X		p = cmd;
+X		dp = path;
+X		while (*p != '>') {
+X			if (*p++ == '\0') {
+X				fprintf(stderr, ERRTO);
+X				exit(-1);
+X			}
+X		}
+X		while (isspace(*++p))
+X			;
+X		while (isspace(*dp++ = *p++) == FALSE)
+X			;
+X		*--dp = '\0';
+X#if MSDOS
+X		/* check for illegal DOS filenames */
+X		if (strncmp(path, "aux", 3) == SAME) {
+X			printf("filename conflicts with AUX:, ", path);
+X			sprintf(path, "xxx%d", filen++);
+X			printf("renamed %s\n", path);
+X		}
+X#endif
+X		while ((out = fopen(path, "wb")) == NULL) {
+X			printf("can't open %s, ", path);
+X			sprintf(path, "xxx%d", filen++);
+X			printf("renamed %s\n", path);
+X		}
+X
+X		/* extract file contents according to sed/cat format */
+X		while (fgets(line, LINESIZE, in)) {
+X			if (sed) {
+X				if (strncmp(line, script, skip) == SAME)
+X					fputs(line + skip, out);
+X				else if (strncmp(line, term, terml) == SAME) {
+X					fclose(out);
+X					break;
+X				}
+X				else {
+X					fprintf(stderr, ELINE);
+X					break;
+X				}
+X			}
+X			else {
+X				if (strncmp(line, term, terml) == SAME) {
+X					fclose(out);
+X					break;
+X				}
+X				fputs(line, out);
+X			}
+X		}
+X	}
+X	fclose(in);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > sieve_c
+X/* Eratosthenes Sieve benchmark */
+X
+X#define true 1
+X#define false 0
+X#define size 8190
+X#define sizepl 8191
+X
+Xchar flags[sizepl];
+X
+Xmain()
+X{
+X	int i, prime, k, count, iter;
+X
+X	printf("10 iterations\n");
+X
+X	iter = 1;
+X	while (iter <= 10) {
+X		count = 0;
+X		i = 0;
+X		while (i <= size) {
+X			flags[i] = true;
+X			i++;
+X		}
+X		i = 0;
+X		while (i <= size) {
+X			if (flags[i]) {
+X				prime = i + i + 3;
+X				k = i + prime;
+X				while (k <= size) {
+X					flags[k] = false;
+X					k = k + prime;
+X				}
+X				count++;
+X			}
+X			i++;
+X		}
+X		iter++;
+X	}
+X
+X	printf("\n%d primes\n", count);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > tcc_c
+X/* tcc.c  26-Jan-89  A.J.Travis */
+X
+X/*
+X * Small-C compilation sequencer
+X * -----------------------------
+X * Generate *exec (*.bat) file to compile Small-C programs
+X */
+X
+X#include <stdio.h>
+X
+X#define TCPP	"tcpp"
+X#define TCCOM	"tccom"
+X#define TCCOMC	"tccom -C"
+X#define AS65	"as65 -o"
+X#define RM	"rm -f"
+X#define LD	"ld -o"
+X#define SWLD	"ld -R -o"
+X
+X#if MSDOS
+X#define PATHSEP '\\'
+X#define EXT	"ext_s enter_s"
+X#define CRT	"crt"
+X#define SWEXT	"swext_s enter_s"
+X#define SWCRT	"swcrt"
+X#define SCEXT	"swext_s start_s"
+X#define COMP	"compile.bat"
+X#define EXEC	"compile"
+X#else
+X#define PATHSEP '.'
+X#define EXT	":0.$.ext_s :0.$.enter_s"
+X#define CRT	":0.$.crt"
+X#define SWEXT	":0.$.swext_s :0.$.enter_s"
+X#define SWCRT	":0.$.swcrt"
+X#define SCEXT	":0.$.swext_s :0.$.start_s"
+X#define COMP	"compile"
+X#define EXEC	"*exec compile"
+X#endif
+X
+X#define LIT	"litfile"
+X#define OFILE	"a_out"
+X
+X#define TRUE 1
+X#define FALSE 0
+X#define SAME 0				/* strcmp() equal */
+X#define UNDEFINED NULL			/* file status */
+X#define RW 3				/* MOS read/write mode */
+X
+Xchar tmp1[80];				/* compiler temporaries */
+Xchar tmp2[80];
+Xchar tmp3[80];
+Xchar tmp4[80];
+Xchar pathname[80];			/* pathname of source file */
+Xchar basename[80];			/* pathname with suffix removed */
+Xchar suffix;				/* file type 'c' suffix */
+Xchar *pp;				/* pathname pointer */
+Xchar *bp;				/* basename pointer */
+Xchar *exec;				/* invocation mantra */
+Xchar *tcpp;				/* Small-C preprocessor */
+Xchar *tccom;				/* Small-C compiler */
+Xchar *as65;				/* 6502 assember */
+Xchar *ld;				/* 6502 loader */
+Xchar *rm;				/* file remover */
+Xchar *ext;				/* external references */
+Xchar *crt;				/* Small-C run-time support module */
+Xchar *lit;				/* compiler literal pool */
+Xchar *ofile;				/* output object file */
+Xchar *comp;				/* exec file */
+XFILE *in, *out;				/* input/output files */
+Xint doexec;				/* execute *exec file */
+Xint docom;				/* compiler phase */
+Xint doasm;				/* assembly phase */
+Xint doload;				/* load phase */
+Xint keepsym;				/* preserve global symbol file */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	in = UNDEFINED;
+X	out = UNDEFINED;
+X	if (argc < 2)
+X		usage();
+X	doexec = TRUE;
+X	docom = TRUE;
+X	doasm = TRUE;
+X	doload = TRUE;
+X	keepsym = FALSE;
+X	tcpp = TCPP;
+X	tccom = TCCOM;
+X	as65 = AS65;
+X	rm = RM;
+X	ld = NULL;
+X	crt = NULL;
+X	ext = SCEXT;
+X	lit = LIT;
+X	ofile = OFILE;
+X	comp = COMP;
+X	exec = EXEC;
+X	while ((*argv[1] & 0xFF) == '-') {	/* BUG in compiler */
+X		if (strcmp(argv[1], "-o") == SAME) {
+X			if (argc < 3)
+X				usage();
+X			else {
+X				ofile = argv[2];
+X				--argc;
+X				argv++;
+X			}
+X		}
+X		else if (strcmp(argv[1], "-n") == SAME)
+X			--doexec;
+X		else if (strcmp(argv[1], "-E") == SAME) {
+X			--docom;
+X			--doasm;
+X		}
+X		else if (strcmp(argv[1], "-S") == SAME)
+X			--doasm;
+X		else if (strcmp(argv[1], "-c") == SAME)
+X			--doload;
+X		else if (strcmp(argv[1], "-R") == SAME) {
+X			ld = SWLD;
+X			ext = SWEXT;
+X			crt = SWCRT;
+X		}
+X		else if (strcmp(argv[1], "-A") == SAME) {
+X			ld = LD;
+X			ext = EXT;
+X			crt = CRT;
+X		}
+X		else if (strcmp(argv[1], "-C") == SAME)
+X			tccom = TCCOMC;			
+X		else if (strcmp(argv[1], "-g") == SAME)
+X			keepsym++;
+X		else
+X			usage();
+X		--argc;
+X		argv++;
+X	}
+X	if (argc < 2)
+X		usage();
+X	strcpy(pathname, argv[1]);
+X	pp = pathname;
+X	while (*pp++)
+X		;
+X	while (--pp != pathname) {
+X		if (*pp == PATHSEP) {
+X			++pp;
+X			break;
+X		}
+X	}
+X	bp = basename;
+X	while ((*bp = *pp++) != '\0')
+X		++bp;
+X	suffix = *--bp;
+X	*--bp = '\0';
+X	if (suffix != 'c') {
+X		fprintf(stderr, "tcc: can't compile '%s'\n", pathname);
+X		fatal(-1);
+X	}
+X	if ((in = fopen(pathname, "r")) == NULL) {
+X		fprintf(stderr, "tcc: can't open %s\n", pathname);
+X		fatal(-1);
+X	}
+X	fclose(in);
+X	in = UNDEFINED;
+X	if ((out = fopen(comp, "w")) == NULL) {
+X		fprintf(stderr, "tcc: can't open %s\n", comp);
+X		fatal(-1);
+X	}
+X	sprintf(tmp1, "%s_i", basename);
+X	sprintf(tmp2, "%s_s", basename);
+X	sprintf(tmp3, "%s_o", basename);
+X	sprintf(tmp4, "g_out");
+X	if (ld == NULL) {
+X		strcpy(tmp3, ofile);
+X		strcpy(ofile, "");
+X	}
+X	fprintf(out, "%s %s %s %s %s ", rm, tmp1, tmp2, tmp3, tmp4);
+X	fprintf(out, "%s %s\n", lit, ofile);
+X	fprintf(out, "%s %s %s\n", tcpp, pathname, tmp1);
+X	if (docom) {
+X		fprintf(out, "%s %s %s\n", tccom, tmp1, tmp2);
+X		fprintf(out, "%s %s %s\n", rm, tmp1, lit);
+X	}
+X	if (doasm) {
+X		fprintf(out, "%s %s %s %s\n", as65, tmp3, ext, tmp2);
+X		if (keepsym)
+X			fprintf(out, "%s %s\n", rm, tmp2);
+X		else
+X			fprintf(out, "%s %s %s\n", rm, tmp2, tmp4);
+X		if ((ld != NULL) & doload) {
+X			fprintf(out, "%s %s %s %s\n", ld, ofile, crt, tmp3);
+X			fprintf(out, "%s %s\n", rm, tmp3);
+X		}
+X	}
+X	fclose(out);
+X	if (doexec)
+X		system(exec);
+X}
+X
+X/*
+X * report usage and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: tcc [-o outfile] [-n] [-E] [-S] [-c] [-g]");
+X	fprintf(stderr, " [-R] [-A] [-C] file\n");
+X	fatal(-1);
+X}
+X
+X/*
+X * close files and exit
+X */
+Xfatal(stat)
+Xint stat;				/* exit status */
+X{
+X	if (in != NULL)
+X		fclose(in);
+X	if (out != NULL)
+X		fclose(out);
+X	exit(stat);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > tccom_c
+X/* tccom.c  11-Apr-89  A.J.Travis */
+X
+X/*
+X * 'Tiny' C compiler for the 6502
+X */
+X
+X#include <stdio.h>
+X
+X/*
+X * Boolean flags
+X */
+X#define TRUE 1
+X#define FALSE 0
+X#define ERROR -1
+X#define UNDEFINED NULL
+X#define SAME 0
+X
+X/*
+X * Implementation dependent definitions
+X */
+X#define INTWIDTH 2	/* integer size */
+X#define CHARWIDTH 1	/* char size */
+X
+X/*
+X * symbol length
+X */
+X#define NAMESIZE 8
+X#define NAMEMAX 7 	/* NAMESIZE - 1 */
+X
+X/*
+X * symbol table entry format
+X */
+X#define NAME		0		/* null terminated string */
+X#define IDENT		8		/* NAMESIZE */
+X#define TYPE		9		/* IDENT + 1 */
+X#define OFFSET		10		/* TYPE + 1 */
+X
+X/*
+X * symbol table parameters
+X */
+X#define SYMSIZ		12		/* NAMESIZE + 4 */
+X#define NUMGLBS		180
+X#define NUMLOCS		20
+X#define SYMTBSZ		2400		/* (NUMGLBS + NUMLOCS) * SYMSIZ */
+X#define STARTGLB	symtab
+X#define ENDGLB		symtab + 2160	/* NUMGLBS * SYMSIZ */
+X#define STARTLOC	symtab + 2172	/* (NUMGLBS * SYMSIZ) + SYMSIZ */
+X#define ENDLOC		symtab + 2388	/* SYMTBSZ - SYMSIZ */
+X
+X/*
+X * symbol "IDENT"
+X */
+X#define VARIABLE 1
+X#define ARRAY 2
+X#define POINTER 3
+X#define FUNCTION 4
+X
+X/*
+X * symbol "TYPE"
+X */
+X#define CCHAR 1
+X#define CINT 2
+X
+X/*
+X * L-value definition
+X */
+X#define LSIZE 2		/* size of L-value structure */
+X#define SYMBOL 0	/* lval[0] symbol table address (0 for constant) */
+X#define CTYPE 1		/* lval[1] type of indirect object (0 for static) */
+X
+X/*
+X * "while" statement queue
+X */
+X#define WQTABSZ 16
+X#define WQSIZ 4
+X#define WQMAX wq + 12	/* WQTABSZ - WQSIZ */
+X
+X/*
+X * entry offsets in while queue
+X */
+X#define WQSYM 0
+X#define WQSP 1
+X#define WQLOOP 2
+X#define WQLAB 3
+X
+X/*
+X * input line
+X */
+X#define LINESIZE 80
+X#define LINEMAX LINESIZE - 1
+X
+X/*
+X * statement types (tokens)
+X */
+X#define STIF 1
+X#define STWHILE 2
+X#define STRETURN 3
+X#define STBREAK 4
+X#define STCONT 5
+X#define STGOTO 6
+X#define STEXP 7
+X#define STEXIT 8
+X
+X/*
+X * expression type
+X */
+X#define ARITH 0
+X#define REL 1
+X
+X/*
+X * error codes
+X */
+X#define E_DECL		 1		/* Illegal function or declaration */
+X#define E_DEF		 2		/* Already defined */
+X#define E_LPAREN	 3		/* Missing opening parenthesis */
+X#define E_ARGNAME	 4		/* Illegal argument name */
+X#define E_RPAREN	 5		/* Missing closing parenthesis */
+X#define E_ARGNUM	 6		/* Wrong number of arguments */
+X#define E_NAME1		 7		/* Illegal symbol name */
+X#define E_ARG		 8		/* Argument name expected */
+X#define E_COMMA		 9		/* Comma expected */
+X#define E_WHILE		10		/* 'while' expected */
+X#define E_LABEL		11		/* Illegal 'goto' label */
+X#define E_LVAL		12		/* L-value required */
+X#define E_ADDRESS	13		/* Illegal address */
+X#define E_CONSTANT	14		/* Can't subscript constant */
+X#define E_VARIABLE	15		/* Can't subscript variable */
+X#define E_EXPR		16		/* Illegal expression */
+X#define E_DELIM		17		/* delimeter expected */
+X#define E_NAME2		18		/* Illegal symbol name */
+X#define E_GFULL		19		/* Global symbol table full */
+X#define E_LFULL		20		/* Local symbol table full */
+X#define E_XWHILE	21		/* Too many active whiles */
+X#define E_NOWHILE	22		/* No active whiles */
+X#define E_CCONST	23		/* Illegal character constant */
+X#define E_NEEDCONST	24		/* Constant required */
+X#define E_SIZE		25		/* Negative size illegal */
+X#define E_SEMI		26		/* Missing semicolon */
+X#define E_BRACKET	27		/* Missing bracket */
+X
+X/*
+X * function types
+X */
+Xchar *addglb();
+Xchar *findglb();
+Xchar *addloc();
+Xchar *findloc();
+Xint *readwhile();
+X
+X/*
+X * global variables
+X */
+Xchar symtab[SYMTBSZ];		/* symbol table	*/
+Xchar *glbp;			/* global symbol pointer */
+Xchar *locp;			/* local symbol pointer */
+X
+Xint wq[WQTABSZ];		/* while queue */
+Xint *wqp;			/* while queue pointer */
+X
+Xint litp;			/* literal pointer */
+X
+Xchar ibuf[LINESIZE];		/* input buffer */
+Xchar *ip;
+Xchar *ipmax;
+Xchar c1, c2;			/* input characters */
+X
+Xint nxtlab;			/* next available label # */
+Xint litlab;			/* label assigned to literal pool */
+Xint sp;				/* stack pointer */
+Xint csp;			/* current stack pointer */
+Xint argstk;			/* function argument sp	*/
+Xint ncmp;			/* # open compound statements */
+Xint eof;			/* non-zero on final input eof */
+XFILE *lf;			/* fp for literal file */
+XFILE *in;			/* fp for input file	*/
+XFILE *out;			/* fp for output file */
+Xint lastst;			/* last executed statement type */
+Xint lastop;			/* last executed operator type */
+Xint hasmain;			/* does this file have main() */
+Xint ctext;			/* show C source as assembler comments */
+Xchar *cp;			/* work ptr to any char buffer */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	ctext = FALSE;
+X	while ((*argv[1] & 0xFF) == '-') {	/* BUG in compiler */
+X		if (strcmp(argv[1], "-C") == SAME)
+X			ctext = TRUE;
+X		else
+X			usage();
+X		--argc;
+X		argv++;
+X	}
+X	in = out = UNDEFINED;
+X	if ((argc < 2) | (argc > 3))
+X		usage();
+X	if ((lf = fopen("litfile", "wb")) == NULL)
+X		cant("litfile");
+X	if ((in = fopen(argv[1], "r")) == NULL)
+X		cant(argv[1]);
+X	if (argc == 2)
+X		out = stdout;
+X	else {
+X		if ((out = fopen(argv[2], "w")) == NULL)
+X			cant(argv[2]);
+X	}
+X	glbp = STARTGLB;
+X	locp = STARTLOC;
+X	wqp = wq;
+X	sp = eof = ncmp = lastst = litp = 0;
+X	nxtlab = 1;
+X	litlab = getlabel();
+X	reset();
+X	header();
+X	parse();
+X	dumplits();
+X	dumpglbs();
+X	trailer();
+X	fclose(lf);
+X	fclose(in);
+X	if (out != stdout)
+X		fclose(out);
+X}
+X
+X/*
+X * report correct usage, and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: tccom [-C] infile [outfile]\n");
+X	exit(-1);
+X}
+X
+X/*
+X * Process all input text
+X * ----------------------
+X * At this level, only static declarations and function definitions are legal
+X */
+Xparse()
+X{
+X	while (eof == FALSE) {
+X		if (token("char"))
+X			declglb(CCHAR);
+X		else if (token("int"))
+X			declglb(CINT);
+X		else if (token("extern"))
+X			/* ignore extern */
+X			skipto(';');
+X		else
+X			/* assume function returning int */
+X			declglb(CINT);
+X		skip();
+X	}
+X}
+X
+X/*
+X * New function definition
+X */
+Xnewfunc(name)
+Xchar *name;				/* function name */
+X{
+X	int argtop;
+X	char n[NAMESIZE];
+X
+X	locp = STARTLOC;
+X	argstk = 0;
+X	while (match(')') == FALSE) {
+X		if (symname(n) == FALSE)
+X			error(E_ARGNAME);
+X		else {
+X			if (findloc(n))
+X				error(E_DEF);
+X			else {
+X				addloc(n, 0, 0, argstk);
+X				argstk = argstk + INTWIDTH;
+X			}
+X		}
+X		skip();
+X		if (c1 != ')') {
+X			if (match(',') == FALSE)
+X				error(E_RPAREN);
+X		}
+X		if (needstend())
+X			break;
+X	}
+X
+X	/* return NULL if this is function declaration */
+X	skip();
+X	if (c1 == ';')
+X		return NULL;
+X
+X	/* print name of each function as it is processed */
+X	printf("%s\n", name);
+X
+X	hasmain = (strcmp(name, "main") == SAME);
+X	label(name);
+X#ifdef DEBUG
+X	trace();
+X#endif
+X	sp = 0;
+X	argtop = argstk;
+X	while (argstk) {
+X		if (token("char")) {
+X			getarg(CCHAR, argtop);
+X			needsemi();
+X		}
+X		else if (token("int")) {
+X			getarg(CINT, argtop);
+X			needsemi();
+X		}
+X		else
+X			error(E_ARGNUM);
+X	}
+X	statement();
+X	if (hasmain == FALSE & lastst != STRETURN) {
+X		modstk(0);
+X		ret();
+X	}
+X	else if (hasmain == TRUE & lastst != STEXIT) {
+X		modstk(0);
+X		c_exit();
+X	}
+X	sp = 0;
+X	locp = STARTLOC;
+X	return FUNCTION;
+X}
+X
+X/*
+X * Get function arguments
+X */
+Xgetarg(t, argtop)
+Xint t, argtop;
+X{
+X	int j, address;
+X	char *argp, n[NAMESIZE];
+X
+X	while(TRUE) {
+X		if (argstk == 0)
+X			return;
+X		if (match('*'))
+X			j = POINTER;
+X		else
+X			j = VARIABLE;
+X		if (symname(n) == FALSE)
+X			error(E_NAME1);
+X		if (match('[')) {
+X			while (inbyte() != ']')
+X				if (needstend())
+X					break;
+X			if ((t == CCHAR) & (j == POINTER))
+X				t = CINT;
+X			j = POINTER;
+X		}
+X		if ((argp = findloc(n)) == 0)
+X			error(E_ARG);
+X		argp[IDENT] = j;
+X		argp[TYPE] = t;
+X		argstk = argstk - INTWIDTH;
+X		if (needstend())
+X			return;
+X		if (match(',') == FALSE)
+X			error(E_COMMA);
+X	}
+X}
+X
+X/*
+X * Process a statement
+X */
+Xstatement()
+X{
+X	lastst = UNDEFINED;
+X	csp = sp;
+X	while (TRUE) {
+X		if (token("char")) {
+X			declloc(CCHAR);
+X			needsemi();
+X		}
+X		else if (token("int")) {
+X			declloc(CINT);
+X			needsemi();
+X		}
+X		else
+X			break;
+X	}
+X	sp = modstk(csp);
+X	if (match('{'))
+X		compound();
+X	else if (token("if"))
+X		doif();
+X	else if (token("while"))
+X		dowhile();
+X	else if (token("for"))
+X		dofor();
+X	else if (token("do")) {
+X		dodo();
+X		needsemi();
+X	}
+X	else if (token("goto")) {
+X		dogoto();
+X		needsemi();
+X	}
+X	else if (dolab())
+X		return;
+X	else if (token("return")) {
+X		doreturn();
+X		needsemi();
+X		lastst = STRETURN;
+X	}
+X	else if (token("break")) {
+X		dobreak();
+X		needsemi();
+X	}
+X	else if (token("continue")) {
+X		docont();
+X		needsemi();
+X	}
+X	else if (token("exit")) {
+X		doexit();
+X		needsemi();
+X		lastst = STEXIT;
+X	}
+X	else {
+X		expression();
+X		needsemi();
+X	}
+X}
+X
+X/*
+X * Process compound statement
+X */
+Xcompound()
+X{
+X	++ncmp;
+X	while (match('}') == FALSE) {
+X		if (eof)
+X			return;
+X		statement();
+X	}
+X	--ncmp;
+X}
+X
+X/*
+X * Process IF statement
+X */
+Xdoif()
+X{
+X	char *flev;
+X	int fsp, flab1, flab2;
+X
+X	flev = locp;
+X	fsp = sp;
+X	flab1 = getlabel();
+X	test(flab1);
+X	statement();
+X	sp = modstk(fsp);
+X	locp = flev;
+X	if (token("else") == FALSE) {
+X		outlab(flab1);
+X		return;
+X	}
+X	if (lastst == STRETURN) {
+X		outlab(flab1);
+X		statement();
+X		sp = modstk(fsp);
+X		locp = flev;
+X		return;
+X	}
+X	jump(flab2 = getlabel());
+X	outlab(flab1);
+X	statement();
+X	sp = modstk(fsp);
+X	locp = flev;
+X	outlab(flab2);
+X}
+X
+X/*
+X * Process WHILE statement
+X */
+Xdowhile()
+X{
+X	int wq[4];
+X
+X	*wq = locp;
+X	wq[WQSP] = sp;
+X	wq[WQLOOP] = getlabel();
+X	wq[WQLAB] = getlabel();
+X	addwhile(wq);
+X	outlab(wq[WQLOOP]);
+X	test(wq[WQLAB]);
+X	statement();
+X	jump(wq[WQLOOP]);
+X	outlab(wq[WQLAB]);
+X	locp = *wq;
+X	sp = modstk(wq[WQSP]);
+X	delwhile();
+X}
+X
+Xdofor()
+X{
+X	int wq[4];
+X	char control[LINESIZE];		/* loop control string */
+X	char trail[LINESIZE];			/* trailing text after ')' */
+X
+X	*wq = locp;
+X	wq[WQSP] = sp;
+X	wq[WQLOOP] = getlabel();
+X	wq[WQLAB] = getlabel();
+X	addwhile(wq);
+X	needbrack('(');
+X	expression();
+X	needsemi();
+X	outlab(wq[WQLOOP]);
+X	fortest(wq[WQLAB]);
+X	needsemi();
+X	strcpy(control, ip);
+X	skipto(')');
+X	statement();
+X	strcpy(trail, ip);
+X	strcpy(ibuf, control);
+X	ip = ibuf;
+X	expression();
+X	needbrack(')');
+X	jump(wq[WQLOOP]);
+X	outlab(wq[WQLAB]);
+X	locp = *wq;
+X	sp = modstk(wq[WQSP]);
+X	delwhile();
+X	strcpy(ibuf, trail);
+X	ip = ibuf;
+X}
+X
+Xdodo()
+X{
+X	int wq[4];
+X
+X	*wq = locp;
+X	wq[WQSP] = sp;
+X	wq[WQLOOP] = getlabel();
+X	wq[WQLAB] = getlabel();
+X	addwhile(wq);
+X	outlab(wq[WQLOOP]);
+X	statement();
+X	if (token("while") == FALSE)
+X		error(E_WHILE);
+X	dotest(wq[WQLOOP]);
+X	outlab(wq[WQLAB]);
+X	locp = *wq;
+X	sp = modstk(wq[WQSP]);
+X	delwhile();
+X}
+X
+Xdogoto()
+X{
+X	char s[LINESIZE];
+X
+X	if (symname(s) == FALSE)
+X		error(E_LABEL);
+X	sjump(s);
+X}
+X
+X/*
+X * Process RETURN statement
+X */
+Xdoreturn()
+X{
+X	if (needstend() == FALSE)
+X		expression();
+X	modstk(0);
+X	ret();
+X}
+X
+X/*
+X * Process BREAK statement
+X */
+Xdobreak()
+X{
+X	int *p;
+X
+X	if ((p = readwhile()) == 0)
+X		return;
+X	modstk(p[WQSP]);
+X	jump(p[WQLAB]);
+X}
+X
+X/*
+X * Process CONTINUE statement
+X */
+Xdocont()
+X{
+X	int *p;
+X
+X	if ((p = readwhile()) == 0)
+X		return;
+X	modstk(p[WQSP]);
+X	jump(p[WQLOOP]);
+X}
+X
+Xdolab()
+X{
+X	char *savech;			/* saved position of ip */
+X	char n[LINESIZE];		/* label name */
+X
+X	savech = ip;
+X	if (symname(n) == FALSE)
+X		return FALSE;
+X	if (match(':') == FALSE) {
+X		ip = savech;
+X		return FALSE;
+X	}
+X	label(n);
+X	return TRUE;
+X}
+X
+Xdoexit()
+X{
+X	if (needstend() == FALSE)
+X		expression();
+X	modstk(0);
+X	c_exit();
+X}
+X
+X/*
+X * Expression evaluation by recursive descent
+X */
+Xexpression()
+X{
+X	int lval[LSIZE];
+X
+X	lastop = 0;
+X	if (c1 == ';') {
+X		if (ctext)
+X			comment("null expression\n");
+X	}
+X	else if (hier1(lval))
+X		rvalue(lval);
+X}
+X
+Xhier1(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier2(lval);
+X	if (match('=')) {
+X		if (k == 0)
+X			error(E_LVAL);
+X		if (lval[CTYPE])
+X			push();
+X		if (hier1(lval2))
+X			rvalue(lval2);
+X		store(lval);
+X		return 0;
+X	}
+X	else
+X		return k;
+X}
+X
+Xhier2(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier3(lval);
+X	skip();
+X	if (c1 != '|')
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (match('|')) {
+X			push();
+X			if (hier3(lval2))
+X				rvalue(lval2);
+X			or();
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier3(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier4(lval);
+X	skip();
+X	if (c1 != '^')
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (match('^')) {
+X			push();
+X			if (hier4(lval2))
+X				rvalue(lval2);
+X			xor();
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier4(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier5(lval);
+X	skip();
+X	if (c1 != '&')
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (match('&')) {
+X			push();
+X			if (hier5(lval2))
+X				rvalue(lval2);
+X			and();
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+X/*
+X * check for == and !=
+X */
+Xhier5(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier6(lval);
+X	skip();
+X	if (c2 != '=')
+X		return k;
+X	if ((c1 != '=') & (c1 != '!'))
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (amatch("==")) {
+X			push();
+X			if (hier6(lval2))
+X				rvalue(lval2);
+X			eq();
+X		}
+X		else if (amatch("!=")) {
+X			push();
+X			if (hier6(lval2))
+X				rvalue(lval2);
+X			ne();
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+X
+X/*
+X * wish to identify >, <, >=, <=, but reject >>, <<
+X */
+Xhier6(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier7(lval);
+X	skip();
+X	if ((c1 != '<') & (c1 != '>'))
+X		return k;
+X	if ((c2 == '<') | (c2 == '>'))
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (amatch("<=")) {
+X			push();
+X			if (hier7(lval2))
+X				rvalue(lval2);
+X			le(lval, lval2);
+X		}
+X		else if (amatch(">=")) {
+X			push();
+X			if (hier7(lval2))
+X				rvalue(lval2);
+X			ge(lval, lval2);
+X		}
+X		else if ((c1 == '<') & (c2 != '<')) {
+X			inbyte();
+X			push();
+X			if (hier7(lval2))
+X				rvalue(lval2);
+X			lt(lval, lval2);
+X		}
+X		else if ((c1 == '>') & (c2 != '>')) {
+X			inbyte();
+X			push();
+X			if (hier7(lval2))
+X				rvalue(lval2);
+X			gt(lval, lval2);
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier7(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier8(lval);
+X	skip();
+X	if ((c1 != '>') & (c1 != '<'))
+X		return k;
+X	if ((c2 != '>') & (c2 != '<'))
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (amatch(">>")) {
+X			push();
+X			if (hier8(lval2))
+X				rvalue(lval2);
+X			asr();
+X		}
+X		else if (amatch("<<")) {
+X			push();
+X			if (hier8(lval2))
+X				rvalue(lval2);
+X			asl();
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier8(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier9(lval);
+X	skip();
+X	if ((c1 != '+') & (c1 != '-'))
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (match('+')) {
+X			push();
+X			if (hier9(lval2))
+X				rvalue(lval2);
+X			add(lval);
+X		}
+X		else if (match('-')) {
+X			push();
+X			if (hier9(lval2))
+X				rvalue(lval2);
+X			sub(lval);
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier9(lval)
+Xint *lval;
+X{
+X	int k;
+X	int lval2[LSIZE];
+X
+X	k = hier10(lval);
+X	skip();
+X	if ((c1 != '*') & (c1 != '/') & (c1 != '%'))
+X		return k;
+X	if (k)
+X		rvalue(lval);
+X	while(TRUE) {
+X		if (match('*')) {
+X			push();
+X			if (hier9(lval2))
+X				rvalue(lval2);
+X			mult();
+X		}
+X		else if (match('/')) {
+X			push();
+X			if (hier10(lval2))
+X				rvalue(lval2);
+X			div(lval, lval2);
+X		}
+X		else if (match('%')) {
+X			push();
+X			if (hier10(lval2))
+X				rvalue(lval2);
+X			mod(lval, lval2);
+X		}
+X		else
+X			return 0;
+X	}
+X}
+X
+Xhier10(lval)
+Xint *lval;
+X{
+X	int k;
+X	char *p;
+X
+X	if (amatch("++")) {
+X		if ((k = hier10(lval)) == 0)
+X			error(E_LVAL);
+X		if (lval[CTYPE])
+X			push();
+X		rvalue(lval);
+X		inc(lval);
+X		store(lval);
+X		return 0;
+X	}
+X	else if (amatch("--")) {
+X		if ((k = hier10(lval)) == 0)
+X			error(E_LVAL);
+X		if (lval[CTYPE])
+X			push();
+X		rvalue(lval);
+X		dec(lval);
+X		store(lval);
+X		return 0;
+X	}
+X	else if (match('-')) {
+X		if ((k = hier10(lval)) != NULL)
+X			rvalue(lval);
+X		neg();
+X		return 0;
+X	}
+X	else if (match('*')) {
+X		if ((k = hier10(lval)) != NULL)
+X			rvalue(lval);
+X		lval[CTYPE] = CINT;
+X		if ((p = lval[SYMBOL]) != NULL)
+X			lval[CTYPE] = p[TYPE];
+X		lval[SYMBOL] = 0;
+X		return 1;
+X	}
+X	else if (match('&')) {
+X		if ((k = hier10(lval)) == 0)
+X			error(E_ADDRESS);
+X		else if (lval[CTYPE])
+X			return 0;
+X		else {
+X			immediate(p = lval[SYMBOL]);
+X			lval[CTYPE] = p[TYPE];
+X			return 0;
+X		}
+X	}
+X	else {
+X		k = hier11(lval);
+X		if (amatch("++")) {
+X			if (k == 0)
+X				error(E_LVAL);
+X			if (lval[CTYPE])
+X				push();
+X			rvalue(lval);
+X			inc(lval);
+X			store(lval);
+X			dec(lval);
+X			return 0;
+X		}
+X		else if (amatch("--")) {
+X			if (k == 0)
+X				error(E_LVAL);
+X			if (lval[CTYPE])
+X				push();
+X			rvalue(lval);
+X			dec(lval);
+X			store(lval);
+X			inc(lval);
+X			return 0;
+X		}
+X		else
+X			return k;
+X	}
+X}
+X
+Xhier11(lval)
+Xint *lval;
+X{
+X	int k;
+X	char *p;
+X
+X	k = primary(lval);
+X	p = lval[SYMBOL];
+X	skip();
+X	if ((c1 == '[') | (c1 == '('))
+X		while (TRUE) {
+X			if (match('[')) {
+X				if (p == NULL)
+X					error(E_CONSTANT);
+X				else if (p[IDENT] == POINTER)
+X					rvalue(lval);
+X				else if (p[IDENT] != ARRAY)
+X					error(E_VARIABLE);
+X				push();
+X				expression();
+X				needbrack(']');
+X				add(lval);
+X				lval[SYMBOL] = NULL;
+X				lval[CTYPE] = p[TYPE];
+X				k = 1;
+X			}
+X			else if (match('(')) {
+X				if (p == NULL)
+X					callfunction(NULL);
+X				else if (p[IDENT] == FUNCTION)
+X					callfunction(p);
+X				else {
+X					rvalue(lval);
+X					callfunction(NULL);
+X				}
+X				lval[SYMBOL] = NULL;
+X				k = 0;
+X			}
+X			else
+X				return k;
+X		}
+X	if (p == NULL)
+X		return k;
+X	if (p[IDENT] == FUNCTION) {
+X		immediate(p);
+X		return 0;
+X	}
+X	return k;
+X}
+X
+Xprimary(lval)
+Xint *lval;
+X{
+X	int k;
+X	int num[1];
+X	char *p, sname[NAMESIZE];
+X
+X	/* check for parenthesised expression */
+X	if (match('(')) {
+X		k = hier1(lval);
+X		needbrack(')');
+X		return k;
+X	}
+X
+X	if (symname(sname)) {
+X		if ((p = findloc(sname)) != NULL) {
+X			getloc(p);
+X			lval[SYMBOL] = p;
+X			lval[CTYPE] = p[TYPE];
+X			if (p[IDENT] == POINTER)
+X				lval[CTYPE] = CINT;
+X			if (p[IDENT] == ARRAY)
+X				return 0;
+X			else
+X				return 1;
+X		}
+X		if ((p = findglb(sname)) != NULL)
+X			if (p[IDENT] != FUNCTION) {
+X				lval[SYMBOL] = p;
+X				lval[CTYPE] = 0;
+X				if (p[IDENT] != ARRAY)
+X					return 1;
+X				immediate(p);
+X				lval[CTYPE] = p[TYPE];
+X				return 0;
+X			}
+X		p = addglb(sname, FUNCTION, CINT, 0);
+X		lval[SYMBOL] = p;
+X		lval[CTYPE] = 0;
+X		return 0;
+X	}
+X	if (constant(num))
+X		return lval[SYMBOL] = lval[CTYPE] = 0;
+X	else
+X		error(E_EXPR);
+X}
+X
+X/*
+X * Process function call
+X */
+Xcallfunction(name)
+Xchar *name;
+X{
+X	int nas;
+X	char *p1, *p2;
+X
+X	skip();
+X	p1 = ip;
+X	while (c1 != ')') {
+X		if (c1 == '"')
+X			skipto('"');
+X		else if (c1 == '\'')
+X			skipto('\'');
+X		else if (c1 == '(')
+X			parscan();
+X		else if (c1 == '\0')
+X			break;	
+X		else
+X			bump();
+X	}
+X	needbrack(')');
+X	p2 = ip;
+X	ip = p1;
+X	skip();
+X	if (name == NULL) {
+X		push();
+X	}
+X	nas = arglist(name, 0);
+X	if (name)
+X		call(name);
+X	else
+X		callstk();
+X	sp = modstk(sp + nas);
+X	ip = p2;
+X	skip();
+X}
+X
+X/*
+X * recursively extract argument list
+X */
+Xarglist(n, nas)
+Xchar *n;		/* name of calling function (NULL if indirect call) */
+Xint nas;		/* number of arguments */
+X{
+X	char *p;
+X
+X	p = ip;
+X	if (argq())
+X		nas = arglist(n, nas);
+X	ip = p;
+X	skip();
+X	if (c1 == ')')
+X		return nas;
+X	expression();
+X	if (n == NULL)
+X		swapstk();
+X	push();
+X	return nas + INTWIDTH;
+X}
+X
+X/*
+X * extract one argument from queue
+X */
+Xargq()
+X{
+X	int c;
+X
+X	skip();
+X	while ((c1 != ',') & (c1 != ')')) {
+X		if (c1 == '"')
+X			skipto('"');
+X		else if (c1 == '\'')
+X			skipto('\'');
+X		else if (c1 == '(')
+X			parscan();
+X		else
+X			bump();
+X	}
+X	c = c1;
+X	bump();
+X	return c == ',';
+X}
+X
+Xskipto(delim)
+Xchar delim;
+X{
+X	while ((bump()) != delim) {
+X		if (c1 == '\\')
+X			bump();
+X		if (c1 == '\0')
+X			error(E_DELIM);
+X	}
+X	bump();
+X}
+X
+Xparscan()
+X{
+X	int nest;
+X
+X	nest = 1;
+X	do {
+X		if ((bump()) == '(')
+X			++nest;
+X		else if (c1 == ')')
+X			--nest;
+X	} 
+X	while ((nest > 0) & (c1 != ')'));
+X	bump();
+X}
+X
+X/*
+X * Declare a static variable
+X * -------------------------
+X * makes an entry in the symbol table so that subsequent
+X * reference can call symbol by name
+X */
+Xdeclglb(typ)
+Xint typ;
+X{
+X	int j, k;
+X	char *p;
+X	char sname[NAMESIZE];
+X
+X	do {
+X		if (needstend())
+X			return;
+X		k = 1;
+X		if (match('*'))
+X			j = POINTER;
+X		else
+X			j = VARIABLE;
+X		if (symname(sname) == FALSE)
+X			error(E_NAME2);
+X		if ((p = findglb(sname)) != NULL) {
+X			if ((p[IDENT] != FUNCTION) | (p[OFFSET] == FUNCTION))
+X				error(E_DEF);
+X		}
+X		if (match('[')) {
+X			if ((k = needsub()) == 0)
+X				j = POINTER;
+X			else
+X				j = ARRAY;
+X		}
+X		else if (match('(')) {
+X			k = newfunc(sname);
+X			j = FUNCTION;
+X		}
+X		addglb(sname, j, typ, k);
+X		if ((j == FUNCTION) & (k == FUNCTION))
+X			return;
+X	}
+X	while (match(','));
+X	needsemi();
+X}
+X
+X/*
+X * Declare local variables
+X */
+Xdeclloc(typ)
+Xint typ;
+X{
+X	int k, j;
+X	char sname[NAMESIZE];
+X
+X	do {
+X		if (needstend())
+X			return;
+X		if (match('*'))
+X			j = POINTER;
+X		else
+X			j = VARIABLE;
+X		if (symname(sname) == FALSE)
+X			error(E_NAME2);
+X		if (findloc(sname))
+X			error(E_DEF);
+X		if (match('[')) {
+X			if ((k = needsub()) == 0) {
+X				j = POINTER;
+X				k = INTWIDTH;
+X			}
+X			else {
+X				j = ARRAY;
+X				if (typ == CINT)
+X					k = k * INTWIDTH;
+X			}
+X		}
+X		else if ((typ == CCHAR) & (j != POINTER))
+X			k = CHARWIDTH;
+X		else
+X			k = INTWIDTH;
+X		csp = csp - k;
+X		addloc(sname, j, typ, csp);
+X	}
+X	while (match(','));
+X}
+X
+X/*
+X * Insert new global symbol name
+X */
+Xchar *addglb(sname, id, typ, value)
+Xchar *sname, id, typ;
+Xint value;
+X{
+X	char *p;
+X
+X	if ((cp = findglb(sname)) != NULL)
+X		return cp;
+X	if (glbp >= ENDGLB)
+X		error(E_GFULL);
+X	cp = p = glbp;
+X	while ((*p++ = *sname++) != '\0')
+X		;
+X	cp[IDENT] = id;
+X	cp[TYPE] = typ;
+X	mputw(cp + OFFSET, value);
+X	glbp = glbp + SYMSIZ;
+X	return cp;
+X}
+X
+X/*
+X * Find a global symbol name
+X */
+Xchar *findglb(sname)
+Xchar *sname;
+X{
+X	char *p;
+X
+X	p = STARTGLB;
+X	while (p != glbp) {
+X		if (strcmp(sname, p) == SAME)
+X			return p;
+X		p = p + SYMSIZ;
+X	}
+X	return NULL;
+X}
+X
+X/*
+X * Insert new local symbol name
+X */
+Xchar *addloc(sname, id, typ, value)
+Xchar *sname, id, typ;
+Xint value;
+X{
+X	char *p;
+X
+X	if ((cp = findloc(sname)) != NULL)
+X		return cp;
+X	if (locp >= ENDLOC)
+X		error(E_LFULL);
+X	cp = p = locp;
+X	while ((*p++ = *sname++) != '\0')
+X		;
+X	cp[IDENT] = id;
+X	cp[TYPE] = typ;
+X	mputw(cp + OFFSET, value);
+X	locp = locp + SYMSIZ;
+X	return cp;
+X}
+X
+X/*
+X * Find a local symbol name
+X */
+Xchar *findloc(sname)
+Xchar *sname;
+X{
+X	char *p;
+X
+X	p = STARTLOC;
+X	while (p != locp) {
+X		if (strcmp(sname, p) == SAME)
+X			return p;
+X		p = p + SYMSIZ;
+X	}
+X	return NULL;
+X}
+X
+X/*
+X * WHILE table manipulation
+X */
+Xaddwhile(p)
+Xint *p;
+X{
+X	int k;
+X
+X	if (wqp > WQMAX)
+X		error(E_XWHILE);
+X	k = 0;
+X	while (k < WQSIZ)
+X		*wqp++ = p[k++];
+X}
+X
+Xdelwhile()
+X{
+X	if (readwhile())
+X		wqp = wqp - WQSIZ;
+X}
+X
+Xint *readwhile()
+X{
+X	if (wqp == wq)
+X		error(E_NOWHILE);
+X	else
+X		return wqp - WQSIZ;
+X}
+X
+X/*
+X * Generate next label
+X */
+Xgetlabel()
+X{
+X	return ++nxtlab;
+X}
+X
+X/*
+X * Read symbol name
+X */
+Xsymname(sname)
+Xchar *sname;
+X{
+X	int k;
+X
+X	skip();
+X	if ((isalpha(c1) == FALSE) & (c1 != '_'))
+X		return FALSE;
+X	k = 0;
+X	while (isalnum(c1) | c1 == '_') {
+X		if (k < NAMEMAX)
+X			sname[k++] = c1;
+X		bump();
+X	}
+X	sname[k] = '\0';
+X	return TRUE;
+X}
+X
+X/*
+X * Check for a number in input
+X */
+Xnumber(val)
+Xint *val;
+X{
+X	int k, sign;
+X
+X	k = sign = 1;
+X	while (k) {
+X		k = 0;
+X		if (match('+'))
+X			k = 1;
+X		if (match('-')) {
+X			sign = (-sign);
+X			k = 1;
+X		}
+X	}
+X	if (isdigit(c1) == FALSE)
+X		return getqchar(val);
+X	if (match('0')) {
+X		if (match('x')) {
+X			while (isxdigit(c1))
+X				k = k * 16 + toint(gch());
+X		}
+X		else {
+X			while (isodigit(c1))
+X				k = k * 8 + toint(gch());
+X		}
+X	}
+X	else {
+X		while (isdigit(c1))
+X			k = k * 10 + toint(gch());
+X	}
+X	if (sign < 0)
+X		k = (-k);
+X	*val = k;
+X	return TRUE;
+X}
+X
+X/*
+X * convert hex char to integer
+X */
+Xtoint(c)
+Xchar c;
+X{
+X	if (isdigit(c))
+X		return c - '0';
+X	if ((c >= 'A') & (c <= 'F'))
+X		return 10 + c - 'A';
+X	if ((c >= 'a') & (c <= 'f'))
+X		return 10 + c - 'a';
+X	return -1;
+X}
+X
+X/*
+X * check for octal digits
+X */
+Xisodigit(c)
+Xchar c;
+X{
+X	return (c >= '0') & (c <= '8');
+X}
+X
+X/*
+X * Load a (positive) constant
+X */
+Xconstant(val)
+Xint *val;
+X{
+X	if (number(val))
+X		immed(*val);
+X	else if (getqstring(val))
+X		literal(litlab, *val);
+X	else
+X		return FALSE;
+X	return TRUE;
+X}
+X
+X/*
+X * Get one or two characters from input stream
+X */
+Xgetqchar(val)
+Xint *val;
+X{
+X	char c;
+X
+X	if (match('\'') == FALSE)
+X		return FALSE;
+X	if (c1 == '\\')
+X		c = cesc();
+X	else
+X		c = gch();
+X	if (c1 != '\'')
+X		error(E_CCONST);
+X	gch();
+X	*val = c;
+X	return TRUE;
+X}
+X
+Xcesc()
+X{
+X	int c;
+X
+X	gch();
+X	if (c1 == 'n')
+X		c = '\n';	/* newline */
+X	else if (c1 == 't')
+X		c = '\t';	/* tab */
+X	else if (c1 == 'b')
+X		c = '\b';	/* backspace */
+X	else if (c1 == 'r')
+X		c = '\r';	/* return */
+X	else if (c1 == 'f')
+X		c = '\f';	/* form feed */
+X	else if (c1 == '\\')
+X		c = '\\';	/* backslash */
+X	else if (isodigit(c1)) {
+X		c = toint(gch());
+X		while (isodigit(c1))
+X			c = c * 8 + toint(gch());
+X		return c;
+X	}
+X	else
+X		c = c1;	/* any other char */
+X	gch();
+X	return c;
+X}
+X
+X/*
+X * Get string from input stream
+X */
+Xgetqstring(val)
+Xint *val;
+X{
+X	char c;
+X
+X	if (match('"') == FALSE)
+X		return FALSE;
+X	*val = litp;
+X	while (c1 != '"') {
+X		if (c1 == '\0')
+X			break;
+X		else if (c1 == '\\')
+X			c = cesc();
+X		else
+X			c = gch();
+X		putc(c, lf);
+X		++litp;
+X	}
+X	gch();
+X	putc('\0', lf);
+X	++litp;
+X	return TRUE;
+X}
+X
+X/*
+X * Compare literal with line buffer contents
+X * -----------------------------------------
+X * advances buffer pointer if literal matches
+X */
+Xmatch(lit)
+Xchar lit;
+X{
+X	skip();
+X	if (c1 != lit)
+X		return FALSE;
+X	else {
+X		bump();
+X		return TRUE;
+X	}
+X}
+X
+X/*
+X * match n chars with input buffer
+X */
+Xamatch(lit)
+Xchar *lit;
+X{
+X	int len;
+X
+X	len = strlen(lit);
+X	skip();
+X	if (strncmp(ip, lit, len) != SAME)
+X		return FALSE;
+X	else {
+X		ip = ip + len;
+X		c1 = *ip;
+X		return TRUE;
+X	}
+X}
+X
+X/*
+X * match token with input buffer
+X */
+Xtoken(lit)
+Xchar *lit;
+X{
+X	int len;
+X
+X	skip();
+X	len = strlen(lit);
+X	if (strncmp(ip, lit, len) != SAME)
+X		return FALSE;
+X	else if (isalnum(ip[len]))
+X		return FALSE;
+X	else {
+X		ip = ip + len;
+X		c1 = *ip;
+X		return TRUE;
+X	}
+X}
+X
+X/*
+X * Get array bounds
+X */
+Xneedsub()
+X{
+X	int num[1];
+X
+X	if (match(']'))
+X		return 0;
+X	if (number(num) == 0)
+X		error(E_NEEDCONST);
+X	if (*num < 0)
+X		error(E_SIZE);
+X	needbrack(']');
+X	return *num;
+X}
+X
+X/*
+X * Check for semicolon
+X */
+Xneedsemi()
+X{
+X	if (match(';') == FALSE)
+X		error(E_SEMI);
+X}
+X
+X/*
+X * Check for end of statement
+X */
+Xneedstend()
+X{
+X	skip();
+X	return (c1 == ';') | (c1 == '\0');
+X}
+X
+Xneedbrack(c)
+Xchar c;
+X{
+X	skip();
+X	if (match(c) == FALSE)
+X		error(E_BRACKET);
+X}
+X
+X/*
+X * Skip white space in input
+X */
+Xskip()
+X{
+X	while (isspace(*ip) | *ip == '\0') {
+X		if (*ip++ == '\0')
+X			inline();
+X	}
+X	c1 = *ip;
+X	c2 = *(ip + 1);
+X}
+X
+X/*
+X * bump lexical input
+X */
+Xbump()
+X{
+X	c1 = *++ip;
+X	c2 = *(ip + 1);
+X	return c1;
+X}
+X
+X/*
+X * Get a character
+X * ---------------
+X * reads in a line if necessary
+X */
+Xinbyte()
+X{
+X	while(*ip == '\0') {
+X		if (eof)
+X			return '\0';
+X		inline();
+X	}
+X	return gch();
+X}
+X
+X/*
+X * Read in a line
+X */
+Xinline()
+X{
+X	if ((ip = fgets(ibuf, LINESIZE, in)) == NULL)
+X		eof = TRUE;
+X	else if (ctext)
+X		comment(ip);
+X}
+X
+X/*
+X * Reset input Buffer
+X */
+Xreset()
+X{
+X	ip = ibuf;
+X	c1 = c2 = *ip = '\0';
+X}
+X
+X/*
+X * Get next input character
+X */
+Xgch()
+X{
+X	int c;
+X
+X	if (*ip == '\0')
+X		return '\0';
+X	else {
+X		c = *ip;
+X		bump();
+X		return c;
+X	}
+X}
+X
+X/*
+X * put 16-bit integer into memory word
+X */
+Xmputw(p, val)
+Xint *p;				/* (int *) cast of char *p */
+Xint val;
+X{
+X	*p = val;
+X}
+X
+X/*
+X * get 16-bit integer word from memory
+X */
+Xmgetw(p)
+Xint *p;				/* (int *) cast of char *p */
+X{
+X	return *p;
+X}
+X
+X/*
+X * Report type and position of an error in the source line
+X */
+Xerror(n)
+Xint n;
+X{
+X	char *p;
+X
+X#if MSDOS
+X	fflush(stdout);
+X#endif
+X	fprintf(stderr, "\n%s", ibuf);
+X	p = ibuf;
+X	while (p < ip) {
+X		if (*p == '\t')
+X			fprintf(stderr, "\t");
+X		else
+X			fprintf(stderr, " ");
+X		++p;
+X	}
+X	fprintf(stderr, "^\nerror: %d\n", n);
+X	exit(-1);
+X}
+X
+X/*
+X * can't open ...
+X */
+Xcant(s)
+Xchar *s;	/* filename */
+X{
+X	fprintf(stderr, "tccom: can't open %s\n", s);
+X	exit(-1);
+X}
+X
+X/*
+X * Evaluate condition
+X */
+Xtest(label)
+Xint label;
+X{
+X	needbrack('(');
+X	expression();
+X	needbrack(')');
+X	if (lastop == REL)
+X		testjump(label);
+X	else
+X		testnz(label);
+X}
+X
+Xfortest(label)
+Xint label;
+X{
+X	expression();
+X	if (lastop == REL)
+X		testjump(label);
+X	else
+X		testnz(label);
+X}
+X
+Xdotest(label)
+Xint label;
+X{
+X	needbrack('(');
+X	expression();
+X	needbrack(')');
+X	if (lastop == REL)
+X		dotestjump(label);
+X	else
+X		dotestnz(label);
+X}
+X
+X/*
+X * Store a value in memory
+X */
+Xstore(lval)
+Xint *lval;
+X{
+X	if (lval[CTYPE] == 0)
+X		putmem(lval);
+X	else {
+X		pop();
+X		putstk(lval[CTYPE]);
+X	}
+X}
+X
+X/*
+X * Get a value from memory
+X */
+Xrvalue(lval)
+Xint *lval;
+X{
+X	if ((lval[SYMBOL] != NULL) & (lval[CTYPE] == 0))
+X		getmem(lval);
+X	else
+X		indirect(lval[CTYPE]);
+X}
+X
+X/*
+X * Dump the literal pool
+X * ---------------------
+X * if nothing there, exit
+X */
+Xdumplits()
+X{
+X	int k, c;
+X
+X	if (litp) {
+X		outlab(litlab);
+X		fclose(lf);
+X		if ((lf = fopen("litfile", "rb")) == NULL)
+X			cant("litfile");
+X		for (k = 0; k < litp; ++k)
+X			defbyte(getc(lf));
+X	}
+X	fprintf(out, "~eot\n");
+X}
+X
+X/*
+X * Dump all static variables
+X */
+Xdumpglbs()
+X{
+X	int sz;
+X	int dp;
+X
+X	dp = 0;
+X	fprintf(out, "~data =~eot\n");
+X	cp = STARTGLB;
+X	while (cp < glbp) {
+X		if (cp[IDENT] != FUNCTION) {
+X			fprintf(out, "_%s", cp);
+X			sz = mgetw(cp + OFFSET);
+X			if ((cp[TYPE] == CINT) | (cp[IDENT] == POINTER))
+X				sz = sz * INTWIDTH;
+X			fprintf(out, " =~data+%u\n", dp);
+X			dp = dp + sz;
+X		}
+X		cp = cp + SYMSIZ;
+X	}
+X	fprintf(out, "~eod =~data+%u\n", dp);
+X}
+X
+X/*
+X * output assembler comment
+X */
+Xcomment(s)
+Xchar *s;
+X{
+X	fprintf(out, "; %s", s);
+X}
+X
+X/*
+X * output line of code
+X */
+Xoutline(s)
+Xchar *s;
+X{
+X	fprintf(out, "\t%s\n", s);
+X}
+X
+X/*
+X * output line of code with integer value
+X */
+Xoutval(s, n)
+Xchar *s;
+Xint n;
+X{
+X	fprintf(out, s, n);
+X	lastop = ARITH;
+X}
+X
+X/*
+X * output line of code with string value
+X */
+Xoutstr(s1, s2)
+Xchar *s1;
+Xchar *s2;
+X{
+X	fprintf(out, s1, s2);
+X	lastop = ARITH;
+X}
+X
+X/*
+X * pop secondary, and output line of JSR threaded code
+X */
+Xpopcode(s)
+Xchar *s;
+X{
+X	pop();
+X	outcode(s);
+X}
+X
+X/*
+X * output line of JSR threaded code (arithmetic)
+X */
+Xoutcode(s)
+Xchar *s;
+X{
+X	fprintf(out, "\tjsr %s\n", s);
+X	lastop = ARITH;
+X}
+X
+X/*
+X * output line of JSR threaded code (relational)
+X */
+Xrelcode(s)
+Xchar *s;
+X{
+X	pop();
+X	fprintf(out, "\tjsr %s\n", s);
+X	lastop = REL;
+X}
+X
+X#ifdef DEBUG
+X/*
+X * output trace/debug call
+X */
+Xtrace()
+X{
+X	outcode("__trace");
+X}
+X#endif
+X
+X/*
+X * output global label by symbol table entry
+X */
+Xlabel(name)
+Xchar *name;
+X{
+X	outstr("_%s\n", name);
+X}
+X
+X/*
+X * output compiler generated label
+X */
+Xoutlab(label)
+Xint label;
+X{
+X	outval("~%d\n", label);
+X}
+X
+X/*
+X * Load direct 8 or 16 bits into primary register
+X */
+Xgetmem(lval)
+Xint *lval;
+X{
+X	char *sym;
+X
+X	sym = lval[SYMBOL];
+X	outstr("\tldx _%s\n", sym);
+X	if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR))
+X		outcode("ext");
+X	else
+X		outstr("\tldy _%s+1\n", sym);
+X}
+X
+X/*
+X * Given offset from SP, get address into primary register
+X */
+Xgetloc(sym)
+Xchar *sym;
+X{
+X	int n;
+X
+X	n = mgetw(sym + OFFSET);
+X	if (n & 0x8000)
+X		n = -((n ^ 0xFFFF) + 1);
+X	n = n - sp;
+X	if (n == 0)
+X		outcode("addr");
+X	else if (n < 256) {
+X		if ((n <= 12) & (n % 2 == 0))
+X			outval("\tjsr addr_%d\n", n / 2);
+X		else {
+X			outval("\tldx #%d\n", n);
+X			outcode("addr_b");
+X		}
+X	}
+X	else {
+X		immed(n);
+X		outcode("addr_w");
+X	}
+X}
+X
+X/*
+X * Store direct 8 or 16 bits from primary register
+X */
+Xputmem(lval)
+Xint *lval;
+X{
+X	char *sym;
+X
+X	sym = lval[SYMBOL];
+X	outstr("\tstx _%s\n", sym);
+X	if ((sym[IDENT] == POINTER) | (sym[TYPE] != CCHAR))
+X		outstr("\tsty _%s+1\n", sym);
+X}
+X
+X/*
+X * Store indirect 8 or 16 bits at address on top of stack
+X */
+Xputstk(typeobj)
+Xchar typeobj;
+X{
+X	if (typeobj == CCHAR)
+X		outcode("sind_b");
+X	else
+X		outcode("sind_w");
+X}
+X
+X/*
+X * Load indirect 8 or 16 bits at address in primary reg into primary register
+X */
+Xindirect(typeobj)
+Xchar typeobj;
+X{
+X	if (typeobj == CCHAR)
+X		outcode("lind_b");
+X	else
+X		outcode("lind_w");
+X}
+X
+X/*
+X * Call subroutine
+X */
+Xcall(sname)
+Xchar *sname;
+X{
+X	outstr("\tjsr _%s\n", sname);
+X}
+X
+X/*
+X * Subroutine call to address on top of stack, return address left on stack
+X */
+Xcallstk()
+X{
+X	popcode("scall");
+X}
+X
+X/*
+X * Jump to specified internal label number
+X */
+Xjump(label)
+Xint label;
+X{
+X	outval("\tjmp ~%d\n", label);
+X}
+X
+Xsjump(s)
+Xchar *s;
+X{
+X	outstr("\tjmp _%s\n", s);
+X}
+X
+X/*
+X * Jump to specified label if primary reg is false (zero)
+X */
+Xtestjump(label)
+Xint label;
+X{
+X	outval("\tbne *+5\n\tjmp ~%d\n", label);
+X}
+X
+Xdotestjump(label)
+Xint label;
+X{
+X	outval("\tbeq *+5\n\tjmp ~%d\n", label);
+X}
+X
+Xtestnz(label)
+Xint label;
+X{
+X	outval("\tjsr nz\n\tbne *+5\n\tjmp ~%d\n", label);
+X}
+X
+Xdotestnz(label)
+Xint label;
+X{
+X	outval("\tjsr nz\n\tbeq *+5\n\tjmp ~%d\n", label);
+X}
+X
+X/*
+X * Modify stack pointer to new value indicated
+X */
+Xmodstk(newsp)
+Xint newsp;
+X{
+X	int k;
+X
+X	k = newsp - sp;
+X	if (k == 0)
+X		return newsp;
+X	if (k < 0)
+X		decstk(k);
+X	else
+X		incstk(k);
+X	return newsp;
+X}
+X
+Xdecstk(n)
+Xint n;
+X{
+X	if ((n = (n & 0xFFFF ^ 0xFFFF) + 1) < 0xFF)
+X		outval("\tlda #%d\n\tjsr sdec_b\n", n);
+X	else {
+X		outval("\tlda #%d\n\tsta asave\n", n >> 8);
+X		outval("\tlda #%d\n\tjsr sdec_w\n", n & 0xFF);
+X	}
+X}
+X
+Xincstk(n)
+Xint n;
+X{
+X	if (n < 0xFF) {
+X		if (n == 2)
+X			outcode("drop");
+X		else if (n == 4 | n == 6)
+X			outval("\tjsr drop%d\n", n >> 1);
+X		else
+X			outval("\tlda #%d\n\tjsr sinc_b\n", n);
+X	}
+X	else {
+X		outval("\tlda #%d\n\tsta asave\n", n >> 8);
+X		outval("\tlda #%d\n\tjsr sinc_w\n", n & 0xFF);
+X	}
+X}
+X
+X/*
+X * (dummy) start to main segment
+X */
+Xheader()
+X{
+X	lastop = 0;
+X}
+X
+X/*
+X * swap primary and secondary
+X */
+Xswap()
+X{
+X	outcode("swap");
+X}
+X
+X/*
+X * load immediate by value
+X */
+Ximmed(val)
+Xint val;
+X{
+X	outval("\tldx #<%u\n", val);
+X	outval("\tldy #>%u\n", val);
+X}
+X
+X/*
+X * load immediate by name
+X */
+Ximmediate(name)
+Xchar *name;
+X{
+X	outstr("\tldx #<_%s\n", name);
+X	outstr("\tldy #>_%s\n", name);
+X}
+X
+X/*
+X * load address of literal
+X */
+Xliteral(lab, offset)
+Xint lab;
+Xint offset;
+X{
+X	outval("\tldx #<~%d+", lab);
+X	outval("%u\n", offset);
+X	outval("\tldy #>~%d+", lab);
+X	outval("%u\n", offset);
+X}
+X
+X/*
+X * push primary onto stack
+X */
+Xpush()
+X{
+X	outcode("push");
+X	sp = sp - INTWIDTH;
+X}
+X
+X/*
+X * pop (compiler) stack
+X */
+Xpop()
+X{
+X	sp = sp + INTWIDTH;
+X}
+X
+X/*
+X * swap primary and top of stack
+X */
+Xswapstk()
+X{
+X	outcode("xchange");
+X}
+X
+X/*
+X * return from function
+X */
+Xret()
+X{
+X	outline("rts");
+X}
+X
+X/*
+X * exit from program at arbitrary depth of function call nesting
+X */
+Xc_exit()
+X{
+X	outline("jmp _exit");
+X}
+X
+X/*
+X * scale primary by INTWIDTH
+X */
+Xscale(lval)
+Xint *lval;
+X{
+X	char *p;
+X
+X	if ((p = lval[SYMBOL]) != NULL) {
+X		if ((p[IDENT] == POINTER) | (p[IDENT] == ARRAY)) {
+X			if (p[TYPE] == CINT)
+X				outcode("scale2");
+X		}
+X	}
+X}
+X
+X/*
+X * add primary and top stack item
+X */
+Xadd(lval)
+Xint *lval;
+X{
+X	pop();
+X	scale(lval);
+X	outcode("add");
+X}
+X
+X/*
+X * subtract primary from top stack item
+X */
+Xsub(lval)
+Xint *lval;
+X{
+X	pop();
+X	scale(lval);
+X	outcode("sub");
+X}
+X
+X/*
+X * multiply primary and top stack item
+X */
+Xmult()
+X{
+X	pop();
+X	outcode("mult");
+X}
+X
+X/*
+X * check 'usual' binary conversions
+X */
+Xuconv(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	char *p1, *p2;
+X	int t1, t2;
+X
+X	if ((p1 = lval1[SYMBOL]) != NULL)
+X		t1 = p1[IDENT];
+X	else
+X		t1 = NULL;
+X	if ((p2 = lval2[SYMBOL]) != NULL)
+X		t2 = p2[IDENT];
+X	else
+X		t2 = NULL;
+X	return (t1 == POINTER) | (t2 == POINTER);
+X}
+X
+X/*
+X * divide top stack item by primary
+X * --------------------------------
+X * quotient in primary, rem in secondary
+X */
+Xdiv(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		popcode("udiv");
+X	else
+X		popcode("div");
+X}
+X
+X/*
+X * mod of top stack item divided by primary
+X * ----------------------------------------
+X * rem in primary, quotient in secondary
+X */
+Xmod(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		popcode("umod");
+X	else
+X		popcode("mod");
+X}
+X
+X/*
+X * inclusive or of primary and top stack item
+X */
+Xor()
+X{
+X	popcode("or");
+X}
+X
+X/*
+X * exclusive or of primary and top stack item
+X */
+Xxor()
+X{
+X	popcode("xor");
+X}
+X
+X/*
+X * logical and of primary and top stack item
+X */
+Xand()
+X{
+X	popcode("cand");
+X}
+X
+X/*
+X * arithmetic shift right of top stack item
+X * ----------------------------------------
+X * number of shifts in primary
+X */
+Xasr()
+X{
+X	popcode("casr");
+X}
+X
+X/*
+X * arithmetic shift left
+X */
+Xasl()
+X{
+X	popcode("casl");
+X}
+X
+X/*
+X * twos complement of primary
+X */
+Xneg()
+X{
+X	outcode("neg");
+X}
+X
+X/*
+X * increment primary by n
+X */
+Xinc(lval)
+Xint *lval;
+X{
+X	char *p;
+X
+X	p = lval[SYMBOL];
+X	if ((p[IDENT] == POINTER) & (p[TYPE] == CINT))
+X		outcode("inc2");
+X	else
+X		outcode("inc1");
+X}
+X
+X/*
+X * decrement primary
+X */
+Xdec(lval)
+Xint *lval;
+X{
+X	char *p;
+X
+X	p = lval[SYMBOL];
+X	if ((p[IDENT] == POINTER) & (p[TYPE] == CINT))
+X		outcode("dec2");
+X	else
+X		outcode("dec1");
+X}
+X
+X/*
+X * Conditional instructions
+X * ------------------------
+X * compare top stack item against primary, put 1 in primary if true, otherwise 0
+X */
+X
+X/*
+X * == (equal)
+X */
+Xeq()
+X{
+X	relcode("eq");
+X}
+X
+X/*
+X * != (not equal)
+X */
+Xne()
+X{
+X	relcode("ne");
+X}
+X
+X/*
+X * < (less than)
+X */
+Xlt(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		relcode("ult");
+X	else
+X		relcode("lt");
+X}
+X
+X/*
+X * <= (less than or equal)
+X */
+Xle(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		relcode("ule");
+X	else
+X		relcode("le");
+X}
+X
+X/*
+X * > (greater than)
+X */
+Xgt(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		relcode("ugt");
+X	else
+X		relcode("gt");
+X}
+X
+X/*
+X * >= (signed)
+X */
+Xge(lval1, lval2)
+Xint *lval1, *lval2;
+X{
+X	if (uconv(lval1, lval2))
+X		relcode("uge");
+X	else
+X		relcode("ge");
+X}
+X
+X/*
+X * literal definitions
+X */
+Xdefbyte(c)
+Xchar c;
+X{
+X	outval("\t.byte %d\n", c);
+X}
+X
+Xdefstorage(n)
+Xint n;
+X{
+X	outval("\t*=*+%u\n", n);
+X}
+X
+X/*
+X * (dummy) end of assembly
+X */
+Xtrailer()
+X{
+X	lastop = 0;
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > tcpp_c
+X/* tcpp.c  25-Jan-89  A.J.Travis */
+X
+X/*
+X * Small-C Preprocessor
+X */
+X
+X#include <stdio.h>
+X#include <ctype.h>
+X
+X/*
+X * boolean constants
+X */
+X#define TRUE		1
+X#define FALSE		0
+X#define ERROR	       -1
+X#define UNDEFINED    NULL
+X#define SAME		0
+X
+X/*
+X * symbol table parameters
+X */
+X#define HASHSIZE     257
+X#define DEFSIZE     4000
+X#define SYMSIZE     4000
+X#define PARMSIZE     132
+X#define NEXTPTR        0
+X#define BODYPTR        2
+X#define NAME           4
+X#define MAXPARMS      32
+X#define LINESIZE      81		/* max length of line + '\0' */
+X
+X/*
+X * directory containing 'standard' #include files
+X */
+X#if MSDOS
+X#define INCLUDE	"/include/"
+X#else
+X#define INCLUDE ":0.$."
+X#endif
+X
+X/*
+X * function types
+X */
+Xchar *filename();
+Xchar *hashfind();
+X
+X/*
+X * global variables
+X */
+Xchar ibuf[BUFSIZ];
+Xchar *ip;
+Xchar obuf[BUFSIZ];
+Xchar *op;
+Xchar mac[BUFSIZ];
+Xchar name[LINESIZE];
+Xchar sbuf[LINESIZE];
+Xchar deftab[DEFSIZE];
+Xchar *defptr;
+Xchar *maxdef;
+Xchar symtab[SYMSIZE];
+Xchar *freeptr;
+Xchar *maxsym;
+Xchar infile[LINESIZE];
+Xchar outfile[LINESIZE];
+XFILE *file[4];
+Xint filen;
+Xint eof;
+XFILE *in;
+XFILE *out;
+Xint hashtab[HASHSIZE];
+Xchar params[PARMSIZE];
+Xint par[MAXPARMS];
+Xint np;
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	in = UNDEFINED;
+X	out = UNDEFINED;
+X	filen = 1;
+X	eof = FALSE;
+X	maxdef = deftab + DEFSIZE;
+X	maxsym = symtab + SYMSIZE;
+X	inithash();
+X	while ((*argv[1] & 0xFF) == '-') {	/* BUG in compiler */
+X		ip = argv[1] + 1;
+X		if (*ip++ == 'D') {
+X			if (sym(sbuf) == FALSE)
+X				usage();
+X			if (*ip++ == '=')
+X				install(sbuf, ip);
+X			else
+X				install(sbuf, "");
+X			--argc;
+X			argv++;
+X		}
+X		else
+X			usage();
+X	}
+X	if (argc < 2 | argc > 3)
+X		usage();
+X	if ((in = fopen(argv[1], "r")) == NULL)
+X		cant(argv[1]);
+X	if (argc == 2)
+X		out = stdout;
+X	else {
+X		if ((out = fopen(argv[2], "w")) == NULL)
+X			cant(argv[2]);
+X	}
+X	parse();
+X	fclose(out);
+X}
+X
+X/*
+X * print correct usage, and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: tcpp [-Dname[=def]] infile [outfile]\n");
+X	fatal(-1);
+X}
+X
+X/*
+X * initialise empty hash table
+X */
+Xinithash()
+X{
+X	int i;
+X
+X	freeptr = symtab;
+X	defptr = deftab;
+X	i = 0;
+X	while (i < HASHSIZE)
+X		hashtab[i++] = 0;
+X}
+X
+X/*
+X * print offending line, and exit
+X */
+Xerror()
+X{
+X	fprintf(stderr, "\n%s", obuf);
+X	fatal(-1);
+X}
+X
+X/*
+X * tidy up and exit on fatal error
+X */
+Xfatal(stat)
+Xint stat;
+X{
+X	if (in != NULL)
+X		fclose(in);
+X	if (out != NULL)
+X		fclose(out);
+X	exit(stat);
+X}
+X
+X/*
+X * parse input text
+X */
+Xparse()
+X{
+X	while (filen) {
+X		inline();
+X		if (amatch("#ifdef", 6))
+X			ifdef();
+X		else if (amatch("#ifndef", 7))
+X			ifndef();
+X		else if (amatch("#else", 5))
+X			break;
+X		else if (amatch("#endif", 6))
+X			break;
+X		else if (amatch("#define", 7))
+X			addmac();
+X		else {
+X			process();
+X			rescan();
+X		}
+X	}
+X}
+X
+X/*
+X * rescan processed line looking for preprocessor #directives
+X */
+Xrescan()
+X{
+X	ip = obuf;
+X	if (amatch("#include", 8))
+X		openincl();
+X	else if (amatch("#if ", 4))
+X		doif();
+X	else
+X		fputs(obuf, out);
+X}
+X
+X/*
+X * match n chars with input buffer
+X */
+Xamatch(s, n)
+Xchar *s;
+Xint n;
+X{
+X	if (strncmp(ip, s, n) != SAME)
+X		return(FALSE);
+X	else {
+X		ip = ip + n;
+X		return(TRUE);
+X	}
+X}
+X
+X/*
+X * skip 'white space' on input
+X */
+Xskip()
+X{
+X	while(*ip == ' ' | *ip == '\t')
+X		ip++;
+X}
+X
+X/*
+X * open nested #include file
+X * -------------------------
+X * Tries to open file in current directory first, then tries
+X * 'standard' path if #include <name> was used.
+X */
+Xopenincl()
+X{
+X	char delim;			/* filename delimeter */
+X	char path[LINESIZE];		/* used to prepend 'standard' path */
+X
+X	if (filen >= 3) {
+X		fprintf(stderr, "tcpp: too many #include files\n");
+X		fatal(-1);
+X	}
+X	skip();
+X	delim = *ip;
+X	if (delim != '"' & delim != '<') {
+X		fprintf(stderr, "tcpp: can't include %s\n", ip);
+X		fatal(-1);
+X	}
+X	file[filen++] = in;
+X	if ((in = fopen(filename(sbuf), "r")) == NULL) {
+X		if (delim == '<') {
+X			strcpy(path, INCLUDE);
+X			strcat(path, sbuf);
+X			if ((in = fopen(path, "r")) != NULL)
+X				return;
+X		}
+X		fixname(sbuf, delim);
+X	}
+X}
+X
+X/*
+X * get name of #include file
+X */
+Xchar *filename(buf)
+Xchar *buf;
+X{
+X	char *bp;			/* buffer pointer */
+X	char delim;			/* filename delimeter */
+X
+X	bp = buf;
+X	delim = *ip++;
+X	if (delim == '<')
+X		delim = '>';
+X	while (*ip != delim & *ip != '\n')
+X		*bp++ = *ip++;
+X	*bp = '\0';
+X	return(buf);
+X}
+X
+X/*
+X * try to find #include file by fiddling with filename
+X */
+Xfixname(s, delim)
+Xchar *s;
+Xchar delim;
+X{
+X	char *p;			/* filename pointer */
+X	char path[LINESIZE];		/* used to prepend 'standard' path */
+X
+X	/* fix BBC Micro DFS/ADFS suffix */
+X	for (p = s; *p; ++p)
+X		;
+X	if (*(p - 2) == '.')
+X		*(p - 2) = '_';
+X
+X	/* now try to open the file again */
+X	if ((in = fopen(s, "r")) == NULL) {
+X		if (delim == '"')
+X			cant(s);
+X		else {
+X			strcpy(path, INCLUDE);
+X			strcat(path, s);
+X			if ((in = fopen(path, "r")) == NULL)
+X				cant(path);
+X		}
+X	}
+X}
+X
+X/*
+X * input line
+X */
+Xinline()
+X{
+X	while (filen) {
+X		if (fgets(ibuf, BUFSIZ, in))
+X			break;
+X		else {
+X			ibuf[0] = '\n';
+X			ibuf[1] = '\0';
+X			fclose(in);
+X			if (--filen == 0)
+X				eof = TRUE;
+X			in = file[filen];
+X		}
+X	}
+X	op = obuf;
+X	ip = ibuf;
+X}
+X
+X/*
+X * process line of text
+X */
+Xprocess()
+X{
+X	while (*ip != '\n') {
+X		if (sym(sbuf))
+X			expand(sbuf);
+X		else if (*ip == '"' | *ip == '\'')
+X			qtext();
+X		else if (amatch("/*", 2))
+X			comment();
+X		else if (*ip == ' ' | *ip == '\t')
+X			keepsp();
+X		else
+X			*op++ = *ip++;
+X	}
+X	*op++ = '\n';
+X	*op = '\0';
+X}
+X
+X/*
+X * get next symbol
+X * ---------------
+X * copy alpha prefixed alphanumeric string from input buffer,
+X * and return length of string
+X */
+Xsym(p)
+Xchar *p;
+X{
+X	char *bp;
+X
+X	bp = p;
+X	while (isalnum(*ip) | *ip == '_')
+X		*bp++ = *ip++;
+X	*bp = '\0';
+X	return(bp - p);
+X}
+X
+X/* 
+X * expand macro definition or copy symbol
+X */ 
+Xexpand(name)
+Xchar *name;
+X{
+X	char *tag;
+X	char *p;
+X	char *to;
+X	int np;
+X	int flag;
+X
+X	flag = 0;
+X	np = 0;
+X	if ((tag = hashfind(name)) != NULL) {
+X		p = mgetw(tag + BODYPTR);
+X		if (*ip == '(')
+X			np = parms1();
+X		to = op;
+X		while (*p) {
+X			if (*p <= np) {
+X				strcpy(op, par[*p - 1]);
+X				op = op + strlen(par[*p - 1]);
+X				p++;
+X				flag = 1;
+X			}
+X			else
+X				*op++ = *p++;
+X		}
+X		if (flag == 1) {
+X			strcpy(op, ip);
+X			strcpy(ibuf, obuf);
+X			op = to;
+X			ip = ibuf + (op - obuf);
+X		}
+X	}
+X	else while (*name)
+X		*op++ = *name++;
+X}
+X
+X/*
+X * get parameters for macro
+X */
+Xparms1()
+X{
+X	int nb;
+X	char *s;
+X	char *p;
+X	char tbuf[BUFSIZ];
+X
+X	p = params;
+X	np = 0;
+X	nb = 0;
+X	ip++;
+X	skip();
+X	while (*ip != ')') {
+X		s = tbuf;
+X		while ((nb > 0) | (*ip != ',' & *ip != ')')) {
+X			if (*ip == '(') 
+X				nb++;
+X			if (*ip == ')')
+X				nb--;
+X			if (*ip == '\n') {
+X				fprintf(stderr, "tcpp: unexpected newline\n");
+X				error();
+X			}
+X			*s++ = *ip++;
+X		}
+X		*s = '\0';
+X		par[np++] = p;
+X		strcpy(p, tbuf);
+X		p = p + strlen(p);
+X		*p++ = '\0';
+X		if (np > MAXPARMS) {
+X			fprintf(stderr, "tcpp: too many parameters\n");
+X			error();
+X		}
+X		if (*ip != ')') 
+X			ip++;
+X		skip();
+X	}
+X	ip++;
+X	return(np);
+X}
+X
+X/*
+X * copy quoted text
+X * ----------------
+X * delimeter is current input char
+X * \ character escapes are preserved
+X */
+Xqtext()
+X{
+X	char delim;
+X
+X	delim = *op++ = *ip++;
+X	while (*ip != delim) {
+X		if ((*op++ = *ip) == '\0') {
+X			fprintf(stderr, "tcpp: delimeter missing\n");
+X			error();
+X		}
+X		else if (*ip++ == '\\')
+X			*op++ = *ip++;
+X	}
+X	*op++ = *ip++;
+X	return;
+X}
+X
+X/*
+X * skip comment
+X */
+Xcomment()
+X{
+X	while (eof == FALSE) {
+X		if ((inchar() == '*') & (*ip == '/'))
+X			break;
+X	}
+X	++ip;
+X}
+X
+X/*
+X * keep one space between tokens
+X */
+Xkeepsp()
+X{
+X	*op++ = ' ';
+X	while (*ip == ' ' | *ip == '\t')
+X		ip++;
+X}
+X
+X/*
+X * add new macro to symbol table
+X */
+Xaddmac()
+X{
+X	char *p;
+X
+X	skip();
+X	if (sym(name) == 0) {
+X		fprintf(stderr, "tcpp: illegal symbol name\n");
+X		error();
+X	}
+X	else {
+X		process();
+X		ip = obuf;
+X		macdef(mac);
+X		install(name, mac);
+X	}
+X}
+X
+X/*
+X * #ifdef ... #endif
+X */
+Xifdef()
+X{
+X	skip();
+X	if (sym(sbuf) == 0) {
+X		fprintf(stderr, "tcpp: '#ifdef symbol' expected\n");
+X		error();
+X	}
+X	if (hashfind(sbuf)) {
+X		parse();
+X		ip = ibuf;
+X		if (amatch("#else", 5)) {
+X			while (amatch("#endif", 6) == FALSE)
+X				inline();
+X		}
+X	}
+X	else {
+X		while (amatch("#endif", 6) == FALSE) {
+X			if (amatch("#else", 5)) {
+X				parse();
+X				break;
+X			}
+X			inline();
+X		}
+X	}
+X}
+X
+X/*
+X * #ifndef ... #endif
+X */
+Xifndef()
+X{
+X	skip();
+X	if (sym(sbuf) == 0) {
+X		fprintf(stderr, "tcpp: '#ifndef symbol' expected\n");
+X		error();
+X	}
+X	if (hashfind(sbuf) == FALSE) {
+X		parse();
+X		ip = ibuf;
+X		if (amatch("#else", 5)) {
+X			while (amatch("#endif", 6) == FALSE)
+X				inline();
+X		}
+X	}
+X	else {
+X		while (amatch("#endif", 6) == FALSE) {
+X			if (amatch("#else", 5)) {
+X				parse();
+X				break;
+X			}
+X			inline();
+X		}
+X	}
+X}
+X
+X/*
+X * #if ... #endif
+X */
+Xdoif()
+X{
+X	int n;
+X
+X	skip();
+X	if (isalnum(*ip) == FALSE) {
+X		fprintf(stderr, "tcpp: '#if symbol' expected\n");
+X		error();
+X	}
+X	if ((n = atoi(ip)) != 0) {
+X		parse();
+X		ip = ibuf;
+X		if (amatch("#else", 5)) {
+X			while (amatch("#endif", 6) == FALSE)
+X				inline();
+X		}
+X	}
+X	else {
+X		while (amatch("#endif", 6) == FALSE) {
+X			if (amatch("#else", 5)) {
+X				parse();
+X				break;
+X			}
+X			inline();
+X		}
+X	}
+X}
+X
+X/*
+X * read char from input buffer
+X * ---------------------------
+X * input new line if necessary
+X */
+Xinchar()
+X{
+X	if (*ip == '\0')
+X		inline();
+X	if (eof)
+X		return(0);
+X	else
+X		return(*ip++);
+X}
+X
+X/*
+X * hashing algorithm
+X * -----------------
+X * returns value in range 0 to HASHSIZE - 1
+X * for best results HASHSIZE should be a prime
+X */
+Xhash(name)
+Xchar *name;
+X{
+X	int h;
+X
+X	h = 0;
+X	while (*name)
+X		h = (3 * h + *name++) % HASHSIZE;
+X	return(h);
+X}
+X
+X/*
+X * install new macro
+X */
+Xinstall(name, mac)
+Xchar *name;
+Xchar *mac;
+X{
+X	char *p;
+X	char *m;
+X	int len;
+X	int h;
+X
+X	len = strlen(name) + 5;
+X	if (freeptr + len > maxsym) {
+X		fprintf(stderr, "tcpp: symbol table full\n");
+X		fatal(-1);
+X	}
+X	if (defptr + strlen(mac) > maxdef) {
+X		fprintf(stderr, "tcpp: macro definition table full\n");
+X		fatal(-1);
+X	}
+X	if (hashfind(name) != NULL)
+X		printf("tcpp: macro %s redefined\n", name);
+X	h = hash(name);
+X	p = freeptr;
+X	mputw(p + NEXTPTR, hashtab[h]);
+X	hashtab[h] = p;
+X	mputw(p + BODYPTR, defptr);
+X	m = mac;
+X	while (*m != '\0')
+X		*defptr++ = *m++;
+X	*defptr++ = '\0';
+X	strcpy(p + NAME, name);
+X	freeptr = p + len;
+X}
+X
+X/*
+X * get macro definition
+X */
+Xmacdef(m)
+Xchar *m;
+X{
+X	int flag;
+X	int i;
+X	char tbuf[BUFSIZ];
+X
+X	np = 0;
+X	if (*ip == '(') 
+X		parms();
+X	skip();
+X	while  (*ip != '\n') {
+X		if (sym(tbuf) == 0) 
+X			*m++ = *ip++;
+X		else {
+X			flag = 1;
+X			for (i = 0; i < np; ++i) {
+X				if (strcmp(par[i], tbuf) == SAME) {
+X					*m++ = i + 1;
+X					flag = 0;
+X				}
+X			}
+X			if (flag == 1) {
+X				strcpy(m, tbuf);
+X				m = m + strlen(m);
+X			}
+X		}
+X	}
+X	*m = '\0';
+X}
+X
+X/*
+X * get parameters for macro
+X */
+Xparms()
+X{
+X	char *p;
+X	char tbuf[BUFSIZ];
+X
+X	p = params;
+X	ip++;
+X	skip();
+X	while (*ip != ')') {
+X		if (sym(tbuf) == 0) {
+X			fprintf(stderr, "tcpp: illegal parameter %s\n", ip);
+X			error();
+X		}
+X		par[np++] = p;
+X		strcpy(p, tbuf);
+X		p = p + strlen(tbuf);
+X		*p++ = '\0';
+X		if (np > MAXPARMS) {
+X			fprintf(stderr, "tcpp: too many parameters\n");
+X			error();
+X		}
+X		skip();
+X		if (*ip == ',') {
+X			ip++;
+X			skip();
+X		}
+X	}
+X	ip++;
+X}
+X
+X/*
+X * find symbol using hash + chain
+X */
+Xchar *hashfind(name)
+Xchar *name;
+X{
+X	char *tag;
+X
+X	tag = hashtab[hash(name)];
+X	while (tag) {
+X		if (strcmp(tag + NAME, name) == SAME)
+X			break;
+X		else
+X			tag = mgetw(tag + NEXTPTR);
+X	}
+X	return(tag);
+X} 
+X
+X/*
+X * print can't open ... and exit
+X */
+Xcant(s)
+Xchar *s;
+X{
+X	fprintf(stderr, "tcpp: can't open %s\n", s);
+X	fatal(-1);
+X}
+X
+X/*
+X * put word into memory low byte first
+X */
+Xmputw(p, val)
+Xint *p;
+Xint *val;
+X{
+X	*p = val;
+X}
+X
+X/*
+X * get word from memory low byte first
+X */
+Xmgetw(p)
+Xint *p;
+X{
+X	return(*p);
+X}
+SHAR_EOF
+

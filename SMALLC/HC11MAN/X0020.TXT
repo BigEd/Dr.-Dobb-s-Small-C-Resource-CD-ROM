@@ -1,0 +1,1831 @@
+
+
+
+
+
+
+          NEW MICROS, INC.
+          1601 CHALK HILL RD.
+          DALLS, TX. 75212
+          PH:  214  339-2204
+          FAX: 214  339-1585
+          BBS: 214  339-2321  2400,8,N,1
+
+
+                         NMIX/T-0020 HARDWARE MANUAL
+                                 JUNE 1, 1993
+
+
+          CONTENTS:                                   PAGE
+
+               GETTING STARTED .......................  2
+
+               NMIX and NMIX DIFFERENCES .............  3
+
+               PARALLEL PORTS ........................  3
+
+               KEYPAD INTERFACE ......................  5
+
+               MUTIPLEXING KEYPAD AND A/D APP. NOTE ..  6
+
+               LCD INTERFACE .........................  7
+
+               SERIAL I/O ............................  8
+
+               AC POWER SUPPLY ....................... 10
+
+               DC POWER, BATTERY BACK-UP, and RESET .. 11
+
+               ADDRESS DECODING ...................... 13
+
+               TROUBLESHOOTING ....................... 14
+
+               MEMORY MAP ............................ 16
+
+               MISCELLANEOUS JUMPERS ................. 17
+
+               GENRAL PURPOSE MEMORY SOCKETS ......... 18
+
+               JUMPER SETTINGS ....................... 19
+
+               INPUT / OUTPUT JACKS and CONNECTORS ... 23
+
+               SAMPLE PROGRAM SEGMENTS (FORTH) ....... 27
+
+               PARTS LIST ............................ 29
+
+               INTEL HEX DUMP APP. NOTE .............. 30
+
+
+                                          1
+
+
+
+
+
+
+
+          GETTING STARTED
+
+          The NMIX-0020,  is an F68HC11 based single  board  computer  with
+          built-in LCD display interface and a 4x5 matrix keypad interface.
+          When  purchased in development configuration,  it is complete and
+          ready to run.   The NMIT-0020 is a target version  of  the  NMIX-
+          0020.    It  is  made  from the same printed circuit board as the
+          NMIX-0020, but has fewer parts installed.  Normally,  a developer
+          will  use  the NMIX-0020 for development,  and high end projects,
+          then switch to the lower cost NMIT-0020 (or a modified version of
+          it - call NMI) when volume buying begins.
+
+          To operate the NMIX-0020 system, plug in the wall transformer and
+          connect a terminal to the serial RS-232 DB25F  connector.    Most
+          terminals should plug in directly,  with a straight through cable
+          (ie: pin 1 to pin 1, 2 to 2,  3 to 3,  etc.).  The NMIX-0020 uses
+          only lines 2 and 3 for serial in and serial out respectively, and
+          pins 1 and 7 for ground.  Many terminals require additional hand-
+          shaking  signals to work,  so pins 4 and 5 are hooked together on
+          the DB25F connector, as are pins 6 and 20.   In this way the ter-
+          minals  that  require  the additional handshake signal have their
+          own " clear to send" / "ready to send" and "data terminal  ready"
+          /  "data  set  ready"  signals  wrapped  back around,  indicating
+          "always ready".
+
+          RS-232 connections:
+
+          J6      DB9F     DB25F     Signal Name
+          ---     ----     -----     ------ ----
+           5                 1       Case ground
+           6       3         2       Serial in  (to   NMIX-0020)
+           7       2         3       Serial out (from NMIX-0020)
+           8       5         7       Electrical ground
+              7 to 8    4 to 5       CTS to RTS
+              4 to 6    6 to 20      DSR to DTR
+
+          In order to talk to the NMIX-0020 the terminal must have the cor-
+          rect bit settings.   The baud rate should be set at 9600 baud for
+          the  standard 2 Mhz system (8 Mhz crystal).   The NMIX-0020 sends
+          and receives a bit protocol of one start bit, eight data bits and
+          one stop bits.
+
+                 +---+---+---+---+---+---+---+---+---+---+
+                 | S | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | S |
+                 +---+---+---+---+---+---+---+---+---+---+
+
+
+
+
+
+
+
+
+                                          2
+
+
+
+
+
+
+
+          When the terminal is set correctly,  every time you  depress  and
+          release the reset button the NMIX-0020 should respond with:
+
+          Max-FORTH V3.x      (Assuming you are using the Forth)
+
+          Seeing  that  message  means  the terminal can see the NMIX-0020.
+          Press "return" on your terminal several times.   If the NMIX-0020
+          responds with "OK" each time, communications are established.
+
+          LETTERS
+
+          Your NMIX-0020 is now running and communicating as it should.
+
+
+
+
+
+
+
+
+          NMIX AND NMIT DIFFERENCES:
+
+          The  NMIT-0020,  when  purchased in the generic target configura-
+          tion,  is a minimum,  5 Volt only,  configuration.   The F68HC11,
+          Xtal,  reset  circuit,  various HC "glue" components and three 28
+          pin JEDEC  sockets.    Typically,  a  program  developed  in  the
+          "development  configured" board will be installed in the "generic
+          target configured" board for production of a  dedicated  applica-
+          tion.   The user must install the appropriate jumpers,  which are
+          not provided in the target configuration.
+
+          All configurations of the F68HC11 based NMIX-0020 boards use  the
+          same  base PC board.   Configuration differences refer to the ex-
+          tent to which the board is filled with components.
+
+
+
+
+
+
+          PARALLEL PORTS
+
+          The F68HC11 has five parallel ports, Port A, B, C, D and E.   Two
+          ports  of  the F68HC11 are sacrificed to create a 64K address and
+          data bus.  Although some of the remaining port lines have special
+          multiplexed functions,  they can all be used as inputs or as out-
+          puts  according  to  their individual designs.   Some of the port
+          lines have direction registers allowing them to be used as either
+          inputs or outputs.   The three remaining ports of the F68HC11 are
+          brought out to connector J5.  Power and ground are also available
+          on J5.
+
+
+                                          3
+
+
+
+
+
+
+
+                                INPUT/OUTPUT JACK J5
+
+                                       TOP VIEW
+             FRONT (EDGE) OF CARD v
+                                  - X PD5 o o PD4 X
+                                  | X PD3 o o PD2 X
+                                  | X PD1 o o PD0 X
+                                  |    +5 o o +5
+                                  |   GND o o GND
+                                  | X PA7 o o PA6 O
+                                  | O PA5 o o PA4 O
+                  34 pin header   | X PA3 o o PA2 I
+                  group           | I PA1 o o PA0 I
+                                  |    +5 o o +5
+                                  |   GND o o GND
+                                  | I PE7 o o PE6 I
+                                  | I PE5 o o PE4 I
+                                  | I PE3 o o PE2 I
+                                  | I PE1 o o PE0 I
+                                  |    +5 o o +5
+                                  -   GND o o GND
+
+                              I=INPUT O=OUTPUT X=EITHER
+
+
+          The lines can be used as individual inputs or outputs or in  com-
+          bination.   There are very few applications,  however, where pins
+          are switched dynamically, sometimes used as inputs,  sometimes as
+          outputs.
+
+          A  voltage  of 7/10 Vcc or greater will always be recognized as a
+          logical one.  Voltages 2/10 Vcc or lower will always be regonized
+          as logic 0.   Voltages applied above Vcc or  below  0  Volts  can
+          damage the computer.
+
+          The  outputs  of the F68HC11 can sink 1.6 mA to ground while let-
+          ting the pin go no higher than 0.4 Volts for a "zero" and  source
+          about .8 mA at 4.5 Volts for a "one".   In terms of control, this
+          is a very small signal.   Most relays require over 50 times  more
+          current to operate.  LED's typically take 5 mA to be visible.  HC
+          levels  are such that the output is sufficient to drive the input
+          on one pin of one TTL device or about a dozen of the lower  power
+          LSTTL  inputs.   The output is sufficient to drive VMOS FET's and
+          Darlingtons with an external pull up which can  in  turn  control
+          several  amps  of current.   Usually,  however,  a buffer will be
+          needed to do serious non-HC interfacing.
+
+
+
+
+
+
+
+                                          4
+
+
+
+
+
+
+
+          KEYPAD INTERFACE
+
+          The NMIX-0020 has a built-in Keypad Controller, the 74C923.  This
+          device scans matrixes of keys up to 4x5 without processor  inter-
+          vention.    Connection of the 74C923 Keypad Controller to the cpu
+          is via 68HC11 Port E pins PE3 thru PE7 for key data  and  Port  A
+          pin PA0 for the key valid strobe.
+
+          The  operation  of  the  74C923 Keypad Controller provides a high
+          level Data Available Strobe to Port  PA0  when  a  valid  key  is
+          detected  in  the  keyboard matrix.   This can be detected by the
+          68HC11 under software control and the key data can then  be  read
+          from  Port  E as a binary number that represents the valid key on
+          the keyboard.
+
+          Connector  J7  provides  the  keyboard  connection.    Compatible
+          keyboards  are  common and should be a simular to Grayhill Series
+          86 or 88 keyboards.  Following is the pinout of J7:
+
+
+                            KEYBOARD INPUT/OUTPUT JACK J7
+
+                                      TOP VIEW
+                               NUMBERED LEFT TO RIGHT
+
+                            1  2  3  4  5  6  7  8  9
+                            --------------------------
+                            o  o  o  o  o  o  o  o  o
+
+                            C  C  R  R  C  R  R  C  C
+                            O  O  O  O  O  O  O  O  O
+                            L  L  W  W  L  W  W  L  L
+                            1  2  3  2  3  1  4  4  5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          5
+
+
+
+
+
+
+
+          MULTIPLEXING KEYBOARD AND A/D CHANNELS
+
+
+          It is important to note that 5 of the 8 68HC11 Port E  A/D  input
+          channels  can  not be while the Keyboard Controller is installed.
+          If more than three A/D channels are required the user may perform
+          a simple  modification  to  multiplex  Port  E  with  the  74C923
+          Keyboard  Controller and the A/D input channels.   Following is a
+          brief explanation:
+
+               1. Enable the 74C923 output enable function so that the out-
+          puts of the 74C923 can be disabled to a high impedance condition.
+          To do this you need to remove the 74C923 IC from  the  IC  socket
+          and  bend  pin 14 out straight so that it will not plug back into
+          the IC socket when the 74C923 is replaced in the  socket.    Next
+          replace the 74C923 back into the socket.
+
+               2. Attach a wire from the open 74C923 pin 14 to an available
+          output  pin  on the 68HC11 cpu in the J5 connector.   For example
+          Port A pin PA4, J5 pin 14.
+
+               3.  Add a software control sequence that will cause  Port  A
+          pin  PA4 to idle in the high level output condition ( 74C923 out-
+          puts off),   output a low on PA4 (enable 74C923 outputs) prior to
+          the read of the Port E key data,  and return PA4 to the idle high
+          condition after the read.
+
+
+               4.  The A/D channels can now be used by placing a  4.7K  ohm
+          resistor or higher in series with the J5 port E inputs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          6
+
+
+
+
+
+
+
+          LCD INTERFACE
+
+
+          The  NMIX-0020 has a built-in connector (J1) and decode circuitry
+          to allow direct interfacing to many of the  popularly  available,
+          intelligent  LCD  displays.   A wide number of LCD modules can be
+          accommodated,  since many manufacturers make the modules with the
+          same controller chips or control operation. Some of these manufac-
+          turers are AND, Densitron, Epson, Optrex, Sharp, and Sieko.  They
+          come in configurations such as 1x8, 1x16, 2x16, 1x20, 2x20, etc.,
+          up to 4x40 or 2x80.
+
+          Connector  J1  contains  16 pins but will accept the 14 pin or 16
+          pin ribbon connectors from the standard LCD modules  as  the  pin
+          out  is  common  except  for  an  addtional enable signal for the
+          larger displays.   J1 is configured to accept  ribbon  connectors
+          that are taken off the back side of the LCD to allow flush mount-
+          ing of the module's display face to a front panel.  Ribbon cables
+          attached this way have their signals mirrored.
+
+          The  LCD  interface  is  hard addressed at four consecutive loca-
+          tions,  $B5FC hex thru $B5FF hex.   On board logic  provides  the
+          necessary  chip select and timing information to operate the dis-
+          plays.   Address line A0 goes directly to the displays,  so  each
+          chip  select  represents two memory locations.   The smaller dis-
+          plays, with up to 80 characters,  use only one display controller
+          chip.    Those  with a larger number of characters use additional
+          display controller chips.   Those with 16 pin connectors have  up
+          to two controllers built-in.
+
+          The  type  display  attached will determine its own access speed.
+          Generally they are listed at 450ns.   This is fast enough  for  1
+          Mhz  bus  timing  (6800  and 6500 type processors),  but not fast
+          enough for 2 Mhz.  Almost all of the displays will work, however,
+          at this higher speed, although using them this way means they are
+          outside the maunfacturer's listed specification.
+
+          The board provides little support to the display processor, other
+          than providing the necessary signals,  voltages,  and gated  chip
+          selects.  The handling of the displays follows the manufacturer's
+          specifications  for  the  particular display.   Extensive example
+          program segments are shown in Appendix B for single controller, 2
+          line displays.   For other configurations and types refer to  the
+          manufacturer's literature.
+
+
+
+
+
+
+
+
+
+                                          7
+
+
+
+
+
+
+
+          SERIAL I/O
+
+
+          The  F68HC11  has  a  full  duplex  hardware  serial channel that
+          operates at CMOS levels.   To use this serial channel  with  most
+          standard communications interfaces,  level converters are needed.
+          Drivers for RS-232C and RS-422/485 drivers are on the boards. (It
+          should be noted that only one combination of RS-232  driver,  RS-
+          422  drivers or RS-485 driver should be used at one time to avoid
+          contention of their receiver outputs.)
+
+          A zero by RS-232C specification is any voltage  from  +3  to  +15
+          Volts, a one is between -3 and -15 Volts.  To convert the HC sig-
+          nals to the voltage ranges of that interface standard,  the NMIX-
+          0020 Rev. 1.0 uses a single 16 pin device, the ICL232.
+
+          The ICL232 is ideally suited for this use.   It not only provides
+          an  RS-232  receiver and transmitter pair for the F68HC11 proces-
+          sor,  but also a spare RS-232 receiver and transmitter pair which
+          can  be  used  with port lines for handshaking or software driven
+          UARTS,  etc..   It also generates the higher voltages needed  for
+          full RS-232 communications standards by way of an internal charge
+          pump.    This allows output swings of a nominal + and - 9V,  even
+          though the chip is only supplied +5V.   (The negative  output  is
+          also used to get the negative voltage bias for the display to in-
+          crease contrast.)
+
+          The  RS-422 standard represents a newer interface now coming into
+          popularity, and with good reason.  Unlike the RS-232 requirements
+          which specify a single wire voltage  transmission  referenced  to
+          ground, the RS-422 standard uses a voltage differential on a pair
+          of conductors.   While the RS-232 at full volatge drive levels in
+          electrically noisy environments is barely reliable  at  distances
+          to 1000 feet, RS-422 signals are considered reliable at distances
+          up  to 4000 feet.   The RS-422 drivers operate,  requiring only a
+          single sided 5 Volt supply, over twisted pairs of wires.   A full
+          duplex connection for RS-422 requires two twisted pairs,  one for
+          transmit, one for recieve.  The shield of the twisted pair should
+          act as the common return path for the signals.
+
+
+
+          continued on next page....
+
+
+
+
+
+
+
+
+
+
+                                          8
+
+
+
+
+
+
+
+          The RS-485 interface uses the same specifications for its  trans-
+          mitters and receivers.  It, however, allows a single twisted pair
+          to  be  used  for  incoming  and outgoing messages.   This is ac-
+          complished by having both a transmitter (with  3  state  ability)
+          and  a reciever tied in parallel to the same twisted pair.   Mul-
+          tiple drop point communications are possible  under  this  scheme
+          (up to 64 pairs by specification).  Of course, in application the
+          transmitter  turns  on  and takes control of the lines only under
+          software control.   The actual implemmentation  of  this  control
+          will  be  determined by the particular protocol being used in the
+          communication network.  Usually one master sends an addresses mes-
+          sage to one of multiple slaves and  then  turns  off  its  master
+          transmitter.   The addressed slave,  recognizing its address will
+          turn on its transmitter and respond with the requested data.
+
+          These two interfaces are accomodated on the NMIX-0020 by the addi-
+          tion   of   two   8   pin   75176's,   which   each   contain   a
+          transmitter/receiver  pair.   Whether the transmitter of the pair
+          is active, or not, is controlled by a signal on one of its pins.
+
+          One of the 75176's (U11) has its receiver always enabled.   It is
+          used  exclusively as the RS-422 receiver.   The other 75176 (U10)
+          can be used as the RS-422 transmitter if jumper G  on  the  NMIX-
+          0020 is grounded (ie: in 422 position),  or it can be used as the
+          receiver and transmitter for the RS-485 interface  as  controlled
+          by Port A pin PA3 (ie: in 485 position).   In this case if PA3 is
+          low,  the 75176's transmitter is not active.   If PA3 is high its
+          transmitter is active.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          9
+
+
+
+
+
+
+
+          AC POWER SUPPLY
+
+
+          The  power  supply  circuit on the NMIX-0020 is designed to allow
+          the board  to  operate  from  a  simple,  low-voltage,  AC  wall-
+          transformer.    It  has three major sub circuits - rectification,
+          regulation and DC to DC conversion.   Battery backup capabilities
+          are also provided to the 28 pin JEDEC sockets and the F68HC11 in-
+          ternal RAM, and a power-up power-down reset circuit.
+
+          Connection  J2  is for AC (9VAC) voltage input or for DC voltages
+          greater than 8 volts to be input.
+
+          The bridge rectifier converts the AC to DC.   The 7805  regulates
+          this rectified incoming voltage to a constant 5 Volts.
+
+          The  upper  limit of +V is set by the ability of the 7805 to dis-
+          sipate heat.   If a heat sink is added to the 7805,  voltages  in
+          excess  of  20  Volts  are  possible.   Driving the 7805 to hard,
+          however,  will cause it to enter thermal overload and "shut down"
+          its output.
+
+          The  typical  current  required by the NMIX-0020 with 8K CMOS RAM
+          and the Max-FORTH ROM at 2 Mhz from 9 VAC is 60mA.
+
+          The ICL232 RS-232 interface chip generates its own + and - V  for
+          RS-232  levels.    A  multiple stage charge pump produces +9V and
+          -9V.   The negative output is also used to get the negative volt-
+          age bias for the LCD display to increase contrast.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         10
+
+
+
+
+
+
+
+          DC POWER, BATTERY BACK UP, AND RESET
+
+
+          Connection J3 provides a means to connect an external +5VDC power
+          source or to access the on board +5VDC supply if the AC power con-
+          nector is providing board power.  Other connections on J3 provide
+          access to VBB and Ground.
+
+          The  battery backup capability allows data retention in otherwise
+          volitale CMOS RAMs and the processor's own internal  RAM  through
+          main-board power-downs.  A third terminal on the power connector,
+          J3, is marked VBB for Voltage Battery Backup.
+
+          The VBB terminal on J3 is connected to the VBB supply rail on the
+          board  by diode,  D1.   The VBB supply rail supplied the three 28
+          pin JEDEC sockets,  the 8054HN low voltage indicator in the reset
+          circuit (Rev A),  one 74HC00 gate and the 74HC138 decoder.  If no
+          power is applied to the VBB terminal,  the VBB rail  is  supplied
+          through a P channel FET,  Q1,  to within a diode drop of the sup-
+          pling 5 volt rail (~4.4 Volts).   When the 8054HN low voltage in-
+          dicator  releases  the  reset  line,  Q1 is turned on and the VBB
+          comes almost completely up to the  5  volt  rail  (~4.95  Volts).
+          (This may cause some problem with the Dallas Semiconductor DS1223
+          battery  sockets,  as  they  "write  protect"  their RAMs at 4.75
+          Volts.  Running an elevated 5 Volt supply may be necessary to ac-
+          comodate these parts.   The purpose of this feature is,  however,
+          to  do  away  with  the  need  for  those devices in final system
+          configurations.)
+
+          When the 8054HN low voltage indicator holds the  reset  line  low
+          (when  VBB is below 3.8-4.2 Volts,  Rev A),  Q1 is turned off and
+          the address decoder is disabled through the same  input  that  is
+          used  by MEMDIS.   This "access" protects the memories during the
+          power down cycle.
+
+          To meet the full letter of the specifications of  the  parts  in-
+          volved  the  correct  backup  voltage on the VBB pin is critical.
+          This supply must be low enough to ensure  that  after  the  diode
+          drop of D1,  the VBB rail cause the 8054HN to issue a reset (~4.0
+          Volts),  otherwise Q1 will remain on and the whole system will be
+          powered by VBB.  It must also be high enough to ensure that after
+          the  diode drop of D1,  the VBB rail will meet the processors re-
+          quired backup volatge (listed as  4.0  Volts).    Therefore,  the
+          ideal voltage for the VBB supply is 4.3-4.5 Volts.   It should be
+          pointed out,  however,  the Motorola specification appears to  be
+          overly  conservative.    By empirical test,  VBB supplies below 3
+          Volts appear to be quite adequate.   Most CMOS RAMs  will  retain
+          data down to 2.2 Volts.  Accounting for the diode drop under such
+          low currents, the VBB supply may work as low as 2.5 Volts.
+
+
+
+
+                                         11
+
+
+
+
+
+
+
+          The proccessor battery backup supply enters the chip via the MODB
+          pin.    Jumper  block  D controls the setting of MODB,  either to
+          ground or to VBB.   For backup of the processor's RAM to be  suc-
+          cessful  jumpers  D  and E must be in the Single Chip or Expanded
+          Multiplexed settings.  When the VBB supply is used on the proces-
+          sor, it will retain its User Area through power down and remember
+          its linkages to the external FORTH dictionary.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         12
+
+
+
+
+
+
+
+          ADDRESS DECODING
+
+
+          The chip selects of the three JEDEC sockets are  generated  by  a
+          74HC138.    When jumpers A and B are in the 8K position,  address
+          lines A15 to A13 are brought to this part.   This means that each
+          of  the  eight  generated chip selects represent a single 8K byte
+          segment out of the 64K byte memory map.
+
+          When jumpers A and B are in the 16K position,  address lines  A15
+          and  A14 are brought to this part.   The A13 is held high.   This
+          means that the upper four  generated  chip  selects  represent  a
+          single 16K byte segment out of the 64K byte memory map.
+
+          When  jumpers A and B are in the 32K position,  address lines A15
+          alone controls the part.   The A14 and A13 are held high.    This
+          means  that  each  of  the two upper chip selects represent a 32K
+          byte segments out of the 64K byte memory map.
+
+          Two other signals control the decoder - Address Strobe (AS')  and
+          On Board Memory Disable (MEMDIS').  The Address Strobe (AS') sig-
+          nal must be active low before any chip selects are enabled.  This
+          is  the  processor's  signal indicating the address on the bus is
+          valid for the off-chip memory.    The  On  Board  Memory  Disable
+          (MEMDIS') signal allows an off-board open collector source to dis-
+          able  the  on  board decoder,  so offboard components can usurp a
+          memory segment from on board memory,  even if the entire  64K  is
+          filled with RAM on the main board.
+
+                               74HC138
+                 +5V  A  A13 +----u----+         C
+                   o  o  o --|A     Vcc|-+5V  +------+
+                 +5V  B  A14 |         |      |      |   ______________
+                   o  o  o --|B      O0|-O0---| o  o |-+-U2 CHIP SELECT
+                             |         |      |      | |
+                         A15-|C      O1|-O1---| o  o |-+
+                          __ |_        |      |      | |
+                          AS-|E      O2|-O2---| o  o |-+
+                      MEMDIS'|_        |      |      | |
+                          + -|E      O3|-O3---| o  o |-+
+                       RESET'|         |      |      | |
+                           E-|E      O4|-O4---| o  o |-+
+                             |         |      |      |   ______________
+                      +---O7-|O7     O5|-O5---| o  o |-+-U3 CHIP SELECT
+                      |      |         |      |      | |
+                      |  GND-|GND    O6|-O6---| o  o |-+
+                      |      +---------+      |      |   ______________
+                      +-----------------------| o  o |---U4 CHIP SELECT
+                                              +------+
+
+
+
+
+                                         13
+
+
+
+
+
+
+
+          TROUBLESHOOTING
+
+
+          As  always the first thing to do when troubleshooting is to check
+          the power and ground connections.  An oscilliscope should be used
+          to check signals.   The heat sink of the  7805  is  a  convenient
+          place  to  hook a ground clip.   If +5 Volts is present at J3 and
+          the board is not operational, the next item to check is the oscil-
+          lator.   Putting the scope on EXTAL (Pin 7) should show a  8  Mhz
+          sine wave (4 Mhz F68HC11 parts running 4 Mhz XTAL's) running from
+          about  .5  Volt  lows  to  4.5 Volt peaks.   XTAL (F68HC11 Pin 8)
+          should have an identical signal, but of a much smaller amplitude.
+          If the sine waves are not present  and there is 5V present at the
+          power pin Vcc (Pins 26), and ground at Vss (Pin 52),  then either
+          the  F68HC11  or  the  crystal  are  bad and require replacement.
+          There is one exception.  If the processor has executed a STOP in-
+          struction,  the oscillator will stop.   When  the  oscillator  is
+          functioning  correctly  a 2 Mhz (1 Mhz) clean running square wave
+          should be present at the E output (Pin 5).   The E signal  drives
+          the timing for all external memory transfers.  This signal should
+          transition  nearly  rail to rail,  a 0.4V low and a 4.6V high are
+          normal.   Less amplitude can indicate a board short or an  exces-
+          sive load on the line external to the F68HC11.
+
+          The  serial channel should send a sign on message if no autostart
+          ROM interferes.   If not,  the reset circuit could  be  bad,  the
+          serial converter could have failed, or the F68HC11 could be defec-
+          tive.    With  the  reset  button  depressed the RES pin (Pin 17)
+          should be at ground.   When released,  the pin should rise  to  5
+          Volts.   If the reset pin is working and still no message is seen
+          on the terminal,  check PD1,  the serial output  line  (Pin  21).
+          When  reset is exercised,  this line should go from normally high
+          through a multitude of toggles back to a high state.  The periods
+          of the toggle transitions  are  multiples  of  approximately  100
+          microseconds.    If this signal is not present,  and there are no
+          user ROMs in the board, the F68HC11 is suspect.  If the signal is
+          present, check pin 3 of the DB25F connector.   It should normally
+          be  at  -V (-9 Volts nominally) and should toggle to +V (+9 Volts
+          nominally) at the same rate as the serial output line.   If  this
+          is happening and no message is seen, the RS-232 wiring or the ter-
+          minal  is suspect.   Check to see if J1 is connected to the DB25F
+          RS-232 connector as follows:
+
+                 DB9F     DB25F     Signal Name
+                 ----     -----     ------ ----
+                            1       Case ground
+                  2         2       Serial in  (to   NMIX-0020)
+                  3         3       Serial out (from NMIX-0020)
+                  5         7       Electrical ground
+             7 to 8    4 to 5       CTS to RTS
+             4 to 6    6 to 20      DSR to DTR
+
+
+                                         14
+
+
+
+
+
+
+
+          Check the voltages on pins 2 and 3. If pin 3 is very negative and
+          pin 2 is floating,  both systems are trying to talk on  the  same
+          line.    Pins  2 and 3 need to be swapped.   Usually this is done
+          with a "null modem" inserted where the two systems connect.
+
+          If the -V/+V signal was not found at pin 3,  the RS-232 converter
+          is  not  working.   Check pin 2 of the ICL232 for +V and pin 6 of
+          the ICL232 for -V.  If these signals are not present,  the charge
+          pump of the ICL232 has failed.  Pin 14 of the ICL232, the output,
+          should look the same as pin 3 of J1.
+
+          Check pin 2 of J1 which is the serial into the board from the ter-
+          minal.    It  should normally be at a negative voltage between -3
+          and -15 Volts.   When a key is pressed on the terminal it  should
+          pulse  to  positive  voltages  between  +3 and +15 Volts.   If it
+          doesn't, the terminal or the RS-232 wiring are suspect.  The same
+          signals at inverted TTL levels,  should also be at PD0,  which is
+          the serial input line of the processor (Pin 20).
+
+          The  most  common  error  in  trying to use the NMIX-0020 is mis-
+          matched baud rates or bit settings.   Verify that the terminal is
+          set  for  9600  baud with one start bit,  eigth data bits and one
+          stop bits, with no parity generated.  If using Forth,  be sure to
+          use  CAPITALS.    (Review  this discussion in the Getting Started
+          section.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         15
+
+
+
+
+
+
+
+          MEMORY MAP
+
+                        K#  HEX
+                        --  -----
+                        64  $FFFF  +------------+
+                        63         |  RUN TIME  |
+                        62         |   KERNEL   |
+                        61         |            |
+                        60         |NON RUN TIME| Max-FORTH ROM
+                        59         |   CODES    |
+                        58         |            |
+                        57         |   HEADS    |
+                        56  $E000  |____________|
+                            $DFFF  |    V3.5    |
+                                   |  FLOATING  |
+                                   |   POINT    |
+                            $D000  |____________|
+                            $CFFF  |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                                   |            |
+                            $B800  |____________|
+                            $B600  |____________| EEPROM
+                            $B5FC  |------------| LCD
+                                   |            |
+                            $B000  |============| REGISTERS  (KEYBOARD)
+                                   |            |
+                                   |            |
+                                   ~            ~
+
+                                   ~            ~
+                                   |            |
+                                   |            |
+                         5         |            |
+                         4  $1000  |$0B_AT_$103B|
+                         3  $C000  |            |
+                         2  $0800  |            |
+                         1  $0400  |            |
+                         0  $0000  +ON=CHIP=RAM=+
+
+
+                                         16
+
+
+
+
+
+
+
+          MISCELLANEOUS JUMPERS
+
+
+          #         SOURCE              DESTINATION              NORMALLY
+          --------  ------------------  -----------------------  --------
+          A
+            A13-A   ADDRESS LINE 13     ADDRESS DECODER INPUT
+            A-5     +5 VOLT RAIL
+          B
+            A13-A   ADDRESS LINE 13     ADDRESS DECODER INPUT
+            A-5     +5 VOLT RAIL
+          C
+            O0-U2   DECODER OUTPUT 0    U2 JEDEC SOCKET
+            O1-U2   DECODER OUTPUT 1    U2 JEDEC SOCKET
+            O2-U2   DECODER OUTPUT 2    U2 JEDEC SOCKET
+            O3-U2   DECODER OUTPUT 3    U2 JEDEC SOCKET
+            O4-U2   DECODER OUTPUT 4    U2 JEDEC SOCKET
+            O5-U3   DECODER OUTPUT 5    U3 JEDEC SOCKET
+            O6-U3   DECODER OUTPUT 6    U3 JEDEC SOCKET
+            O7-U4   DECODER OUTPUT 7    U4 JEDEC SOCKET
+          D
+            GND-D   GROUND              MODB PIN                 OPEN
+            D-5     MODB PIN            +5 VOLT RAIL             CLOSED
+          E
+            GND-E   GROUND              MODA PIN                 OPEN
+            E-5     MODA PIN            +5 VOLT RAIL             CLOSED
+          F
+            XIRQ-B  XIRQ'               INT FROM J4              OPEN
+            B-IRQ   IRQ'                INT FROM J4              OPEN
+          G
+            485-C   PA3                 U12 PINS 2 & 3
+            C-422   U12 PINS 2 & 3      GROUND
+          H
+            U2      U2 PIN 27 R/W LINE  U2 PIN 28 SUPPLY         OPEN*
+          I
+            U3      U3 PIN 27 R/W LINE  U3 PIN 28 SUPPLY         OPEN*
+          J
+            U4      U4 PIN 27 R/W LINE  U4 PIN 28 SUPPLY         OPEN*
+
+
+          *  Option of pullups on R/W lines to write protect
+             RAMs in socket.  To use install 100K pullup resistor & remove
+             jumper from 28 pin JEDEC selection socket for pin 27.
+             If battery backup is in use, RAM will then emulate ROM.
+
+
+
+
+
+
+
+
+
+                                         17
+
+
+
+
+
+
+
+          GENERAL PURPOSE SOCKETS
+
+
+                     Jumper Assignments for JEDEC 28 Pin Sockets
+
+                                                                 +---+
+                     JUMPER  1 o                    o 28 +5      | o |
+                                                                 |   | *
+                        A12  2 o                    o 27 JUMPER  | o |
+                                                                 +---+
+                         A7  3 o                    o 26 JUMPER
+
+                         A6  4 o                    o 25 A8
+
+                         A5  5 o                    o 24 A9
+
+                         A4  6 o                    o 23 A11
+
+                         A3  7 o                    o 22 OE
+
+                         A2  8 o                    o 21 A10
+                                                         ___________
+                         A1  9 o                    o 20 CHIP SELECT
+
+                         A0 10 o                    o 19 D7
+
+                         D0 11 o                    o 18 D6
+
+                         D1 12 o                    o 17 D5
+
+                         D2 13 o                    o 16 D4
+
+                        GND 14 o                    o 15 D3
+
+                                PIN 1   PIN 26  PIN 27
+                                O---O   O---O   O---O
+
+                                O   O   O   O   O   O
+                               A14 +5  +5  A13 A14 RR/W
+
+          * Option of pullups on R/W lines to  write  protect      RAMs  in
+          socket.   To use,  install 100K pullup resister & remove   jumper
+          for pin 27.   If battery backup is in use,  RAM will then emulate
+          ROM.
+
+
+
+
+
+
+
+
+
+                                         18
+
+
+
+
+
+
+
+          SOCKET JUMPER SETTINGS
+
+
+                         GENERAL PURPOSE SOCKET - U6, U7, U8
+
+                Jumper Settings for Standard JEDEC 24/28 Pin Devices
+
+
+                                 ALL 8K X 8 DEVICES
+                                  2764, 2864, 6264
+
+                               PIN 1   PIN 26  PIN 27
+                              +---+---+---+---+---+---+
+                              |   | X | X |   |   | X | *
+                              |   | X | X |   |   | X |
+                              +---+---+---+---+---+---+
+                               A14 +5V +5V A13 A14 RR/W
+
+
+                                    16K X 8 EPROM
+                                        27128
+                               PIN 1   PIN 26  PIN 27
+                              +---+---+---+---+---+---+
+                              |   | X |   | X |   | X |
+                              |   | X |   | X |   | X |
+                              +---+---+---+---+---+---+
+                               A14 +5V +5V A13 A14 RR/W
+
+
+                                    32K X 8 EPROM
+                                        27256
+                               PIN 1   PIN 26  PIN 27
+                              +---+---+---+---+---+---+
+                              |   | X |   | X | X |   |
+                              |   | X |   | X | X |   |
+                              +---+---+---+---+---+---+
+                               A14 +5V +5V A13 A14 RR/W
+
+
+                                     32K X 8 RAM
+                                        62256
+                               PIN 1   PIN 26  PIN 27
+                              +---+---+---+---+---+---+
+                              | X |   |   | X |   | X | *
+                              | X |   |   | X |   | X |
+                              +---+---+---+---+---+---+
+                               A14 +5V +5V A13 A14 RR/W
+
+          *    Rev  2.x has option of pullups on R/W lines to write protect
+          RAMs in socket.   To use,  install 100K pullup resistor &  remove
+          jumper  for pin 27.   If battery backup is in use,  RAM will then
+          emulate ROM.
+
+                                         19
+
+
+
+
+
+
+
+                   Jumper Settings for Various Addressing Schemes
+
+                                    3  8K DEVICES
+
+                            +5V  A  A13
+                            +---------+
+                            | o  XXXX |
+                            +---------+ 8K POSITION
+                            | o  XXXX |
+                            +---------+
+                            +5V  B  A14
+
+                               C
+                            +------+      ___________ 0000
+               0000-1FFF O0 | XXXX |-+-U2 CHIP SELECT ----
+                            |      | |                1FFF
+               2000-3FFF O1 | o  o |-+
+                            |      | |
+               4000-5FFF O2 | o  o |-+
+                            |      | |
+               6000-7FFF O3 | o  o |-+
+                            |      | |
+               8000-9FFF O4 | o  o |-+
+                            |      |      ___________ C000
+               A000-BFFF O5 | o  o |-+-U3 CHIP SELECT ----
+                            |      | |                DFFF
+               C000-DFFF O6 | XXXX |-+
+                            |      |      ___________ E000
+               E000-FFFF O7 | *--* |---U4 CHIP SELECT ----
+                            +------+                  FFFF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         20
+
+
+
+
+
+
+
+
+
+                                   3  16K DEVICES
+
+                            +5V  A  A13
+                            +---------+
+                            | XXXX  o |
+                            +---------+ 16K POSITION
+                            | o  XXXX |
+                            +---------+
+                            +5V  B  A14
+
+                               C
+                            +------+
+                         O0 | o  o |-+
+                            |      | |    ___________ 0000
+               0000-3FFF O1 | XXXX |-+-U2 CHIP SELECT ----
+                            |      | |                3FFF
+                         O2 | o  o |-+
+                            |      | |
+               4000-7FFF O3 | o  o |-+
+                            |      | |
+                         O4 | o  o |-+
+                            |      |      ___________ 8000
+               8000-BFFF O5 | XXXX |-+-U3 CHIP SELECT ----
+                            |      | |                BFFF
+                         O6 | o  o |-+
+                            |      |      ___________ C000
+               C000-FFFF O7 | *--* |---U4 CHIP SELECT ----
+                            +------+                  FFFF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         21
+
+
+
+
+
+
+
+
+                                   2  32K DEVICES
+
+
+                            +5V  A  A13
+                            +---------+
+                            | XXXX  o |
+                            +---------+ 32K POSITION
+                            | XXXX  o |
+                            +---------+
+                            +5V  B  A14
+
+                               C
+                            +------+
+                         O0 | o  o |-+
+                            |      | |
+                         O1 | o  o |-+
+                            |      | |
+                         O2 | o  o |-+
+                            |      | |    ___________ 0000
+               0000-7FFF O3 | XXXX |-+-U2 CHIP SELECT ----
+                            |      | |                7FFF
+                         O4 | o  o |-+
+                            |      |      ___________
+                         O5 | o  o |-+-U3 CHIP SELECT ----
+                            |      | |
+                         O6 | o  o |-+
+                            |      |      ___________ 8000
+               8000-FFFF O7 | *--* |---U4 CHIP SELECT ----
+                            +------+                  FFFF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         22
+
+
+
+
+
+
+
+          INPUT/OUTPUT JACKS
+
+                             SERIAL INPUT/OUTPUT JACK J6
+
+                                      TOP VIEW
+                               NUMBERED LEFT TO RIGHT
+
+                      1  2  3  4  5  6  7  8  9 10 11 12 13 14
+                      ----------------------------------------
+                      o  o  o  o  o  o  o  o  o  o  o  o  o  o
+
+
+
+          DB25F  J1  Signal Name
+          ----- ---  -----------------------------
+                 1   Spare RS-232 in
+                 2   Spare RS-232 out
+                 3   Spare TTL receiver out
+                 4   Spare TTL transmitter in
+             1   5   Case ground
+             2   6   Serial into NMIX-0020
+             3   7   Serial out of NMIX-0020
+             7   8   Electrical ground
+                 9   Reset line in or out
+                10   Electrical ground
+                11   RS-422 Receive + Differential input or 485 xcv
+                12   RS-422 Receive - Differential input or 485 xcv
+                13   RS-422 Receive + Differential output
+                14   RS-422 Receive - Differential output
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         23
+
+
+
+
+
+
+
+
+
+
+                                INPUT/OUTPUT JACK J2
+
+                                       TOP VIEW
+             FRONT (EDGE) OF CARD v
+                                  - X PD5 o o PD4 X
+                                  | X PD3 o o PD2 X
+                                  | X PD1 o o PD0 X
+                                  |    +5 o o +5
+                                  |   GND o o GND
+                                  | X PA7 o o PA6 O
+                                  | O PA5 o o PA4 O
+                  34 pin header   | X PA3 o o PA2 I
+                  group           | I PA1 o o PA0 I
+                                  |    +5 o o +5
+                                  |   GND o o GND
+                                  | I PE7 o o PE6 I
+                                  | I PE5 o o PE4 I
+                                  | I PE3 o o PE2 I
+                                  | I PE1 o o PE0 I
+                                  |    +5 o o +5
+                                  -   GND o o GND
+
+                              I=INPUT O=OUTPUT X=EITHER
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         24
+
+
+
+
+
+
+
+                                 LCD DISPLAY JACK J1
+
+                                       TOP VIEW
+             FRONT (EDGE) OF CARD v
+                                  -    +5 o o GND
+                                  |    A0 o o Vo
+                                  |    E1 o o R/W'
+                  16 pin header   |    D1 o o D0
+                  group           |    D3 o o D2
+                                  |    D5 o o D4
+                                  |    D7 o o D6
+                                  -    E2 o o
+
+
+
+
+
+
+
+
+
+                                  KEYBOARD JACK J7
+
+                                       TOP VIEW
+             FRONT (EDGE) OF CARD v       J1     J7
+                                  -       o o   P o Y1
+                                  |       o o   N o Y2
+                                  |       o o   M o X3
+                  9 pin single-   |       o o   L o X2
+                  inline-header   |       o o   K o Y3
+                  behind J1       |       o o   J o X1
+                                  |       o o   H o X4
+                                  |       o o   G o Y4
+                                  -             F o Y5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         25
+
+
+
+
+
+
+
+                               VSC34 EXPANSION JACK J4
+
+
+
+
+
+
+                               MEMDIS o o  N.C.
+                                 E    o o  RST
+                                 A15  o o  INT
+                                 A14  o o  +5
+                                 A12  o o  R/W
+                                 A7   o o  A13
+                                 A6   o o  A8
+                                 A5   o o  A9
+                                 A4   o o  A11
+                                 A3   o o  OE
+                                 A2   o o  A10
+                                 A1   o o  AS
+                                 A0   o o  D7
+                                 D0   o o  D6
+                                 D1   o o  D5
+                                 D2   o o  D4
+                                 GND  o o  D3
+
+
+
+          The J4 expansion connector was designed to follow the JEDEC stan-
+          dard for byte sized memory parts  in  the  8,  16  and  32K  Byte
+          varieties.    The  J4  connector on these boards are made to most
+          closely match the more recently available 32K JEDEC parts.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         26
+
+
+
+
+
+
+
+          PROGRAM SEGMENTS
+
+          COLD
+
+          FORGET TASK
+          HEX
+          100 1C ! ( V3.3 ONLY!
+          50 1E !  ( V3.3 ONLY!
+          400 DP !
+
+          ( ************************************************************* )
+          (LCD DISPLAY ROUTINES )
+          ( ************************************************************* )
+
+          : IS CONSTANT ;
+
+          B5FC IS DSP-CMD
+          B5FD IS DSP-DATA
+
+          : WAIT-NOT-BUSY BEGIN DSP-CMD C@ 80 AND 0= UNTIL ;
+          : CLEAR WAIT-NOT-BUSY 1 DSP-CMD C! ;
+          : HOME WAIT-NOT-BUSY 2 DSP-CMD C! ;
+          : CRLF WAIT-NOT-BUSY C0 DSP-CMD C! ;
+          : MOVE-CURSOR WAIT-NOT-BUSY 80 OR DSP-CMD C! ;
+          : RIGHT-UPPER-CORNER 27 MOVE-CURSOR ;
+          : CURSOR? WAIT-NOT-BUSY DSP-CMD C@ 7F AND ;
+          : DSP>L WAIT-NOT-BUSY 10 DSP-CMD C! CURSOR? 27 >
+                  IF RIGHT-UPPER-CORNER THEN ;
+          : DSP>R WAIT-NOT-BUSY 14 DSP-CMD C! CURSOR? 27 >
+                  IF HOME THEN ;
+
+          : DSP-EMIT WAIT-NOT-BUSY DSP-DATA C! ;
+
+          : DSP-TYPE
+            BEGIN
+              DUP 0= NOT
+            WHILE
+              1- SWAP DUP C@ DSP-EMIT 1+ SWAP
+            REPEAT
+            2DROP
+          ;
+
+          : DSP-SPACE BL DSP-EMIT ;
+          : DSP-SPACES 0 MAX BEGIN ?DUP WHILE 1- DSP-SPACE REPEAT ;
+
+          : DSP-ON
+            WAIT-NOT-BUSY
+            38 DSP-CMD C! ( GET ATTN
+            38 DSP-CMD C! ( SET 2 LINE DISP )
+             6 DSP-CMD C! ( CHARACTER ENTRY RIGHT )
+             E DSP-CMD C! ( DISPLAY CONTROL ON, CURSOR ON )
+          ;
+
+                                         27
+
+
+
+
+
+
+
+
+          ( ************************************************************* )
+          ( KEYPAD ROUTINES )
+          ( ************************************************************* )
+
+          B00A IS KEYPAD
+
+          : KP-?TERMINAL B000 C@ 1 AND ;
+
+          : KP-KEY
+            BEGIN
+              KP-?TERMINAL
+            UNTIL
+            KEYPAD C@ 2/ 2/ 2/
+          ;
+
+          : KP-EXPECT
+            0 SPAN ! DUP
+            IF
+              OVER + OVER
+              BEGIN
+                KP-KEY DUP 0D ( OR DEFINE ENTER KEY INSTEAD OF 0D) =
+                IF
+                  DROP SPACE 1
+                ELSE
+                  DUP 08 ( OR DEFINE BACKSPACE KEY INSTEAD OF 08 ) =
+                  IF
+                    DROP 2 PICK OVER U<
+                    IF
+                      SPAN 1-! 1- 08 DUP EMIT SPACE EMIT
+                    THEN
+                    0
+                  ELSE
+                    2DUP SWAP C! EMIT
+                    SPAN 1+!
+                    1+
+                    2DUP =
+                  THEN
+                THEN
+              UNTIL
+              DROP
+            THEN
+            TDROP
+          ;
+
+
+
+
+
+
+
+
+
+                                         28
+
+
+
+
+
+
+
+          NMIX-0020 PARTS LIST
+
+
+                        F68HC11 NMIX-0020 PARTS LIST REV 1.0
+
+
+          REF.DES.            VALUE                    COMPONENT
+          ---------------    --------------       -------------------------
+          C1,C4-6, C14-20,    .1UF                     CAPACITOR, MONO.
+          C22,24-26
+          C9,10,11,12         10UF                     CAPACITOR, ELECT.
+          C3,4                220UF                    CAPACITOR, ELECT.
+          C7,C8               22PF                     CAPACITOR, CER. DISK
+          J4                  34 VSC                   CONNECTORS
+          R0,R2-4             10K,1/8W,5%              RESISTORS
+          R1                  10M,1/8W,5%              RESISTORS
+          R6                  5K,1/4W,1%               RESISTORS
+          R7                  10K                      TRIM-POT
+          D1,D2               1N4148                   DIODE
+          Q1                  VPO300M                  FET
+          VR1                 LM7805                   REGULATOR
+          BR1                 VMO8                     RECTIFIER
+          J3                  3 PIN                    TERM. BLOCK
+          Y1                  8MHz                     XTAL, LOW PROFILE
+          LVI1                8054                     IC
+          U5,U7               74HC00                   IC
+          U8                  74HC138                  IC
+          U9                  74HC373                  IC
+          U1                  F68HC11                  IC
+          U14                 74HC27                   IC
+          U12                 74HC133                  IC
+          U13                 MM74C923                 IC
+          U6                  MAX232                   IC
+          U10,U11             75176                    IC
+          U2                  KM6264BL-10              IC
+          U10,U11             8 PIN                    SOCKET
+          U5,U6,U7            14 PIN                   SOCKET
+          U8,U12              16 PIN                   SOCKET
+          U9,U13              20 PIN                   SOCKET
+          U2,U3,U4            28 PIN                   SOCKET
+          U1                  52 PIN                   SOCKET
+          J4                  34 VSC                   SPACER
+                                                       SHUNTS
+          J7                   1x9                     HEADER PINS
+          J6                   1x6                     HEADER PINS
+          J8                   1x2                     HEADER PINS
+          J1,C                 2x8                     HEADER PINS
+                               2x3                     HEADER PINS
+                               2x6                     HEADER PINS
+                               NMIX0020                PCB
+
+
+
+                                         29
+
+
+
+
+
+
+
+          APPLICATION NOTE
+
+                              INTEL FORMAT DUMP COMMAND
+
+          The following program allows a section of memory to be dumped out
+          the serial channel in the Intel hex format which  is  a  standard
+          used  by  many  of  the  commercially available PROM programmers.
+          This program should allow the use of such programmers to  capture
+          programs and data in EPROMs, which are not supported for program-
+          ming by the NMIX-0020 directly.
+
+          HEX
+
+          VARIABLE CHKSUM
+
+          : CE DUP A < IF 30 ELSE 37 THEN + EMIT ; ( CONVERT AND EMIT )
+          : 2.R FF AND 10 /MOD CE CE ;
+          : 4.R 0 100 UM/MOD 2.R 2.R ;
+
+          : INTEL-DUMP ( addr count --- )
+            OVER + SWAP ( CONVERTS ADDR & COUNT TO UPPER, LOWER ADDR )
+            BEGIN
+              CR
+              2DUP 20 + MIN ( MAKE NEXT LINE OF OUTPUT UP TO 32 BYTES LONG)
+              SWAP ( BRING UP START ADDRESS, MOVE DOWN END ADDRESS )
+              ." :" ( BEGIN THE RECORD )
+              2DUP - ( FIND OUT # OF BYTES IN THIS RECORD )
+              DUP CHKSUM ! ( BEGIN CHKSUM COMPUTATION )
+              2.R ( PRINT # OF BYTES IN RECORD IN TWO DIGIT FIELD )
+              DUP 100 /MOD + CHKSUM +! ( ADD START ADDRESS TO CHKSUM )
+              DUP 4.R ( PRINT START ADDRESS IN FOUR DIGIT FIELD )
+              ." 00" ( PRINT RECORD TYPE, NO NEED TO ADD TO CHKSUM )
+              >R DUP R> ( MAKE START STOP #S FOR DO LOOP )
+              DO
+                I C@ 2.R ( PRINT HEX BYTE IN TWO DIGIT FIELD )
+                I C@ CHKSUM +! ( UPDATE CHKSUM )
+              LOOP
+              CHKSUM @ FF AND NEGATE 2.R ( PRINT CHKSUM NEG 2 DIGIT FIELD )
+              2DUP =
+            UNTIL ( KEEP GOING TILL LINE END IS = TO BLOCK END )
+            CR ." :00000001FF" CR ( TACK ON END RECORD )
+            2DROP
+          ;
+
+          Program  and application courtesy of Danny Barger,  International
+          Computing Scale.
+
+
+
+
+
+
+
+                                         30
+
+

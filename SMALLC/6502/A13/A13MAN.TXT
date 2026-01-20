@@ -1,0 +1,154 @@
+From G.J.Flanagan@uk.ac.newcastle Tue Dec 11 00:19:59 1990
+Via: uk.ac.newcastle; Tue, 11 Dec 90 00:19:56 GMT
+Received: from uk.ac.ncl.mts by uk.ac.newcastle; Mon, 10 Dec 90 16:00:53 GMT
+Date:     Mon, 10 Dec 90  15:57:47 GMT
+From: G.J.Flanagan@uk.ac.newcastle
+To: syspds
+Message-Id: <emu-ov07.s.1990.1210.155748.mde7@uk.ac.ncl.mts>
+Status: OR
+
+Here follows a13man.txt
+ 
+                         CUSTOM TOOLKIT - MANUAL
+ 
+*HELP CUSTOM or *H.C. will give the following help information :
+ 
+Custom Toolkit 1.00
+ 
+  ASC     <addr> <+len/end> (<rom/T>)
+  BOOT    (<drv>)
+  CATALL
+  CLOSE
+  CHKSUM  <rom>
+  DIS     <addr> <+len/end> (<rom/T>)
+  FILESYS
+  EXPALL
+  EXPLAIN
+  INSERT  (<rom>)
+  QUIT
+  HEX     <addr> <+len/end> (<rom/T>)
+  KILL    (<rom>)
+  MDUMP   <addr> <+len/end> (<rom/T>)
+  MEDIT   <addr> (<rom/T>)
+  ROMS    (<rom>)
+  SRLOAD  <fsp> <addr> <ramslot>
+  SRSAVE  <fsp> <addr> <+len/end> <rom>
+  SRWIPE  <ramslot>
+  STATUS
+  TDUMP
+>
+ This uses the following abbreviations:
+fsp   : file specification or filename
+drv   : disc drive number
+rom   : sideways rom number in decimal or hex
+T     : select tube
+addr  : hexadecimal start address
++len  : "+" followed by length in hex
+end   : last address in hex
+<xxxx>   - must be specified
+(<xxxx>) - optional
+ 
+ 
+Command: *ASC <addr> <+len/end> (<rom/T>)
+Description: Memory dump in ascii format.
+ 
+Command: *BOOT (<drv>)
+Description:Execute !BOOT file on disc. Useful for some physically
+handicapped persons.
+Command: *CATALL
+Description: Catalogue all files on ADFS disc.
+ 
+Command: *CLOSE
+Description: Close any open files. Equivalent to CLOSE#0 in BASIC.
+ 
+Command: *CHKSUM <rom>
+Description: Generate a checksum for any sideways rom image in a format
+widely used by commercial eprom programmers.
+ 
+Command: *DIS <addr> <+len/end> (<rom/T>)
+Description: Disassembly of memory contents in 65C02 mnemonics.
+ 
+Command: *FILESYS
+Description: Returns currently selected filing system.
+ 
+Command: *EXPLAIN
+Description: Catalogues disc and if any BASIC programs are found that
+have a REM statement in the first line, EXPLAIN will echo the associated
+text to the screen. Very useful for finding programs, latest versions etc.
+ 
+Command: *EXPALL
+Description: Performs the EXPLAIN command in all directories from the
+currently selected one on an ADFS disc.
+ 
+Command: *KILL (<rom>)
+Description:  Kills off sideways rom images without having to physically
+unplug them. If no rom is specified then you will be prompted for a Y/N
+response on each rom. Survives ctrl-break!
+ 
+Command: *INSERT (<rom>)
+Description: Opposite to *KILL. If you find that you have killed Custom
+Rom, then corrupting the middle of the stack (&150,&151,&152) followed by
+break will restore normality.
+ 
+Command: *QUIT
+Description: Quits current application and enter Custom Toolkit as a
+simple language with a "*" prompt. All input is sent directly to the CLI.
+ 
+Command: *HEX <addr> <+len/end> (<rom/T>)
+Description: Memory dump in hexadecimal format.
+ 
+Command: *MDUMP <addr> <+len/end> (<rom/T>)
+Description: Memory dump in hexadecimal and ascii format. Similar in
+format to the DFS command *DUMP.
+Command: *MEDIT <addr> (<rom/T>)
+Description: Powerful memory editor/bi-directional disassembler enabling
+editing in hex or ascii format. Within the editor, the following keys have
+special functions:
+ Cursor keys - find your way around the screen with these
+ Ctrl-T      - toggle tube/io memory (beeps if no tube present)
+ Ctrl-G      - goto address - prompts for four digit hex number
+ Ctrl-R      - select sideways rom - prompts for hex number (0-F)
+ Ctrl-A      - ascii input as indicated by block cursor
+ Ctrl-H      - hexadecimal input - standard cursor
+ Ctrl-U      - move address indicated by cursor to top of the screen
+ Ctrl-P      - print current screen
+ TAB         - changes format of display
+Note:
+Before entering the editor, a *FX12 1 will make the display scroll faster.
+ 
+Command: *ROMS (<rom>)
+Description: Rom lister highlighting the current "active or dead" status
+of all roms.
+ 
+Command: *SRLOAD <fsp> <addr> <ramslot>
+Description: Loads a rom image into sideways ram. A ctrl-break is often
+needed after this.
+ 
+Command: *SRSAVE <fsp> <addr> <+len/end> <rom>
+Description: saves the contents of sideways ram or rom socket to a file.
+ 
+Command: *SRWIPE  <ramslot>
+Description: erases contents of write-enabled sideways ram.
+Command: *STATUS
+Description: produces a dynamic display of the current machine status.
+e.g.
+ 
+>*MSTATUS
+ 
+Custom Toolkit 1.00
+ 
+PRINTER     SERIAL
+IGNORE      0
+TRANSMIT    9600
+RECEIVE     9600
+DELAY       35
+REPEAT      1
+DATA        8 BITS 2 STOP
+PREFIX      M
+QUIET
+SHIFT CAPS
+ 
+Command: *TDUMP
+Description: text dump of the current screen to a printer.
+
+

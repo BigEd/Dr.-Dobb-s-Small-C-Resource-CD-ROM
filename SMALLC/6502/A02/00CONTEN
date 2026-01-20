@@ -1,0 +1,16 @@
+
+Directory : icros/bbc/a02
+
+00contents               <CONTENTS>
+a02.msg                    2133 bytes   8 Oct 91 13:43
+a02dehex.hex               4321 bytes  26 Jul 89 16:55
+a02getshar.exc              286 bytes  26 Jul 89 16:55
+a02mkboot.exc              4208 bytes  26 Jul 89 16:55
+a02sh.hex                 28311 bytes  26 Jul 89 16:55
+a02shar.hex                7895 bytes  26 Jul 89 16:55
+a02tcc.001                96552 bytes  26 Jul 89 16:55
+a02tcc.002                92475 bytes  26 Jul 89 16:55
+a02tcc.003                71901 bytes  26 Jul 89 16:55
+a02tcc.004                86289 bytes  26 Jul 89 16:55
+a02tcc.doc                38091 bytes  26 Jul 89 16:55
+a02unpack.exc               567 bytes  26 Jul 89 16:55

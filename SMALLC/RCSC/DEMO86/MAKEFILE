@@ -1,0 +1,31 @@
+# 
+# Makefile for the example program
+# please note that the file containing main() must be the last one
+# specified in the link process
+
+DIR	 = ..\bin
+LIBDIR   = ..\lib86
+CC       = rcsc
+
+OBJECTS  = mchopstk.obj mconsole.obj asyn8250.obj philos.obj
+ASMSRC   = mchopstk.asm mconsole.asm asyn8250.asm philos.asm
+M4SRC    = mchopstk.m4 mconsole.m4 asyn8250.m4 philos.m4
+#SCFLAGS  = -m -a -p
+
+philos.exe: $(OBJECTS)
+    link $(OBJECTS), philos, philos, $(LIBDIR)\clib.lib $(LIBDIR)\csc.lib;
+
+asm: $(ASMSRC)
+
+m4: $(M4SRC)
+
+.SUFFIXES
+.asm.obj:
+    masm $<;
+
+.m4.asm:
+    m4 $(DIR)\8086.m4 $< > $*.asm
+
+.c.m4:
+    $(CC) $< $(SCFLAGS)
+

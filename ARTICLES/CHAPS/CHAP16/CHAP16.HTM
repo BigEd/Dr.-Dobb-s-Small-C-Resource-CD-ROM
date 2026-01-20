@@ -1,0 +1,1079 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.
+-->
+<CENTER>
+<B><H1>CONCURRENT SMALL C</H1> <p>
+
+by Andy Yuen<p>
+</CENTER>
+</B>
+
+<i>This article originally appeared Dr. Dobb's Jounal, #250 
+(August 1996)</i>. <p>
+
+Concurrent Small C is a programming language specifically 
+designed for 
+embedded-system development. It is a superset of Small C, which 
+was introduced 
+by Ron Cain in &quot;A Small C Compiler for the 8080&quot; (<I>
+DDJ</I>, May 1980). 
+Concurrent Small C uses five new keywords to provide direct 
+support for preemptive 
+multitasking, interprocess communication, and interrupt handling. 
+CSC is unrelated 
+to &quot;Concurrent C,&quot; developed by Gehani and Roome; see 
+&quot;Concurrent C 
+for Realtime Programming,&quot; by N.H. Gehani and W.D. Roome 
+(<I>DDJ</I>, November 1989).<P>
+
+Small C is a selfcompiler written in Small C itself--a novel idea 
+in 1980. 
+The compiler generates assembly code that has to be assembled and 
+linked to 
+produce an executable. I use Small C because of its small size, 
+source code 
+availability and, most importantly, because it is thoroughly 
+documented in 
+James E. Hendrix's book <I>A Small C Compiler</I> 
+(M&amp;T Books, ISBN 0138147248).<P>
+
+CSC is based on Small C Version 2.2. Small C 2.2 is interesting 
+in that the 
+compiler generates intermediate codes in memory (called Pcodes), 
+which are 
+instructions for a twoaccumulator virtual machine with a stack 
+pointer. The 
+compiler then runs them through a peephole optimizer and 
+translates them into 
+the processor's assembler language using a translation table. 
+Consequently, this version of the compiler generates much more 
+efficient code 
+than previous versions. The use of Pcodes and a translation table 
+also make 
+it easy to modify the compiler to generate code for different 
+processors.<P>
+
+Monitor as a Synchronization Mechanism<P>
+
+CSC's tasking/synchronization model is based on a construct 
+called &quot;monitor,&quot; which is both a synchronization and 
+data-abstraction 
+mechanism that encapsulates system resources and provides a set 
+of operations that 
+can be used by various tasks to manipulate the resources. (Don't 
+confuse this 
+monitor with the control program, also called a 
+&quot;monitor,&quot; in ROM on 
+singleboard computers or microcontrollers.)<P>
+
+You can think of a monitor as a fence around the protected 
+resources. The 
+only way to go past the fence is via gates called 
+&quot;entries.&quot; At any 
+time, there can only be one task inside a monitor. Other tasks 
+wanting to enter are 
+blocked until the one inside exits voluntarily or performs a <I>
+Wait</I> or 
+<I>Signal</I> operation on a condition variable. <I>Wait</I> and 
+<I>Signal</I> 
+are synchronization operations used inside a monitor. When a <I>
+Wait</I> is 
+executed, the task is put in the condition variable specified and 
+another task 
+enters the monitor. When a <I>Signal</I> is called, the running 
+task temporarily 
+steps out of the monitor and the task waiting in the specified 
+condition variable 
+resumes execution inside the monitor. If the condition variable 
+is empty when a 
+<I>Signal</I> is performed, nothing happens, although the running 
+task may still 
+step out of the monitor temporarily (depending on the 
+implementation).<P>
+
+<a href="ch16fg1.gif">Figure 1</a> illustrates a monitor with two 
+gates, entry 1 and entry 2. Task T3 
+is inside the monitor. Tasks T1 and T2 are waiting to enter the 
+monitor via 
+entry 1. T4 and T5 are waiting on conditions C1 and C2, 
+respectively. If T3 
+executes a <I>Signal</I> on condition C1, it steps out of the 
+monitor and T4 
+resumes execution inside the monitor. T3 will be competing with 
+T1 and T2 to 
+enter the monitor again. If, instead, it executes a <I>Wait</I> 
+on condition 
+C2, it gets queued in C2, and T1 enters the monitor. Since only 
+one task is 
+allowed inside a monitor at any one time, the integrity of the 
+monitor's 
+resources is guaranteed. <P>
+
+<b>Adding Concurrency to Small C</b><P>
+
+Small C does not require many syntax changes to evolve into a 
+concurrent language; 
+there are only five new keywords in CSC.<P>
+
+A task, handled by the keyword <I>task</I>, is a thread of 
+execution that is declared using the syntax in <a href="#ex1">
+Example 1(a)</a>, 
+which looks much like a function declaration. <I>priority</I> 
+designates the task's priority (between 1 and 32767 inclusive). 
+The higher the value, the higher the priority. <I>stacksize</I> 
+denotes the 
+size of the task's stack in bytes. The <I>priority</I> and <I>
+stacksize</I> 
+specifications are optional. Leaving out the specifications or 
+specifying NULL tells 
+the system to use  default values; see <a href="#ex1">Example 
+1(b)</a> and <a href="#ex1">Example 1(c)</a>.<P>
+
+All declared tasks are started before the first executable 
+statement of <I>main()</I>. 
+Even if several tasks implement the same logic, they must all be 
+declared explicitly. 
+There is no shortcutall tasks are statically declared and dynamic 
+task creation within 
+a running task is not allowed. However, this is not as limiting 
+as it sounds because 
+they can all call the same function in the task body; see <a 
+href="#ex1">Example 1(d)</a>.<P>
+
+A monitor consists of three types of components: resources 
+(monitor data structures), 
+entries, and monitorinitialization routines.<P>
+
+The monitorinitialization routine initializes the monitor data 
+structures. CSC calls 
+it during system initializationbefore starting tasks, installing 
+interrupt handlers, 
+and so on. The monitorinitialization routine or function is 
+denoted by the 
+keyword <I>monitor</I>. Each .c file can only contain one 
+monitor-initialization 
+function.<P>
+
+A monitor entry is denoted by the keyword <I>entry</I>. An entry 
+is the gate through 
+which a task can go inside the monitor enclosure. Entries define 
+how tasks access and 
+manipulate the monitor's resources. Each monitor should be put in 
+a separate .c 
+file so that you can use the keyword <I>static</I> to render the 
+monitor data 
+structures (resources) accessible only from within the module. If 
+this is not enforced, 
+some errant task may destroy the monitor data by mistake. The 
+keyword <I>static</I> is 
+not implemented in Small C, but has been added to CSC for this 
+purpose.<P>
+
+<a href="#ex2">Example 2(a)</a> shows how simple mutual exclusion 
+can be implemented using a monitor. 
+Every monitor must associate a consistency criterion, called 
+an &quot;invariant,&quot; with its critical data. The invariant 
+guarantees 
+that the data is accurate and uptodate. In this example, <I>busy
+</I> is the 
+invariant. It guarantees that the state of the resource is 
+accurately represented 
+either busy or not busy.<P>
+
+Assume that this mutex monitor is used to manage exclusive use 
+of, say, a printer. 
+Multiple tasks can request the use of this printer, as in <a 
+href="#ex2">Example 2(b)</a>. The 
+invariant <I>busy</I> is initialized to False (0) by declaration. 
+The monitor 
+initialization function in this example does nothing useful. You 
+may need to 
+perform many initializing operations for a more-complicated 
+monitor, though. For 
+completeness, each monitor should always declare an 
+initialization function even 
+if it does nothing.<P>
+
+When the first task tries to acquire the printer, <I>busy</I> is 
+False, so it 
+sets it to True (1) and exits the monitor. It now has exclusive 
+use of the printer 
+until it calls <I>release()</I>. When a second task tries to 
+acquire the printer, 
+<I>busy</I> is True, so it waits in the condition variable <I>
+cond</I>. Note that 
+the address of the condition variable is passed to <I>Wait</I>, 
+not its value.<P>
+
+The monitor entry <I>release()</I> sets <I>busy</I> to False and 
+signals the 
+condition variable. Remember that a <I>signal</I> causes the 
+signaling task to go 
+out of the monitor so that the awakened task can proceed. 
+Consequently, the awakened 
+task is assured that <I>busy</I> is accurate and uptodate.<P>
+
+The mutex monitor can easily be generalized into providing 
+multiple resources, as 
+in<a href="#ex2">Example 2(c)</a>.<P>
+
+Since interrupt handling is an important part of any embedded 
+system, a 
+concurrent language must provide interrupt support; hence CSC's 
+<I>interrupt</I> keyword. CSC's interrupt-support mechanism is 
+powerful, 
+yet simple to use. A task synchronizes its operation with an 
+interruptservice 
+routine (ISR), declared using the keyword <I>interrupt</I>, by 
+using the function 
+call <I>StartIO(intrnum, command, &amp;result);</I>. In this 
+case, <I>intrnum</I> 
+is the interrupt number, <I>command</I> is a function to be 
+invoked by CSC before
+ putting the task in the condition variable (supplied by CSC) 
+associated with the 
+interrupt, and <I>result</I> is the variable to receive the 
+result of the I/O 
+operation.<P>
+
+<I>command</I> is a userwritten function to initiate an I/O 
+operation. The function 
+must return an integer value: zero if the command is successful, 
+nonzero otherwise. 
+If the command is successful, the task will be put to sleep 
+awaiting notification of 
+the completion of the I/O operation from the ISR. If the command 
+fails, 
+<I>StartIO</I> returns immediately with the error code of the 
+command saved in 
+<I>result</I>. A NULL may be specified in place of a command, in 
+which case, the 
+task is put to sleep immediately.<P>
+
+<a href="#ex3">Example 3</a> declares an ISR, where <I>intrnum</I>
+ is the interrupt number, 
+which must be a numeral, not a variable or expression. The ISR 
+must return 
+a value: zero if the I/O operation is not yet complete, or 
+nonzero if the 
+operation has completed or failed. A nonzero value causes the CSC 
+run time 
+to <I>Signal</I> the waiting task. When the task resumes, <I>
+result</I> contains 
+the value returned by the ISR. <I>StartIO</I> and <I>interrupt</I>
+ functions are 
+designed for writing device handlers.<P>
+
+The complete list of kernel functions is summarized in <a 
+href="#tab1">Table 1</a>.<P>
+
+<b>Implementation</b><P>
+
+The Small C compiler generates code that uses separate code (CS) 
+and data/stack 
+(DS=SS) segments on an 80x86. The compiler is organized into four 
+modules: cc1.c, 
+cc2.c, cc3.c, and cc4.c. The cc1.c module handles overall program 
+flow and parsing; 
+cc2.c, input preprocessing (such as macro expansion); cc3.c, 
+expression analysis; 
+and cc4.c, code generation and optimization.<P>
+
+Changes are made to the parser in cc1.c to recognize and generate 
+code for 
+the new language features. Whenever the parser encounters the 
+keywords 
+<I>monitor</I>, <I>task</I>, and <I>interrupt</I>, it saves that 
+function's 
+address and parameters, if any, in separate named segments (one 
+for each kind) for 
+use by <I>_cscinit</I> to set up the environment during system 
+initialization. 
+I've added three new Pcodes and their translation table entries 
+to cc.h and 
+cc4.c for generating native assembler code for these new 
+features. These 
+Pcodes are:<P>
+<UL>
+<LI> CSCINIT, which generates a call to the function <I>_cscini
+</I> in the 
+CSC run time to execute all monitor-initialization functions, 
+create all 
+declared tasks, install system (timer) and userdefined interrupt 
+handlers, 
+create an idle task, convert <I>main()</I> into a task, and go 
+into multitasking 
+mode. If the user does not declare a task, the system stays in 
+singletasking mode, 
+which means that the system-timer interrupt handler will not be 
+installed and 
+a call to <I>Delay</I> will return immediately. In singletasking 
+mode, CSC is 
+100 percent compatible with Small C.
+<LI> ENTERMON is the request to enter a monitor. This is simply 
+translated into a 
+disableinterrupt instruction to guarantee that only one task can 
+be inside a 
+monitor at any one time.
+<LI> EXITMON exits a monitor. This is translated into an 
+enableinterrupt instruction.<P>
+</UL>
+
+Modifying the compiler to generate code to support the new 
+language features is 
+straightforward. The difficulty is in the initial design of the 
+language features 
+and the system kernel. For portability, the kernel is mostly 
+written in CSC. Only 
+the tricky stack manipulation stuff is written in assembler, 
+using 
+the <I>#asm/#endasm</I> directives. Also, all function names 
+starting with an 
+underscore (_) are meant to be used internally only.<P>
+
+Each task created by the kernel has a task descriptor and a stack 
+associated with 
+it. The task descriptor keeps the task's priority, the number of 
+clock ticks 
+to delay (if the <I>Delay</I> function is called), the task's 
+stack pointer, 
+and a pointer to the next task descriptor. The values of the 
+registers (or 
+task context) are saved in the task's stack during task 
+switching. There is 
+only one running task at any one time. The pointer to its 
+descriptor is kept 
+in <I>running</I>. All ready-to-run tasks' descriptors are 
+chained together 
+according to their priority. The pointer to the head of the chain 
+is kept 
+in <I>ready</I>. In multitasking mode, on every timer interrupt, 
+the running task 
+is put on hold in the ready queue and the first ready task is 
+reactivated.<P>
+
+When a monitor entry executes a <I>Wait(&amp;cond)</I>, the 
+running task's 
+context is saved and its descriptor is queued according to its 
+priority in the 
+condition variable <I>cond</I>, which is, in fact, a queue. The 
+first task 
+queued in <I>ready</I> is restarted and becomes the running task.
+<P>
+
+When a <I>Signal(&amp;cond)</I> is called from within a monitor 
+entry, the running 
+task's context is again saved, and its descriptor is queued in <I>
+ready</I>. 
+However, instead of restarting a task from the ready queue, it 
+restarts the first 
+one in the condition queue.<P>
+
+The kernel also provides a <I>Delay</I> function for tasks to 
+suspend execution 
+for a specified number of clock ticks. This capability could have 
+been implemented 
+as a monitor outside the kernel, but I implemented it inside the 
+kernel for 
+convenience. The kernel uses a delta list to keep track of the 
+order in which the 
+tasks are to be reactivated. For example, if the tasks T1, T2, 
+and T3 request 
+delays of 2, 6, and 9 timer ticks, the delta values saved in 
+their descriptors 
+are 2, 4, and 3, respectively. If two of them request the same 
+delay as in 2, 2, and 
+5, then their delta values are 2, 0, and 3, respectively. The 
+pointer to the first 
+task in the delta list is kept in <I>delta</I>.<P>
+
+Interrupt handling is the most difficult, yet interesting, part 
+of the kernel. 
+Instead of generating special code to save all registers on entry 
+and to restore 
+all registers on exit for every user-defined ISR, and hooking it 
+to the specified 
+interrupt vector, CSC actually uses a common interrupt handler 
+for all interrupts. 
+For each userdefined ISR, an interrupt descriptor is built that 
+contains fields for 
+the interrupt number, an intersegment call instruction to the 
+common interrupt code 
+(80x86 parlance), a pointer to the user ISR, a condition 
+variable, an error variable, 
+and a pointer to the next interrupt descriptor. <a 
+href="ch16fg2.gif">Figure 2</a> shows how an interrupt is 
+serviced.<P>
+
+The interrupt vector is set pointing to its descriptor's 
+intersegment call 
+instruction. When an interrupt occurs, it vectors to this call 
+instruction, which 
+invokes the common ISR. The common ISR saves the task context and 
+calls the 
+user-defined interrupt handler. If all interrupts call a common 
+ISR, how does it 
+tell which user function to call? The trick is in the call 
+instruction, which 
+means that the return address on the stack contains the address 
+immediately 
+following the call instruction in the interrupt descriptor. By 
+design, this is the 
+address to the pointer to the user function. Using this address, 
+other fields in the 
+interrupt descriptor can be accessed as well. If a userdefined 
+ISR returns a nonzero 
+value, the common ISR moves the running tasks to the ready queue 
+and wakes up the task 
+waiting in the interrupt descriptor's condition variable. If a 
+zero is returned, 
+this step is skipped. <I>_</I><I>dodelta</I>, which updates the 
+delta list and always 
+returns a 1, is declared by the system as the userdefined 
+function for the timer 
+interrupt. The common ISR wakes up the first task in the ready 
+queue instead.<P>
+
+<I>StartIO</I> starts an I/O operation and waits in the interrupt 
+
+descriptor's condition variable. <I>StartIO</I> and userdefined 
+ISRs 
+are the mechanism in CSC for writing device handlers.<P>
+
+<b>A Concurrent Program Example</b><P>
+
+To demonstrate how you might use CSC, imagine an embedded system 
+(with 
+remote-console support) designed to solve the classic 
+diningphilosopher problem: 
+There are <I>N</I> philosophers sitting at a round table. A bowl 
+of Chinese food is put in the middle. A total of <I>N</I> 
+chopsticks are placed on the table, one between adjacent 
+philosophers. They alternate between eating and contemplating the 
+meaning of life. To eat, a philosopher must pick up two 
+chopsticks, one from each side. After eating, he puts th
+e chopsticks back where they came from. The problem is preventing 
+deadlock or 
+indefinite postponement. A deadlock results, for example, if 
+every philosopher 
+picks up and retains the chopstick on his left; in this case, no 
+one will be able to obtain both chopsticks. Indefinite 
+postponement occurs if philosopher #1 always eats when 
+philosopher #3 is thinking, and vice versa, in such case, 
+philosopher #2 will never be able to pick up both chopsticks to 
+eat. <P>
+The example program consists of four files: philos.c, mchopstk.c, 
+mconsole.c 
+and asyn8250.c ((<a href="#list16-1">Listing 16-1</a>), <a 
+href="#list16-2">Listing 16-2</a>,
+<a href="#list16-3">Listing 16-3</a>, and <a href="#list16-4">
+Listing 16-4</a>, 
+respectively). philos.c contains the 
+main program and task declaration for each philosopher (a total 
+of five). Each 
+task consists of only one statement: <I>philosophe</I><I>r</I><I>
+(n</I><I>)</I><I>,
+</I> which implements the behavior of a philosopher. It calls the 
+chopsticks monitor 
+entries, <I>GetChopsticks()</I> and <I>PutChopsticks()</I>, to 
+acquire and release 
+the chopsticks, respectively. It delays a random amount of time 
+(between 1 and 200 
+timer ticks) after each monitor-entry call, and sends a message 
+to the console 
+monitor to describe what it is doing. <P>
+
+mchopstk.c implements the chopsticks monitor, which provides the 
+logic to solve the 
+dining-philosopher problem. The array <I>chopsticks</I> 
+represents the number of 
+chopsticks (0, 1, or 2) available to each philosopher. Each 
+philosopher has its own 
+condition variable to wait in <I>waiting[n]</I>. Also, each can 
+determine its neighbor 
+by looking at the array <I>myleft[n]</I> and <I>myright[n]</I>. 
+Inside the 
+<I>GetChopsticks()</I> entry, philosopher <I>n</I> is allowed to 
+pick up chopsticks 
+only if <I>chopsticks[n]</I> equals 2; that is, both chopsticks 
+are available. 
+Otherwise it waits in <I>waiting[n]</I>. After the philosopher 
+picks up the 
+chopsticks, it decreases its left and right neighbor's chopstick 
+count by 1 
+and exits the monitor. When a philosopher releases its 
+chopsticks, it calls the 
+entry <I>PutChopsticks(),</I> which increases its neighbors' 
+chopstick counts 
+by 1 and wakes up one or both of them if their chopstick count 
+now equals 2.<P>
+
+mconsole.c implements the console monitor. Each philosopher 
+outputs a message to 
+the console describing its current activity. Since the console 
+can only output one 
+message at a time, a monitor coordinates the use of the console. 
+A philosopher 
+prints a message by calling the monitor entry <I>Send()</I>. On 
+entry, <I>Send</I>  
+examines the invariant <I>busy</I> to see if the console is busy 
+(1). If so it 
+waits in the condition variable <I>conready</I>. Otherwise, it 
+copies the message 
+to the monitor's buffer, sets <I>busy</I> to 1 and <I>Signal</I>s 
+the 
+condition variable <I>msgavail</I>, where the console is waiting. 
+The console gets 
+work by calling the monitor entry <I>GetMsg()</I>. On entry, <I>
+GetMsg() </I>checks 
+if <I>busy</I> is set. If it is not set, there is nothing to do, 
+and it waits in the 
+condition variable <I>msgavail</I>. Otherwise, it copies the 
+message to the 
+caller's buffer, sets <I>busy</I> to 0, and <I>Signal</I>s <I>
+conready</I> to 
+wake up a waiting philosopher. This monitor provides a single 
+buffer for all 
+philosopher messages and forces a philosopher to wait when the 
+buffer is not 
+available. Modifying the monitor to provide multiple buffers is 
+not difficult 
+and is left as an exercise for the reader.<P>
+
+asyn8250.c is the most interesting module. It implements a link 
+to a remote 
+site by using the PC's asynchronous adapter. This module 
+demonstrates how 
+the <I>xmitter</I> task coordinates with the ISR <I>asynsend()</I>
+ to transmit 
+messages over the link. <I>xmitter</I> initializes the 
+asynchronous adapter 
+(setting the baud rate, data size, number of stop bits, and so 
+on) and calls the 
+console monitor entry <I>GetMsg()</I> to get a message to send. 
+It displays the 
+message on the screen and calls <I>StartIO()</I> to initiate the 
+transmission. 
+<I>StartIO</I> specifies that the <I>startx</I> command be 
+invoked before waiting in its interrupt condition variable. <I>
+startx</I> transmits the first character of the message. When the 
+adapter is ready to transmit the next character, it generates an 
+interrupt that passes control to <I>asynsend()</I>, which sends 
+the next character, when the end of the message is reached,  it 
+returns a nonzero value, which causes the CSC common interrupt 
+handler to wake up the <I>
+xmitter</I> task. <P>
+
+To write device handlers in CSC, devote an I/O task (such as <I>
+xmitter</I> in the 
+example) to each device and use <I>StartIO</I> to interact with 
+its ISR to service 
+the device.<P>
+
+<b>Conclusion</b><P>
+
+Concurrent Small C's features make concurrent programs easy to 
+write and 
+understand. Still, it could be improved. Exception handling and 
+task termination 
+are not addressed in the current version. Also, the Pcodes 
+ENTERMON and EXITMON 
+(which enforce mutual, exclusive access to monitor resources) are 
+implemented 
+simply by disabling and enabling interrupts, respectively. This 
+affects the 
+interrupt latency if a lot of work is done inside the monitor. It 
+would be 
+better to use simple binary semaphores to provide the mutual 
+exclusion, so 
+that monitor-entry processing is no longer time critical. Also, 
+the object 
+file containing <I>main()</I> must be the last object file 
+specified in the 
+link command, because of the way the named segment tables for 
+recording the 
+monitor, task, and interrupt function addresses and parameters 
+(for use by 
+<I>_cscinit</I>) are terminated when <I>main()</I> is 
+encountered. Although 
+minor, if overlooked, this may cause unnecessary difficulty and 
+frustration in 
+debugging concurrent programs.<P>
+
+Despite these shortcomings, standardizing the tasking and 
+synchronization model 
+in the language makes porting an embedded system from one 
+processor to another 
+often a simple recompile using the CSC compiler and the C library 
+for the target 
+platform. Although only the 80x86 version was available at this 
+writing, a 
+project is ready to go (pending donations of hardware by vendors) 
+to port 
+Concurrent Small C to popular microcontrollers such as the 6811 
+and 8051.<P>
+
+
+
+
+<B><a name="ex1">Example 1:</a></B> (a) Declaring a task; (b) 
+task abc uses the default 
+priority (64) and stack size (512 bytes); (c) task xyz uses the 
+default priority 
+and a stack size of 384 bytes; (d) creating similar tasks.<P>
+
+<b>(a)</b><p>
+<pre>
+task taskname([priority][,stacksize])
+{
+   ...
+}<p>
+</pre>
+
+<b>(b)</b><p>
+<pre>
+task abc()
+{
+   ...
+}<p>
+</pre>
+
+<b>(c)</b><p>
+<pre>
+task xyz(NULL, 384)
+{
+   ...
+}<p>
+</pre>
+
+<b>(d)</b><p>
+<pre>
+common()
+{
+	while (1)
+		{
+		...
+		}
+}
+task task1()
+{
+	common();
+}
+	...
+task taskn()
+{
+	common();
+}<p>
+</pre>
+
+
+
+<B><a name="ex2">Example 2:</a> </B>(a) Using a monitor to 
+implement a simple mutual exclusion; 
+(b) multiple tasks can request exclusive use of the printer; (c) 
+generalizing the 
+mutex monitor.<p>
+
+<b>(a)</b><p>
+<pre>
+#include &lt;stdio.h&gt;
+
+/* monitor data */
+static CONDITION cond;
+static int busy;
+
+void monitor printer()
+{
+	printf(&quot;Initializing mutex monitor\n&quot;); /
+}
+void entry acquire()
+{
+	if (busy)
+		Wait(&amp;cond);
+	busy = 1;
+}
+void entry release()
+{
+	busy = 0;
+	Signal(&amp;cond);
+}<p>
+</pre>
+
+<b>(b)</b><p>
+<pre>
+/* get exclusive use of the printer */
+acquire();
+	/* start print job */
+/* release the printer */
+release();<p>
+</pre>
+
+<b>(c)</b><p>
+<pre>
+#include &lt;stdio.h&gt;
+
+/* monitor data */
+#define MAXRESOURCES    10
+
+static CONDITION cond;
+static int count;
+
+void monitor printer()
+{
+	printf(&quot;Initializing resource monitor\n&quot;); /
+}
+
+void entry acquire()
+{ 	if (count == 0)
+		Wait(&amp;cond);
+	count;
+}
+
+void entry release()
+{
+	count++;
+	Signal(&amp;cond);
+}<p>
+</pre>
+
+<B><a name="ex3">Example 3:</a></B> Declaring an ISR.<p>
+<pre>
+interrupt isr(inttnum)
+{
+	...
+}<p>
+</pre>
+
+
+<B><a name="tab1">Table 1:</a> </B>Useful kernel functions.<p>
+<pre>
+
+<b>Function 			Description</b><p>
+	
+<I>enable()</I>
+			Enables interrupt.
+
+<I>disable()</I> 
+			Disables interrupt.
+
+<I>Delay(n)int n;</I> 
+			Delays for <I>n </I>timer ticks (works only when at least one 
+			task has been declared, otherwise return immediately 
+			with a value of 1).
+
+<I>inpbyte(port)int port;</I>
+			Returns a byte from the specified port.
+
+<I>outpbyte(port, value)int port; int value;</I>
+			Outputs a byte value to the specified port.
+
+<I>SetPrior(prior) int prior;</I> 
+			Sets the running task's priority.
+
+<I>GetPrior()</I>
+			Returns the running task's priority.
+
+<I>StartIO(intr, command, result)int intr; int (*command)(); int *result;</i>    
+			Executes command and waits for the interrupt-service 
+			routine for <I>intr</I> to wake it up. On return, result 
+			contains the I/O operation's return code.
+
+<I>Yield()</I>			
+			Gives up the CPU to another ready task.
+
+<I>Signal(cond)CONDITION*cond;</I> 
+			Wakes up a task waiting in the specified condition 
+			variable (not to be used outside a monitor-entry function).
+
+<I>Wait(cond)CONDITION*cond;</I>   
+			Goes to sleep in the condition variable <I>cond </I>until a 
+			<I>Signal(&amp;cond)</I> is executed (not to be used 
+			outside a monitor-entry function).<p>
+
+</pre>
+
+<b><a name="list16-1">LISTING 16-1</a></b><p>
+<pre>
+#include &lt;stdio.h&gt;
+unsigned int seed = 127;
+
+/* generate pseudorandom number between 1200 inclusive */
+rnd()
+{
+    seed *= 177;
+    if (!seed)
+        seed = 127;
+    return seed % 200 + 1;
+}
+/* logic for a dining philosopher */
+void philosopher(id)
+int id;
+{
+    char buffer[128];
+    int n;
+    while (1)
+    {
+        /* acquire chopsticks */
+        GetChopsticks(id);
+        /* display message and eat */
+        n = rnd();
+            sprintf(buffer, &quot;Philosopher #%d eating for %d ticks :)\n&quot;,id,n);
+        Send(buffer);   /* pass to console task */
+        Delay(n);       /* simulate eating */
+        /* release chopsticks */
+        PutChopsticks(id);
+        /* display message and think */
+        n = rnd();
+           sprintf(buffer, &quot;Philosopher #%d thinking for %d ticks :(\n&quot;,id,n);
+        Send(buffer);   /* pass to console task */
+        Delay(n);       /* simulate thinking */
+    }
+}
+/* task declarations */
+void task p0()
+{
+    philosopher(0);
+}
+void task p1()
+{
+    philosopher(1);
+}
+void task p2()
+{
+    philosopher(2);
+}
+void task p3()
+{
+    philosopher(3);
+}
+/* main program: note that the function philosopher is used as
+    the body of a number of tasks including main() */
+main()
+{
+    /* all declared tasks start before this. main() is converted into a
+       task by Concurrent Small C and becomes the fifth philosopher */
+    philosopher(4);
+}<p>
+</pre>
+
+<b><a name="list16-2">LISTING 16-2</a></b><p>
+<pre>
+#include &lt;stdio.h&gt;
+
+/* data for the chopstick monitor */
+static int chopsticks[] = {2, 2, 2, 2, 2};  /* chopstick counts 
+*/
+static int myright[] = {1, 2, 3, 4, 0};     /* right neighbor identity */
+static int myleft[] = {4, 0, 1, 2, 3};      /* left neighbor identity */
+static CONDITION waiting[5];                /* condition variables */
+
+/* initialization for chopstick monitor */
+void monitor mchopstk()
+{
+    /* demonstrates that this is being called during 
+initialization */
+    printf(&quot;Initializing chopsticks monitor...\n&quot;);
+}
+/* monitor entry to get both chopsticks */
+void entry GetChopsticks(id)
+int id;
+{
+    /* wait until both chopsticks available */
+    if (chopsticks[id] != 2)
+        Wait(&amp;waiting[id]);
+    /* decrement neighbors' chopstick counts */
+    chopsticks[myright[id]];
+    chopsticks[myleft[id]];
+}
+/* monitor entry to release the 2 chopsticks */
+void entry PutChopsticks(id)
+int id;
+{
+    /* increment neighbors' chopstick counts and wake
+        them up if they now have both chopsticks */
+    if (++chopsticks[myright[id]] == 2)
+        Signal(&amp;waiting[myright[id]]);
+    if (++chopsticks[myleft[id]] == 2)
+        Signal(&amp;waiting[myleft[id]]);
+}<p>
+</pre>
+
+<b><a name="list16-3">LISTING 16-3</a></b><p>
+<pre>
+#include &lt;stdio.h&gt;
+
+/* monitor data */
+static CONDITION conready;  /* console ready condition variable */
+static CONDITION msgavail;  /* message available condition variable */
+static int busy;            /* buffer inuse invariant */
+static char buffer[128];    /* monitor's message buffer */
+
+/* console monitor initialization */
+void monitor mconsole()
+{
+    printf(&quot;Initializing console monitor...\n&quot;);
+}
+/* monitor entry to send message to console */
+void entry Send(msg)
+char *msg;
+{
+    /* wait till buffer is not in use */
+    if (busy)
+        Wait(&amp;conready);
+    /* copy message to local buffer and wake up console */
+    strcpy(buffer, msg);
+    busy = 1;
+    Signal(&amp;msgavail);
+}
+/* monitor entry for console to get message */
+entry GetMsg(msg)
+char *msg;
+{
+    /* wait till message is available */
+    if (!busy)
+        Wait(&amp;msgavail);
+    /* copy message to caller's buffer and wake up any task
+        waiting to deliver a message */
+    strcpy(msg, buffer);
+    busy = 0;
+    Signal(&amp;conready);
+}<p>
+</pre>
+
+<b><a name="list16-4">LISTING 16-4</a></b><p>
+<pre>
+#include &lt;stdio.h&gt;
+
+/* 8259 interrupt controller interrupt mask register port# */
+#define MASK8259    0x21
+
+/* async 8250 constants */
+/* these parameters are for com2 */
+#define IOBASE      0x2F0
+#define INTVEC      0x0B
+#define DEVMASKBIT  0x08
+
+/* 8250 control register port number */
+#define RLINECTR    (IOBASE + 0x0B)
+#define RLBAUD      (IOBASE + 0x08)
+#define RHBAUD      (IOBASE + 0x09)
+#define RLINESTAT   (IOBASE + 0x0D)
+#define RRECV       (IOBASE + 0x08)
+#define RXMIT       (IOBASE + 0x08)
+#define RINTEN      (IOBASE + 0x09)
+#define RMODEMC     (IOBASE + 0x0C)
+#define RINTID      (IOBASE + 0x0A)
+#define RMODEMSTAT  (IOBASE + 0x0E)
+
+#define TXREADY     0x20    /* ready to transmit */
+#define SETDIVISOR  0x80    /* set divisor */
+#define L2400       0x30    /* low value for clock divisor */
+#define H2400       0x00    /* high value for clock divisor */
+#define DATA8       0x03    /* 8bit data */
+#define DCD         0x80    /* data carrier detect */
+#define DSR         0x20    /* data set ready */
+#define CTS         0x10    /* clear to send */
+#define DTR         0x01    /* data terminal ready */
+#define RTS         0x02    /* request to send */
+#define OUT2        0x08    /* output 2 signal */
+#define TXEMPTY     0x02    /* Tx holding register empty 
+interrupt */
+
+#define COMPLETED   0xFF    /* userdefined completion return code */
+
+static int pos;         /* position of char in msg to send */
+static char msg[128];   /* message to send */
+static int linefeed;    /* time to send a linefeed */
+/* send a char over the asyn link */
+sendchar(ch)
+char ch;
+{
+    /* check for modem status */
+    if (inpbyte(RMODEMSTAT) &amp; (DCD | DSR | CTS)) {
+        /* wait till Tx is ready and send */
+        while ((inpbyte(RLINESTAT) &amp; TXREADY) != TXREADY);
+        outpbyte(RXMIT, ch);
+        return 0;
+        }
+    return 1;
+}
+/* initialize the 8250 chip */
+void Init8250()
+{
+    /* set baud rate at 2400, no parity, 8bit data */
+    outpbyte(RLINECTR, SETDIVISOR);
+    outpbyte(RLBAUD, L2400);
+    outpbyte(RHBAUD, H2400);
+    outpbyte(RLINECTR, DATA8);
+
+    /* set modem control */
+    outpbyte(RMODEMC, (DTR | RTS | OUT2));
+
+    /* enable 8250 Tx holding register empty interrupt */
+    outpbyte(RINTEN, TXEMPTY);
+
+    /* enable 8259 interrupt controller for com2 */
+    outpbyte(MASK8259, inpbyte(MASK8259) &amp; ~DEVMASKBIT);
+}
+/* interrupt service routine to send a message. Note: a nonzero 
+return value
+     wakes up xmitter task which initiated transmission by 
+calling StartIO */
+interrupt asynsend(INTVEC)
+{
+    char ch;
+    int retcode;
+    if (linefeed) {
+        /* time to send a linefeed */
+        linefeed = 0;
+        retcode = sendchar(LF);
+        }
+    else if ((ch = msg[++pos]) != 0) {
+        /* translate LF to CR followed by LF */
+        if (ch == LF)
+            {
+            retcode = sendchar(CR);
+            linefeed = 1;
+            }
+        else
+            /* send char as is */
+            retcode = sendchar(ch);
+        }
+    else
+        return COMPLETED;
+    return retcode;
+}
+/* start interruptdriven message transmission */
+startx()
+{
+    pos = 0;
+    return sendchar(msg[0]);
+}
+/* xmitter task declaration: note use of high task priority */
+void task xmitter(256)
+{
+    int status;
+    Init8250(); /* init 8250 */
+    while (1) {
+        /* get message and print it */
+        GetMsg(msg);
+        printf(msg);
+        /* start i/o operation to send message to remote console.
+            Only return when operation is completed or failed */
+        StartIO(INTVEC, startx, &amp;status);
+        if (status != COMPLETED)
+            printf(&quot;Async transmit error: %d\n&quot;, status);
+        }
+}
+</pre>
+
+
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 

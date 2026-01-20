@@ -1,0 +1,401 @@
+                          SMALL C FOR THE 8051
+                             Brad Rodriguez
+                         T-Recursive Technology
+
+SC51 is an adaptation of James E. Hendrix's Small C compiler, to produce
+code for the 8051 family of microprocessors.  It is based on version 2.2
+of the IBM PC Small C compiler.  The documentation for the Small C
+language (and the workings of the compiler) is contained in the book "A
+Small C Compiler", second edition, by James E. Hendrix (ISBN
+1-55851-124-5).  This book is highly recommended.
+
+SC51 takes Small C programs as input, and produces 8051 assembly
+language programs as output.  It is specifically tailored to the syntax
+and capabilities of the freeware PseudoCorp Level 1 assembler, A51.  You
+must have a copy of A51 to use SC51.
+
+================= Installing the 8051 Small C compiler =================
+
+The 8051 Small C compiler is organized into a directory and three
+subdirectories.
+
+SC51  contains the Small C compiler (CC51.EXE) and 8051 assembler
+      (A51.EXE), and assorted test files.  You can use this as your
+      working directory for writing Small C programs.
+
+SC51\CLIB  contains the library files for Small C.  These files are
+           normally added to your C program with #include directives.
+
+SC51\COMPILER  contains the tools necessary to regenerate the 8051 Small
+               C compiler: the 8086 Small C compiler (CC.EXE), Small
+               Assembler (ASM.EXE), and all source files.  The batch
+               file CCC.BAT will completely rebuild the the 8051 Small C
+               compiler.
+
+SC51\A8051  contains the full distribution for the A51 assembler,
+            including documentation.
+
+The COMPILER and A8051 subdirectories are not required in order to use
+the 8051 Small C compiler.  You can delete them to save space.
+
+=================== Using the 8051 Small C compiler ====================
+
+An 8051 Small C program is normally compiled with the command
+
+        CC51 [options] progname
+
+which will look for the file 'progname.C', and produce the file
+'progname.ASM'.  The options can be any of the following:
+
+        -A   Sound alarm (beep) when an error is reported.
+        -L1  Generate a listing on the standard output device.
+        -L2  Generate a listing on the screen.
+        -M   Monitor compiler progress (displays function names
+             as they are compiled).
+        -NO  Disable the optimizer.
+        -P   Pause after reporting each error.  (Press ENTER to
+             resume compilation.)
+
+You can also omit 'progname' from the command line, in which case the
+compiler will take its input from the standard input device, and send
+its output to the standard output device.  You can then use < and > to
+redirect the input and output as desired.  When used with the -L1
+option, this will cause the original Small C source text to be included
+as comments in the assembler output file, e.g.:
+
+        CC51 -L1 <progname.C >progname.ASM
+
+In either case, the .ASM file is assembled with the command
+
+        A51 progname
+
+which will produce an Intel hex file 'progname.OBJ', and a listing file
+'progname.LST'.  You can compile and assemble with the single batch
+command
+
+        CC progname
+
+======================= Using library functions ========================
+
+Small C was originally designed to use a relocating assembler and
+linker, which could automatically include needed functions from a
+pre-compiled library.  For the 8051 we have neither a relocating
+assembler nor linker, and the A51 assembler does not support "included"
+files.  Therefore, ALL NEEDED LIBRARY FUNCTIONS MUST BE INCLUDED IN YOUR
+SMALL C SOURCE CODE, using the #include directive.  The library files
+supplied with 8051 Small C are all contained in the subdirectory CLIB.
+
+ALL 8051 SMALL C PROGRAMS MUST INCLUDE THE FILE CLIB\COMMON51.C.
+This file contains the memory map equates, interrupt vectors, 8051
+initialization code, and several support subroutines expected by the
+compiler (such as multiply and divide).  You may edit this file to
+change the memory map or CPU initialization code.  Don't change the RAM
+initialization or support routines.
+
+The file CLIB\SYSLIB51.C contains basic serial I/O routines.  These may
+be omitted if your program does not use the 8051's UART.  However, ALL
+Small C character I/O uses these routines, so you MUST #include this
+file if you are using gets(), puts(), printf(), etc.
+
+Most 8051 Small C programs will begin with the two lines
+
+    #include clib\common51.c
+    #include clib\syslib51.c
+
+followed by #includes for any other library functions you require.
+
+(If you have used 8086 Small C, or are reading the Hendrix book, please
+note that COMMON51.C replaces CALL.ASM, and SYSLIB51.C replaces
+CSYSLIB.C.)
+
+================= Memory map of 8051 small C programs ==================
+
+There are five memory regions of interest to Small C programmers.  The
+Small C program itself is located in the 8051's Program (external ROM)
+address space.
+
+The 8051's Data (external RAM) address space is divided into three
+parts.  Globals and literal data (such as string constants) are stored
+at the bottom of RAM.  The stack is located at the top of RAM, and grows
+downward.  Between these two regions is the "free RAM" area, which can
+be managed with calloc() malloc() and free().
+
+Globals and literal data are initialized from ROM immediately after
+reset.  This "initializer" table is located in the Program space,
+somewhere after the Small C program.  The specific address of this table
+must be specified by the programmer.  Its location is not critical, as
+long as the entire table fits in ROM, and does not overlap the Small C
+program itself.
+
+              PROGRAM space                   DATA space
+
+      ROM->ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        0000ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+           ³ interrupt vecs  ³            ³                 ³
+           ³ 8051 init code  ³            ³                 ³
+           ³                 ³            ³                 ³
+           ³                 ³            ³                 ³
+           ³ small C program ³            ³                 ³
+           ³                 ³            ³                 ³
+  ENDCODE->ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´            ³                 ³
+           ³ XXXXXXXXXXXXXXX ³            ³                 ³
+   LITROM->ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´            ³                 ³
+           ³ initializers &  ³            ³                 ³
+           ³  literal data   ³       RAM->ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+           ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´            ³  globals and    ³
+           ³                 ³            ³  literal data   ³
+           ³                 ³   ENDLITS->ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+           ³                 ³            ³                 ³
+           ³                 ³            ³   "free RAM"    ³
+           ³                 ³            ³                 ³
+           ³                 ³            ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+           ³                 ³            ³      stack      ³
+           ³                 ³  STACKTOP->ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+           ³                 ³            ³                 ³
+           ³                 ³            ³                 ³
+           ³                 ³            ³                 ³
+           ³                 ³            ³                 ³
+       FFFFÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ        FFFFÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+There are four equates which you can specify to control the memory
+layout of your 8051 Small C program.  All of these are found in the file
+common51.c:
+
+ROM  is the starting address of your program.  Normally this will be
+     0000, which is the reset address of the 8051 microprocessor.
+     The necessary interrupt vectors and initialization code are
+     contained in common51.c.  For this reason, COMMON51.C MUST ALWAYS
+     BE INCLUDED BEFORE ANY OTHER PROGRAM MODULES.
+
+LITROM  is the starting ROM address of the initializers and literal
+        data.  This data is copied to RAM after reset.  This address
+        must be set manually, and must be higher than the end address
+        of the program.  You must also ensure that this literal region
+        does not extend past the end of the ROM.  (Default: 6000H.)
+
+RAM  is the starting address of your RAM.  For the New Micros NMIX-0016
+     this is 8000h for a 32K RAM chip in U3.  Global variables and
+     literal data (such as string constants) are allocated starting at
+     this address.  Note that THIS ADDRESS MUST BE NONZERO.  If your RAM
+     starts at address 0000, set RAM to 0001.
+
+STACKTOP  is the highest RAM address used by Small C, and will normally
+     be the ending address of your RAM plus 1.  For the NMIX-0016 this
+     is 0000 for a 32K RAM chip in U3.  The stack grows downward from
+     this address.  Note that THIS ADDRESS MUST BE EVEN, so you specify
+     0000 and not FFFFh!
+
+Two addresses can be obtained from the listing after you have assembled
+your Small C program:
+
+ENDCODE  is the last program address plus 1.  You should check to ensure
+         that ENDCODE <= LITROM.
+
+ENDLITS  is the last RAM address used by global data and literals.  Note
+         that this is a RAM address, not a ROM address.  The number of
+         bytes used for "initialized RAM" is ENDLITS-RAM.  You can add
+         this number to LITROM to determine the last ROM address used
+         for literal data; this must fit within your ROM.
+
+Note: the NMIX-0016 allows Program and Data spaces to be combined, as a
+jumper-selectable option.  There is no advantage to doing this with
+Small C, which is designed for separate Program and Data.  But if you
+should choose Combined operation, you must ensure that your ROM and RAM
+regions do NOT overlap.  In particular, you CANNOT save time or space
+by making LITROM equal to RAM.  This will not work!  'LITROM' must be in
+ROM, and 'RAM' must be in RAM.
+
+================== Differences from "normal" Small C ===================
+
+Since 8051 Small C runs on an embedded microprocessor, and not under an
+operating system like DOS, there is no disk access or command line
+interface.  In particular, please note that the routine main() now takes
+NO arguments.  'argc' and 'argv' have been deleted.
+
+All of the functions pertaining to file access have been deleted.
+
+================== Assembler programming with Small C ==================
+                  (Small C 8051 implementation notes)
+
+Small C allows you to include fragments of assembler code in your C
+programs, using the #asm ... #endasm directives.  (For examples of this,
+see the file CLIB\SYSLIB51.C.)  You must, however, observe Small C's
+register usage and calling conventions.
+
+               ----- Small-C's 8051 Register Usage -----
+
+  SR = DPTR   Secondary Register, SR
+  PR = R4:R0  Primary Register, PR
+  XP = R5:R1  eXternal stack Pointer, XP
+  BP = R6:R2  Base Pointer, BP
+       R7:R3  scratch
+       B      Argument Count & scratch
+       A      scratch
+       SP     8051 internal stack pointer
+
+The peculiar register assignments of XP and PR allow byte fetches from
+external memory using the MOVX @Ri instruction form.  BP follows this
+pattern for consistency.
+
+All Small C arithmetic expressions leave their result in the Primary
+Register (PR), which in the 8051 is R4:R0.  (R4 is the high byte.)
+Also, anything left in the Primary Register when a function exits will
+be the return value of the function.
+
+Small C also defines a Secondary Register (SR), which in the 8051 is the
+DPTR.  Your assembler code can use this freely.  You can also use R7,
+R3, and the B register as scratch registers.  (Be advised that the B
+register is used to pass the number of arguments to a function.  Most
+functions ignore this.)
+
+The External Stack Pointer (XP, registers R5:R1) and Base Pointer (BP,
+registers R6:R2) should not be disturbed.  If you must use the external
+stack, be sure to restore XP to its original value before the end of
+your assembler code.
+
+You can use the 8051's internal stack with PUSH, POP, CALL, and RET, as
+long as you are careful not to overflow or unbalance the stack.  Always
+POP as many items as you PUSH!
+
+                 ----- Other Implementation Notes -----
+
+Register Bank 0 MUST be selected!  (I.e., R0-R7 must be mapped to
+locations 0-7 of internal RAM.)
+
+Registers 8..127 are used for the hardware stack.  The hardware stack
+holds Small C return addresses (from LCALLs).  All other stack frame
+data is kept on the "software stack" in external RAM, addressed by
+R5:R1.  Note that this limits subroutine nesting to 60 levels on 8051s
+(124 levels on 8052s which have 256 bytes of internal RAM).
+
+The external RAM stack pointer XP *MUST* be word aligned (i.e., even).
+Small-C operations will preserve this alignment.
+
+Data in RAM is stored low byte, high byte.  Note that this requires you
+to use the .DRW directive in the A51 assembler.
+
+               ----- Memory map & initialized data -----
+
+Small C defines an "initialized data" region in RAM.  This must of
+course reside in 8051 Data memory, and must be initialized from a table
+in ROM (in 8051 Program memory).  A small routine does this upon
+startup.  The programmer must specify where in ROM this initialization
+table will be located, through the equate LITROM.  The appropriate hex
+output file is produced automatically by the assembler.  Note that
+symbolic labels will refer to the RAM addresses of data.
+
+Note: if RAM starts at zero, set the RAM equate to 1. (Code pointers and
+data pointers must be nonzero.)
+
+
+REVISION HISTORY
+
+========================== Library functions ===========================
+
+Because the A51 assembler does not support a linker, library functions
+must be #included.  Prerequisite and related functions have been grouped
+together into larger library files:
+
+NEW FILE    INCORPORATES THESE OLD FILES
+alloc.c     avail.c, calloc.c, malloc.c, free.c, pad.c
+common51.c  call.asm
+syslib51.c  csyslib.c (excluding file i/o functions)
+
+The following library functions are unchanged:
+  abs.c, atoi.c, atoib.c, calloc.c, dtoi.c, fprintf.c, free.c, fscanf.c,
+  getchar.c, is.c, isascii.c, itoa.c, itoab.c, itod.c, itoo.c, itou.c,
+  itox.c, left.c, lexcmp.c, malloc.c, otoi.c, pad.c, putchar.c, puts.c,
+  reverse.c, sign.c, strcat.c, strchr.c, strcmp.c, strcpy.c, strncat.c,
+  strncmp.c, strncpy.c, strrchr.c, toascii.c, tolower.c, toupper.c,
+  utoi.c, xtoi.c
+
+The following functions are not relevant in a diskless, DOSless
+environment, and have been deleted:
+  auxbuf.c, bseek.c, btell.c, clearerr.c, cseek.c, ctell.c, exit.c,
+  fclose.c, feof.c, ferror.c, fopen.c, fread.c, freopen.c, fwrite.c,
+  getarg.c, isatty.c, iscons.c, rename.c, rewind.c, unlink.c, clib.h
+
+The following functions have been modified:
+  avail.c - disabled the "abort" option.
+  fgetc.c - ignores fd, always uses serial port.
+  fgets.c - deleted reference to iscons().  fd ignored by fgetc().
+  fputc.c - ignores fd, always uses serial port.
+  fputs.c - no change in code; fd ignored by fputc().
+  poll.c - disabled the "abort" options.
+  strlen.c - rewrote in 8051 assembler
+  ungetc.c - ignores fd, always uses serial port's "unget" buffer.
+  stdio.h - added the ASCII characters from clib.h.
+
+==================== Modifications to the compiler =====================
+   References are to "A Small C Compiler, 2nd Edition" by J.E.Hendrix
+
+Modified argtop value in dofunction() in CC1.C, to adjust stack offsets
+of arguments, accounting for the LCALL return address NOT being pushed
+in the stack frame (return addresses are pushed on hardware stack).
+
+Back End Functions: P-Code Translation Strings (p.279)
+added  <b>  to output the low Byte of the Value (n),
+       <h>  to output the High byte of the Value (n).
+changed repetition symbol from '#' to '%',
+  because '#' is needed in 8051 assembly statements.
+
+The 8051 assembler does not allow underscore '_' characters in names, so
+Small C labels are prefixed with a period '.' instead.  Changed several
+string literals accordingly.  Modified outname() function in CC4.C to
+prefix a period, and to convert underscores in C names to periods.
+
+Of course, all of the code generation strings and functions in cc4.c
+were changed: setcodes(), ...
+
+The optimizer strings were removed from setcodes() into a separate
+routines setopt() because of literal table overflow.
+
+                   ----- Code generation notes -----
+
+The p-codes GETb1p, GETb1pu, and GETw1p now take an address in the
+primary register (as expected by the compiler).  Removed the "MOVE21"
+kluge from the gen() routine.
+
+The p-code SUB12 now subtracts the pr from the sr, with the result in pr
+(as expected by the compiler).  Removed the "SWAP12" kluge from the
+gen() routine.
+
+OLD> The routine step() in CC3.C, used for ++ and -- operations, assumed
+OLD> that GETb1p etc. left the address in sr.  This assumption is no
+OLD> longer true.  Added code to step() to generate PUSH1 and POP2.
+
+NEW: Rewrote step() in CC3.C to use new increment and decrement p-codes,
+PRDECwqn PRINCwqn PODECwqn POINCwqn PRDECbqn PRINCbqn PODECbqn POINCbqn.
+These generate optimal 8051 code for these common operations.  The new
+p-code SEXT1 returns signed character values when required.
+
+                      ----- Optimizer notes -----
+
+Deleted 13 optimizer rules no longer applicable to the 8051. (Eight
+pertained to ++ and -- operations.)  Edited several others to conform to
+revised 8051 p-codes (e.g. no SWAP12 before SUB12).
+
+Deleted optimizer p-codes:
+  ADDbpn ADDwpn ADDm_ COMMAn DECbp DECwp GETw1m_ GETw2p INCbp INCwp
+  PUT_m_ rDEC2 SUB_m_ SUBbpn SUBwpn
+
+Added new optimizer p-codes:
+  PUTbqn PUTwqn PUSHn RPUSH1 RPOP2
+
+Added new optimizer rules seq35[] through seq38[].
+
+Fixed error in peep(): the test for 'comm' was
+  if(*next & COMMUTES)...
+and should be
+  cp = code[*next];  if(*cp & COMMUTES)...
+
+================ Modifications to Small-C 8086 compiler ================
+   References are to "A Small C Compiler, 2nd Edition" by J.E.Hendrix
+   These modifications were NOT carried over into the 8051 compiler.
+
+The literal queue in the distribution Small-C/8086 compiler is too small
+to compile the Small-C/8051 compiler.  LITABSZ in cc.h increased to
+6000. (p.573)
+
+Modified to allow continued character strings: routine string() in
+cc3.c. (pp.397-398)
+

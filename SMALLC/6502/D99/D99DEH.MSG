@@ -1,0 +1,25 @@
+PROGRAM NAME     : BBC Micro HEX-to-Binary converter
+
+MACHINE REQUIRED : BBC Micro with BASIC 2 or later
+
+FILES NEEDED     : [.TOOLS]BBCDEHEX.BAS
+
+WRITTEN BY       : Alan Phillips,
+                   Department of Computing,
+                   Lancaster University
+
+CONTRIBUTED BY   : The author
+
+DATE MOUNTED     : 13/11/86 (permanently available)
+
+DESCRIPTION      : This is a short BASIC program that can be used to convert
+                   BBC binary files from the Intel hex form that they are
+                   stored in on the VAX, back to the original binary.
+
+NOTES            : Once you have the file on your machine, *EXEC it to form
+                   a runnable BASIC program. The program asks you for the name
+                   of the input file (which will be one of the .HEX files
+                   you've picked up). It then asks for the name of the output
+                   file, which will be in the original binary format. See the
+                   description of the package you're picking up for details
+                   of what the output file name needs to be.

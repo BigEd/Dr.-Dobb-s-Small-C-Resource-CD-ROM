@@ -1,0 +1,765 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>CC: A DRIVER FOR SMALL-C</H1> <p>
+
+by Axel T. Schreiner<p>
+</CENTER>
+</B>
+
+
+<i>This article originally appeared in Dr. Dobb's Journal #92 (June 1984).</i><p>
+
+
+Once you make extensive use of a programming system consisting of compiler,assembler, and linker, you find yourself either typing a lot of commands or using the CP/M SUBMIT facility quite a bit. The latter, however, is not very flexible. It unconditionally runs whatever commands the batch file dictates, and those, regardless of argument substitution, may be more or less than 
+what you intended.<p>
+
+A language like C encourages separate compilation and program composition from various source files, and a combination like Jim Hendrix's Small-C compiler (see &quot;Small-C Version 2&quot; in this volume) and Microsoft's relocating assembler and linking loader makes it quite attractive to compile as little as possible during program development. When you add a separate 
+preprocessor for Small-C and attempt to eliminate intermediate files, you find yourself typing
+lots of (almost) identical commands each time you want to preprocess, compile, erase, assemble, erase, link, and so on.<p>
+
+cc (<a href="#list11-1">Listing 11-1</a>) is a program patterned after Dennis Ritchie's cc command in the Unix system. It accepts options and file specifications and, through CP/M's
+SUB-MIT feature, arranges for the proper amount of preprocessing, compiling, assembly,
+and loading. Essentially, you type what files ought to be processed to construct a
+program, then cc prepares a SUBMiT file and persuades CP/M to execute it.<p>
+
+<b>Features<p>
+</b>
+cc is based on a runtime support that passes arguments to the main program. It expects to be called as follows:<p>
+<pre>
+     cc (option)... file.
+</pre>
+You may specify options in any order, and they are generally cumulative. The following options are available:<p>
+<pre>
+     -c                        compile only: do not execute the linker
+     -p                        preprocess only
+     -s                        preprocess and compile only
+     -o                        filename output of the linker is &quot;filename&quot;<p>
+</pre>
+Other options are passed on to the relevant processor, mostly to the Small-C
+preprocessor (see &quot;p: A Small-C Preprocessor&quot; in this volume). p accepts the
+following:<p>
+<pre>
+     -d name(=value)           define a symbolic name
+     -e                        suppress position stamps
+     -i drive                  search for file inclusion
+     -u name                   undefine a symbolic name<p>
+</pre>
+So that p can be used prior to Hendrix's compiler, the -e option is included automatically.<p>
+
+Files are passed on to the appropriate processors. The most general files are processed first. Intermediate files, named after the original source files, are erased once they are no longer needed; objects, however, are retained. In the absence of the -o option, the resulting load module is named after the first of the more general source files. The following filename extensions are used by cc:<p>
+<pre>
+     .c                    preprocessor source file
+     .i                    compiler source file
+     .mac                  macro assembler source file
+     .rel                  linker source file or library<p>
+</pre>
+If an extension is not present or not recognizable, the file is passed only to the linker. It is thus quite simple to pass libraries. Files are passed to the linker within each source file category in the order specified; the more general source file category, however, is passed first. This rarely roduces conflicts.<p>
+
+The options are clearly patterned after the Unix system. The main program expects to receive pointers to the various options as a vector, <i>argv</i>. The number of such options, including (theoretically) the program name as first option, is also passed as an integer, argc. Options must precede the filenames.<p>
+
+<b>Examples<p>
+</b>
+
+A few sample calls might illustrate just what cc does. The first example constructs the cc command itself:<p>
+<pre>
+     B&gt;cc cc.c<p>
+</pre>
+On my system I have the shortest possible names for the language processors, and I keep most tools on disk a:. Here the following commands would be issued:<p>
+<pre>
+     A&gt;b:p -e b:cc.c &gt;b:cc.i
+     A&gt;c b:cc.i &gt;b:cc.mac
+     A&gt;era b:cc.i
+     A&gt;m =b:cc
+     A&gt;era b:cc.mac
+     A&gt;l b:cc/n/e,b:cc,c/s
+     A&gt;b:<p>
+</pre>
+Assume that submit.c is compiled separately:<p>
+<pre>
+     B&gt;cc -c submit.c
+          A&gt;b:p -e b:submit.c &gt;b:submit.i
+          A&gt;c b:submit.i &gt;b:submit.mac
+          A&gt;era b:submit.i
+          A&gt;m =b:submit
+          A&gt;era b:submit.mac
+          A&gt;b:<p>
+</pre>
+Subsequently, compile cc.c and link it as follows:<p>
+<pre>
+     B&gt;cc submit cc.c
+          A&gt;b:p -e b:cc.c &gt;b:cc.i
+          A&gt;c b:cc.i &gt;b:cc.mac
+          A&gt;era b:cc.i
+          A&gt;m =b:cc
+          A&gt;era b:cc.mac
+          A&gt;l b:cc/n/e,b:cc,submit,c/s
+          A&gt;b:<p>
+</pre>
+It should be clear why such a driver program might be generally useful--not only for Small-C.<p>
+
+<b>Implementation<p>
+</b>
+
+The system driver basically has the following structure:<p>
+<pre>
+     Obtain and save options, initialize
+     Obtain, test, and save files
+     For each category of source files: run preprocessor,
+     compiler, assembler as required
+     Run linker as required<p>
+</pre>
+Most of this is accomplished by <i>main()</i>; one subroutine for each processor handles the problem of issuing the actual commands. This arrangement makes the system easy to adapt to other processors.<p>
+
+File and option lists must be circular so that they can be easily traversed in input order. Push routines maintain the lists. A list element consists of a pointer to the next list element, followed by the string that constitutes the actual value stored. The list header points to the last element entered, which in turn points to the first element, and the circular list continues to the last 
+element again. The list need not be marked, since you always start at the list header and thus
+know when you have traversed the list once.<p>
+
+For reasons explained below, filenames must be fully specified. If an explicit drive name is not part of the file specification, <i>pushf()</i> adds the current drive name.<p>
+
+The <i>kind()</i> function analyzes a file specification to determine the source category based on the file extension. All &quot;unknown&quot; extensions are considered to be object specifications. This allows linker libraries to pass through correctly. All other files must be existing source files. To detect trivial errors early, <i>kind()</i> tests source files for existence by opening them for reading.<p>
+
+The most interesting aspect of cc clearly is its use of the CP/M SUBMIT feature. During a warm start on drive a:, the CP/M console command processor (CCP) checks if a file $$$.sub exists. If it does, it is expected to contain one CCP command line (preceded by its length) per CP/M 
+sector. The CCP takes the last sector from the file, truncates the file by one sector, and issues the command.<p>
+
+To use this feature, you need to store all command lines as a stack and then write them, appropriately formatted, into the file. You must also take care that once the driver program exits, drive a: is selected and a warm start is performed.<p>
+
+The <i>submit()</i> function (<a HREF="#list11-2">Listing 11-2</a> ) handles all of this. If it is called with a string argument, it stacks the string (using a dynamic memory allocation function that is part of my runtime support). If it is called with a NULL argument, it writes the stack (that is, the commands in reverse order) into the file, forces the CCP to select drive a: (and user area 
+0) by clearing the byte at location 4, and terminates program execution through a warm start.<p>
+
+<i>submit()</i> issues a command to (re)select the current drive, so that once the batch stream is completely processed the current drive is selected again. Nevertheless, during batch execution drive a: must be selected. This is why <i>pushf()</i> fully specifies each file.<p>
+
+<i>submit()</i> actually appends to the end of the batch file processed by the CCP.
+This has a desirable effect in that <i>submit()</i> can be used from within a batch stream--something that is lacking in the CP/M SUBMIT utility. (It is not difficult to position a CP/M file to end of file, especially on a sector boundary.) A simple test program (<a HREF="#list11-3">Listing 11-3</a>) demonstrates this feature:<p>
+<pre>
+
+     B&gt;x a 'b c' &quot;'d e' f&quot; g
+     a
+          A&gt;b:x b c
+          b
+               A&gt;b:x c
+               c
+               A&gt;a:
+          A&gt;b:x 'd e' f
+          d e
+               A&gt;b:x f
+               f
+               A&gt;a:
+          A&gt;b:x g
+          g
+          A&gt;b:<p>
+</pre>
+Quotes and double quotes can be used to hide white space within command arguments. The output shown above has been indented to show the nesting of batch streams.<p>
+
+<b>Installation<p>
+</b>
+
+Getting cc to run on your system might be a bit tricky. Basically you need to decide where your processors and standard libraries reside and how they ought to be called. Also, cc relies on my own runtime support, which is heavily oriented toward the Unix environment.<p>
+
+You should probably consult Kernighan and Ritchie, <i>The C Programming Language</i> (Prentice-Hall, 1978), to learn about all the routines that are mentioned &quot;extern&quot; at the beginning of the program. Most of them are simple to construct. It is essential, however, that you provide a memory allocator, <i>calloc()</i>, that is reasonably stable. I am using a scheme where memory above the load module and below the stack is managed by a list of words, each 
+word pointing to the next. The low bit in each such word indicates if the area past that word and
+up to the next one is allocated or free.<p>
+
+I have had access to Chapter 17 of J.E. Hendrix, <i>The Small-C Handbook</i> (Reston Publishing Company, 1984), describing his runtime support (see also &quot;A New Library for Small-C&quot; in this volume). Although I did not have access to the runtime support itself and therefore could not test it. I believe that installing cc should be simple. The following probably must be done:<p>
+<pre>
+
+     FILE              should be defined as int
+     _drive()          needs to access BDOS function 25
+     fseek(..,10)      is Hendrix's cseek(..,2)
+     rindex()          is Hendrix's strrchr()<p>
+</pre>
+You can replace<i> _bputchar()</i> by storing the relevant characters in a buffer of length 128 and using Hendrix's <i>write()</i> to emit the buffer. The file pointer <i>_cfp</i> then is not needed.<p>
+
+I process the arguments to <i>main()</i> directly. Depending on the actual implementation, you might have to use Hendrix's function <i> getarg()</i>. I am assuming that the storage allocator, <i>calloc()/cfree()</i>, supports random order release of memory.<p>
+
+Two runtime routines perhaps deserve special mention:<p>
+<pre>
+     fseek(fp, 0, 10)<p>
+</pre>
+positions the file indicated by fp to the end of the last allocated CP/M sector. (In Unix the third argument for <i>fseek()</i> must be 0, 1, or 2, indicating positioning relative to the beginning of the file, the present position, and the end of the file. Additionally, I permit 8, 9, and 10, indicating sector positioning.)<p>
+<pre>
+     _bputchar(ch)<p>
+</pre>
+emits the character ch to the file currently indicated by <i>_cfp</i> without interpreting tab, return, or other characters. Since <i>submit()</i> must write CP/M sectors containing binary length information, use of this internal routine of the runtime support is necessary. <i>_bputchar()</i> returns EOF on end of file (that is, when the relevant disk overflows).<p>
+
+Deciding where your processors live and how they ought to be called is your own problem. I have a CP/M system with two 200K floppies; one of these (barely) contains Small-C, the Microsoft assembler and linker, a text editor, and my runtime library. Unless I trade the text editor for the 
+preprocessor, I have to call the preprocessor from the second disk.<p>
+
+Notice that the SUBMIT file must be on the a: disk, and that this disk must be selected while this file is processed. My processors therefore all reside on this disk, and there is enough room left over for the SUBMIT file.<p>
+
+Constructing the proper calls is relatively simple; if you use other systems, you may have to add a small amount of code to the program.<p>
+
+Part of this work was done during a sabbatical spent at the University of Illinois; in particular, the Small-C system was obtained from UseNet.<p>
+
+<b><a name="list11-1">LISTING 11-1</a><p>
+</b>
+<pre>
+  /*
+   * Contributed by A. T. Schreiner
+   *                Sektion Informatik
+   *                University of Ulm
+   *                West Germany
+   *
+   */
+
+  /*
+   *     cc - Small-C compiler driver
+   *     ats 5/83
+   */
+
+  /*
+   * define...
+   *
+   * c80 to drive Software Toolworks C80
+   */
+
+  char usage[] =
+       &quot;cc [-c|p|s] [-d n[=v]] [-e] [-i d:] [-o task] [-u n] files&quot;;
+
+  #define Csource 1      /* results of kind() */
+  #define Msource 2
+  #define Psource 3
+
+  #define Cfile   &quot;.i&quot;   /* for these extensions */
+  #define Pfile   &quot;.c&quot;
+  #define Mfile   &quot;.mac&quot;
+
+  #define C       &quot;c&quot; /* for these processors */
+  #define P       &quot;b:p&quot;
+  #define M       &quot;m&quot;
+  #define L       &quot;l&quot;
+
+  #define CLIB    &quot;c/s&quot; /* and this library search */
+
+  /*
+   * &quot;FEATURES:&quot;
+   *
+   *         If the same file name is specified with different
+   *         extensions, the most general source is processed...
+   *         ...and the others will fail, but be linked several times!
+   */
+
+  #include &lt;stdio.h&gt;
+
+  /*
+   *      i/o header file
+
+  #define FILE    ???    type to represent files (used as FILE*)
+  #define stdin   ???    pre-opened standard input file
+  #define stdout  ???    pre-opened standard output file
+  #define stderr  ???    pre-opened diagnostic output file
+  #define NULL    0      null pointer, false
+  #define EOF     ???    end of file indication
+
+   */
+
+  /*
+   * special data type
+   */
+
+  #define LIST int                   /* list of word or string values */
+  #define l_next(x)   (*(x))         /* -&gt; next element */
+  #define l_str(x)    ((x)+1)        /* -&gt; string value */
+  #define l.first(x)  (*(x)+2)       /* -&gt; first string value in circular list */
+  #define sz.STR(s)   (3+strlen(s))  /* size of string list element */
+  #define sz. FILE(s) (5+strlen(s))  /* size of file (+ drive) element */
+  /*
+   *      runtime support routines
+   */
+
+   extern _drive(),       /* BDOS function 25: current drive number */
+          calloc(),       /* (n,l) return NULL or -&gt; n elements of length l */
+          cfree(),        /* (p) free area at p, returned by calloc() */
+          exit(),         /* terminate program execution */
+          fputs(),        /* (s,f) write string s on file f */
+          freopen(),      /* (n,m,f) return NULL or file descriptor f,
+                             closed if necessary, and reopened to read
+                             (m == &quot;r&quot;), write (&quot;w&quot;), or append (&quot;a&quot;) */
+          rindex(),       /* (s,c) find c in string s end to front, return
+                             NULL or -&gt;c in s; '\0' is always found */
+          strcat(),       /* (a,b) copy string b beyond string a */
+          strcmp(),       /* Ca,b) &lt;, ==, &gt; 0 as string a is &lt;, ==, &gt; string b */
+          strcpy(),       /* (a,b) copy string b to string a */
+          strlen(),       /* (s) return number of characters in string s */
+          submit();       /* (s) add string s to command list; (NULL) submit */
+
+  /*
+   *      global data
+   */
+
+   char   buf[126],       /* to submit (length unchecked...) */
+          drive[] = &quot;?:&quot;, /* current drive name */
+          pflag,          /* run only preprocessor */
+          cflag,          /* run only compiler */
+          sflag;          /* run assembler */
+
+  LIST    *task,          /* task name (-o option) only */
+          *popt,          /* p option list */
+          *parg,          /* p argument list */
+          *carg,          /* c argument list */
+          *marg,          /* m argument list */
+          *larg;          /* l argument list */
+
+  main(argc, argv)
+          int argc;
+          int *argv;
+  {       char *cp;
+          LIST *arg;
+
+          /* remember current drive */
+          drive[0] = _drive() + 'a';
+
+          /* default preprocessor options */
+          popt = pushs(popt, &quot;-e&quot;);
+
+          /* record options and flags *!
+          while (--argc)
+          {       cp = *++argv;
+                  /* options must precede files */
+                  if (*cp != '-')
+                          break;
+                  /* dispatch and record, accept values attached or separate */
+                  switch(cp[1]) {
+                  case 'c':              /* -c            run p c m */
+                          cflag = 1;
+                          break;
+                  case 'd':              /* -d n[=v]      p option */
+                  case 'i':              /* -i d:         p option */
+                  case 'u':              /* -u n          p option */
+                          popt = pushs(popt, *argv);
+                          if (cp[2])
+                                  break;
+                          if (--argc == 0)
+                                  goto error;
+                          popt = pushs(popt, *++argv);
+                          break;
+                  case 'e':              /* -e            p option */
+                          popt = pushs(popt, *argv);
+                          break;
+                  case 'o':              /* -o task       name task image */
+                          if (cp[2])
+                                  task = pushf(task, cp+2);
+                          else if (--argc == O)
+                                  goto error;
+                          else
+                                  task = pushf(task, *++argv);
+                          break;
+                  case 'p':              /* -p            run p */
+                          pflag = 1;
+                          break;
+                  case 's':              /* -s            run p c */
+                          sflag = 1;
+                          break;
+                  default:
+                          goto error;
+                  }
+          }
+
+          /* there must be at least one file */
+          if (argc == O)
+          {
+  error:          fputs(usage, stderr);
+                  exit();
+          }
+
+          /* collect files on various lists */
+          do
+          {        switch(kind(*argv)) {
+                   case Psource:
+                           parg = pushf(parg, *argv);
+                           break;
+                   case Csource:
+                           carg = pushf(carg, *argv);
+                           break;
+                   case Msource:
+                           marg = pushf(marg, *argv);
+                           break;
+                   default:
+                           larg = pushf(larg, *argv);
+                   }
+                   ++argv;
+          } while (--argc);
+
+          /* run files preprocessor -&gt; compiler -&gt; assembler */
+          if (arg = parg)
+                  do
+                  {       arg = *arg;
+                          run(P, popt, l_str(arg), Pfile, Cfile);
+                          if (pflag)
+                                  continue;
+                          run(C, NULL, l_str(arg), Cfile, Mfile);
+                          erase(l_str(arg), Cfile);
+                          if (sflag)
+                                  continue;
+                          asm(l_str(arg));
+                          erase(l_str(arg), Mfile);
+                  } while (arg != parg);
+          if (pflag)
+                  goto done;
+
+          /* run files compiler -&gt; assembler */
+          if (arg = carg)
+                  do
+                  {       arg = *arg;
+                          run(C, NULL, l_str(arg), Cfile, Mfile);
+                          if (sflag)
+                                  continue;
+                          asm(l_str(arg));
+                          erase(l_str(arg), Mfile);
+                  } while (arg != carg);
+          if (sflag)
+                  goto done;
+
+          /* run files assembler */
+          if (arg = marg)
+                  do
+                  {       arg = *arg;
+                          asm(l_str(arg));
+                  } while (arg != marg);
+          if (cflag)
+                  goto done;
+
+          /* run (MicroSoft) linker */
+          /* L task/n/e, parg..., carg..., marg..., larg..., CLIB */
+          /* note that we do not explicitly check the length of this command */
+
+          strcpy(buf, L);
+          strcat(buf, &quot; &quot;);
+
+          /* decide on output file name */
+          if (task)
+                  strcat(buf, l_str(task));
+          else if (parg)
+                  strcat(buf, l_first(parg));
+          else if (carg)
+                  strcat(buf, l_first(carg));
+          else if (marg)
+                  strcat(buf, l_first(marg));
+          else if (larg)
+                  strcat(buf, l_first(larg));
+
+        else
+        {       strcat(buf, drive);
+                strcat(buf, &quot;task&quot;);
+        }
+        strcat(buf, &quot;/n/e&quot;);
+
+        /* add all modules */
+        if (arg = parg)
+                do
+                {       arg = *arg;
+                        strcat(buf, &quot;,&quot;);
+                        strcat(buf, l_str(arg));
+                } while (arg != parg);
+        if (arg = carg)
+                do
+                {       arg = *arg;
+                        strcat(buf, &quot;,&quot;);
+                        strcat(buf, l_str(arg));
+                } while (arg != carg);
+        if (arg = marg)
+                do
+                {       arg = *arg;
+                        strcat(buf, &quot;,&quot;);
+                        strcat(buf, l_str(arg));
+                } while (arg != marg);
+        if (arg = larg)
+                do
+                {       arg = *arg;
+                        strcat(buf, &quot;,&quot;);
+                        strcat(buf, l_str(arg));
+                } while (arg != larg);
+
+         /* add smallC library and submit */
+         strcat(buf, &quot;,&quot;);
+         strcat(buf, CLIB);
+         submit(buf);
+
+         /* submit the batch stream */
+  done:
+         submit(NULL);
+  }
+
+  /*
+   *     circular list routines
+   */
+
+  pushs(l, s)            /* attach string to list */
+          LIST *l;       /* list */
+          char *s;       /* string */
+
+  {       LIST *r;       /* new element*/
+
+         if ((r = calloc(sz_STR(s), 1)) == NULL)
+         {       fputs(&quot;no room&quot;, stderr);
+                 exit();
+         }
+         strcpy(l_str(r), s);
+         /* empty list: link first element to itself */
+         if (l == NULL)
+                 return l_next(r) = r;
+         /* nonempty list: tie element into it */
+         l_next(r) = l_next(l);
+         return l_next(l) = r;
+  }
+
+  pushf(l, f)            /* attach file name to list */
+         LIST *l;        /* list */
+         char *f;        /* file name */
+  {      LIST *r;        /* new element */
+
+         if ((r = calloc(sz_ FILE(f), 1)) == NULL)
+         {       fputs(&quot;no room&quot;, stderr);
+                 exit();
+         }
+         if (f[1] != ':')        /* use current drive */
+         {       strcpy(l_str(r), drive);
+                 strcat(l_str(r), f);
+         }
+         else                    /* explicit drive */
+                 strcpy(l_str(r), f);
+         if (l == NULL)
+                 return l_next(r) = r;
+         l_next(r) = l_next(l);
+         return l_next(l) = r;
+  }
+
+  /*
+   *     source file type analysis
+   */
+
+  kind(f)                /* determine type of source */
+         char *f;        /* file name */
+  {      char *p;
+
+         if (p = rindex(f, '.'))
+                 if (strcmp(p, Pfile) == O)
+                 {       if (freopen(f, &quot;r&quot;, stdin) == NULL)
+                                 goto badfile;
+                         *p = '\O';
+                         return Psource;
+                 }
+                 else if (strcmp(p, Cfile) == 0)
+                 {       if  (freopen(f, &quot;r&quot;, stdin) == NULL)
+                                  goto badfile;
+                         *p = '\0';
+                         return Csource;
+                 }
+                 else if (strcmp(p, Mfile) == 0)
+                 {       if (freopen(f, &quot;r&quot;, stdin) == NULL)
+                                 goto badfile;
+                         *p = '\0';
+                         return Msource;
+                 }
+         return 0;
+  badfile:
+         fputs(&quot;cannot open &quot;, stderr);
+         fputs(f, stderr);
+         exit();
+  }
+
+  /*
+   *      routines to produce command calls
+   */
+
+  run(cmd, opt, fnm, in, out)     /* run smallC task */
+                          /* cmd opt... fnm.in &gt; fnm.out */
+          char *cmd;      /* command name */
+          LIST *opt;      /* option List */
+          char *fnm;      /* file name to process */
+          char *in;       /* input file extension */
+          char *out;      /* output file extension */
+  {       LIST *p;
+
+          strcpy(buf, cmd);
+          if (p = opt)
+                  do
+                  {       p = l_next(p);
+                          strcat(buf, &quot; &quot;);
+                          strcat(buf, l_strip));
+                  } while (p != opt);
+          strcat(buf, &quot; &quot;);
+          strcat(buf, fnm);
+  #ifndef c80
+          strcat(buf, in);
+          strcat(buf, &quot;&gt;&quot;);
+          strcat(buf, fnm);
+          strcat(buf, out);
+  #endif
+          submit(buf);
+  }
+
+  asm(fnm)               /* run (MicroSoft) macro assembler */
+                         /* M = fnm */
+          char *fnm;     /* file name to process */
+  {
+          strcpy(buf, M);
+          strcat(buf, &quot; =&quot;);
+          strcat(buf, fnm);
+          submit(buf);
+  }
+
+  erase(fnm,ext)         /* erase intermediate file */
+                         /* era fnm.ext */
+          char *fnm;     /* file name */
+          char *ext;     /* extension */
+  {
+          strcpy(buf, &quot;era &quot;);
+          strcat(buf, fnm);
+          strcat(buf, ext);
+          submit(buf);
+  }<p>
+</pre>
+
+<b><a name="list11-2">LISTING 11-2</a><p>
+</b>
+<pre>
+  /*
+   *
+   *      Contributed by A. T. Schreiner
+   *
+   */
+
+  /*
+   *      submit() -- submit commands to  CP/M batch
+   *      ats 5/83
+   */
+
+  #define DSKBYTE 4        /* BDOS/CCP selected disk, user# */
+
+  /*
+   *      needed from the i/o header file
+
+  #define FILE   ???   type to represent files
+  #define NULL   0     null pointer, false
+  #define EOF    ???   end of file indication
+
+   */
+  /*
+   *      runtime support routines
+   */
+
+  extern  _bputchar(),    /* (c) write char c uninterpreted to file *_cfp */
+          _cfp,
+          _drive(),       /* BDOS function 25: current drive number */
+          calloc(),       /* (n,l) return NULL or -&gt; n elements of length l */
+          exit(),         /* terminate program execution */
+          fclose(),       /* (f) close file described by f */
+          fopen(),        /* (n,m) return NULL or descriptor for file &quot;n&quot;
+                             opened to append (m == &quot;a&quot;) */
+          fseek(),        /* (f,p,w) position f to byte or sector p
+                             measured according to w */
+          strcpy(),       /* (a,b) copy string b to string a */
+          strlen();       /* (s) return number of characters in string s */
+
+  /*
+   *      global data
+   */
+
+  int *_submit;           /* chain of submitted buffers */
+
+  submit(s)               /* add command to CP/M job stream */
+          char * s;       /* command to submit */
+  {       FILE *fp;       /* need to use block i/o, NOT putc */
+          char *cp;
+          int *wp, i;
+
+          /* if string argument, save it as a command */
+          if (s)
+          {       if (strlen(s) &gt; 126)
+                          return NULL;    /* too long */
+                  if ((wp = calloc(strlen(s)+2+2,1)) == NULL)
+                          return NULL;    /* no room */
+                  *wp = submit;
+                  _submit = wp;
+                  cp = _submit+1;
+
+                  *cp = strlen(s);        /* length byte */
+                  strcpy(cp+1, s);        /* text */
+                  return s;
+          }
+
+          /* if anything to submit, write it to a:$$$.sub */
+          if (_submit)
+          {       if ((fp = fopen(&quot;a:$$$.sub&quot;, &quot;a&quot;)) == NULL)
+                          return NULL;    /* cannot make batch file */
+                  if (fseek(fp, O, 10) == -1)
+                          goto error;
+                  _cfp = fp;              /* for_bputchar() */
+
+                  /* last command: reselect current drive */
+                  _bputchar(2);
+                  _bputchar(_drive()+'a');
+                  _bputchar(':');
+                  for (i = 3; i &lt; 127; ++i)
+                          _bputchar(O);
+                  /* check last byte in sector for overflow */
+                  if (_bputchar(O))
+                          goto error;
+
+                  /* other commands from stack */
+                  do
+                  {
+                          cp = _submit+1;
+                          for (i = O; i &lt; 127; ++i)
+                          {       _bputchar(*cp);
+                                  if (*cp)
+                                          ++cp;
+                          }
+                          if (_bputchar(*cp) == EOF)
+                          {
+  error:                          fclose(fp);
+                                  return NULL;    /* overflow */
+                          }
+                  } while (_submit = *_submit);
+
+                  /* signal CCP to select a: and user 0 */
+                  cp = DSKBYTE;
+                  *cp = O;
+          }
+
+          /* exit this program and perform warm start */
+          exit();
+  }<p>
+</pre>
+
+<b><a name="list11-3">LISTING 11-3</a><p>
+</b>
+<pre>
+  /*
+   *
+   * Contributed by A. T. Schreiner
+   *
+   */
+
+  #include &lt;stdio.h&gt;
+  extern strcpy(), strcat(), submit(), puts();
+  main(argc, argv)
+          int argc;
+          int *argv;
+  {       int i;
+          char buf[128];
+
+          switch (argc) {
+          default:
+                  strcpy(buf, &quot;b:x &quot;);
+                  for (i=2; i&lt;argc; ++i)
+                  {       strcpy(buf+4, argv[i]);
+                          submit(buf);
+                  }
+          case 2:
+                  puts(argv[1]);
+          case 1:
+          }
+          if (submit(NULL) == NULL)
+                  puts(&quot;oops&quot;);
+   }
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML>

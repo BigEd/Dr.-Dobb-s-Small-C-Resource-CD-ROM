@@ -1,0 +1,42 @@
+Title:			FANFARE
+Author:			Alan Phillips
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Alan Phillips, 
+			Department of Computing, 
+			Lancaster University
+Date:			13/11/86
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a04
+Date mounted/updated:	13/11/86
+File names:		a04fan.hex         Intel Hex form of the program
+			a04fan.doc         The user guide
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+You will need to get the hex-encoded form of the program onto a disc, then
+run the BBC Hex-to-Binary converter to convert this to binary form. The
+resulting file can be programmed into a 27128 EPROM, or loaded into sideways
+RAM and used from there.
+
+Description:
+
+Fanfare is a Teletext carousel display system. It incorporates a mode 7
+screen editor, which can also be used to prepare stand-alone screen files.
+The system allows you to hold almost 200 pages in a file, and display them
+according to a programmed sequence.
+

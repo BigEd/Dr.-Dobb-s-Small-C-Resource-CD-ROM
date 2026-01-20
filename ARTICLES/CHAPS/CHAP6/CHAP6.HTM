@@ -1,0 +1,4235 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.
+-->
+<CENTER>
+<B><H1>A NEW LIBRARY FOR SMALL-C</H1> <p>
+by James Hendrix and Ernest Payne<p>
+</CENTER>
+</B>
+
+
+<i>This article first appeared in Dr. Dobb's Journal #91 and #92 
+(May and June 1984). The 
+library has since been revised. The listings printed here are of 
+the new version, 
+and the text of the article has been altered to accommodate the 
+changes. </i><p>
+ 
+Small-C Version 2, by James Hendrix, presented a meager 
+function library that failed to stress compatibility with the 
+Unix libraries. 
+Readers quickly pointed out that shortcoming, and several people 
+have gone on to 
+develop their own &quot;standard&quot; libraries. <p>
+
+This article describes one such library that was developed 
+jointly by the 
+authors. It was implemented under CP/M 2.2 and provides full 
+support for the 
+Small-C compiler and programs it compiles. Virtually all the Unix 
+functions that 
+apply to foreign environments have been included. Naturally, 
+standard files, 
+with I/O redirection, and Unix-style command-line argument 
+passing is 
+supported. We chose the MACRO-80 package, from Microsoft, for the 
+project. <p>
+
+Other than the arithmetic and logical library (a load module in 
+this 
+library), which remains essentially as Ron Cain presented it in 
+1980 (see &quot;A 
+Small-C Compiler for the 8080s,&quot; <i>DDJ</i> #45 or the 
+excerpt on this CD-ROM), only 
+about 20 lines of assembly language code exist in this 
+implementation. That 
+makes even the low-level system functions much easier to 
+understand, and to 
+adapt to other environments. <p>
+
+We made some changes in the compiler itself with this 
+implementation, so 
+it has been redesignated version 2.1. Except for the library, the 
+differences from 
+version 2 are minor, so we only mention them in passing. They 
+are: <p>
+<OL> 
+<LI> To reduce command-line clutter, a filename in the command 
+line (not a 
+        redirection specification) causes the compiler to output 
+to a file having the same name 
+        but with an extension of MAC. The default input file 
+extension is C. If more than 
+        one file is specified, they are compiled into a single 
+program bearing the name of 
+        the first file. If no filename is given, input and output 
+are done on the standard 
+        input and output files, as before, and redirection may be 
+used to change the 
+        default console assignments.  
+<LI> Undeclared functions are automatically declared to be 
+external. 
+<LI> The syntax <i>(*func)()</i> for declaring pointers to 
+functions and for calling such 
+        functions is now accepted.  
+<LI> To accommodate the MACRO-80 package, the code generating 
+logic was changed 
+        and some functions were renamed both to avoid clashes 
+with reserved symbols 
+        and because external names are limited to six characters. 
+
+<LI>Fixes and enhancements reported in <i>DDJ</i> by Andrew 
+Macpherson of East Sussex, 
+        England, and Paul West of Ann Arbor, Michigan, have been 
+applied. Several other 
+        minor fixes have been applied.  
+<LI> Calls to nonstandard functions have been replaced by 
+standard library calls. <p>
+</OL>
+ 
+<i>The Small-C Handbook</i> by J. E. Hendrix (Reston Publishing 
+Company, 1984) 
+fully documents, from the user's point of view, the Small-C 
+language and 
+compiler, including this library. Most of the material in the 
+section User Functions 
+is borrowed from the book. <p>
+<B>
+Library Organization <p>
+</B> 
+Generally, each library function is compiled and assembled 
+separately and is 
+then kept in a library of relocatable object modules, which we 
+call CLIB.REL. 
+Some functions that share common code, or are otherwise related, 
+are grouped 
+into a single module. Examples are printf and fprintf, and the 
+low-level system 
+functions found in the module CSYSLIB. At link time, L80 is 
+directed to search 
+CLIB.REL to resolve external references. Everything needed to 
+support the 
+program under CP/M is loaded and linked into the resulting COM 
+file. Modules 
+that are not referenced are not loaded. The minimum set of 
+functions loaded 
+comes to 5.5K bytes. <p>
+
+Since L80 does not scan backwards to find a module, the library 
+is 
+organized so that backward references only involve modules that 
+are known to be 
+loaded. Otherwise, it is arranged alphabetically. The compiler 
+always generates 
+an external reference to <i>_link</i>, which contains just <p>
+<PRE> 
+     _link::~ext~_main 
+             end <p>
+</PRE>  
+This occurs first in the library and forces the loading of 
+CSYSLIB, which follows. 
+The last module in the library is CALL, the arithmetic and 
+logical library. It is 
+loaded last in order to establish the location of the beginning 
+of free memory. <p>
+<B>
+System Functions <p>
+</B> 
+The low-level system functions in the source file CSYSLIB.C are 
+shown in 
+<a href="#list6-1">Listing 6-1</a>. The names of these functions 
+and their global variables formerly began 
+with the underscore character to avoid clashes with user-written 
+function and 
+variable names. But we found that older versions of MACRO-80 
+would not 
+accept such names as external references. So the letter U, 
+meaning &quot;underscore,&quot; 
+was substituted. Throughout this article the underscore still 
+appears, although 
+the listings that postdate the article contain the letter U. <p>
+<B>
+Program Initiation and Termination <p>
+</B> 
+The last part of CALL contains the following code: <p>
+<PRE>  
+     _end: lhld 6              ;get bdos address 
+           sphl                ;use for base of stack 
+           lxi h,_end          ;get start of free memory 
+           shld _memptr##      ;use for memory allocation 
+           jmp _main##         ;parse command line, execute program 
+           end _end <p>
+</PRE>  
+The label <i>_end</i> designates the end of the program and the 
+beginning of free 
+memory. As indicated by the last line, this is also where program 
+execution 
+begins. (L80 plants a jump to this address at the beginning of 
+the user program.) 
+This logic is executed once, and then its memory space becomes 
+available for 
+use by the program. The label <i>_end</i> (1) sets SP to the base 
+of BDOS, thus 
+overlaying the CCP, (2) sets <i>_memptr</i> to the beginning of 
+free memory, and (3) 
+jumps to <i>_main</i> (in CSYSLIB.C) to prepare for execution of 
+the program.<p>
+ 
+The function <i>_parse()</i> is called by <i>_main()</i> to 
+perform command-line 
+parsing and I/O redirection. It first copies the CP/M command 
+line into a 
+dynamically allocated buffer and then scans it, calling <i>
+_field()</i> to isolate 
+arguments and <i>_redirect()</i> to alter the assignments of 
+stdin and stdout (appending is 
+supported). If a redirection open fails, the program aborts after 
+displaying the 
+letter R for redirection error. Finally, <i>argc</i> and <i>argv
+</i> are pushed onto the stack 
+and <i>main()</i> is called to start program execution. On 
+return, <i>exit()</i> is called with 
+a zero argument signifying successful completion. Of course, the 
+program could 
+call <i>exit()</i> directly and pass whatever error code it 
+wishes. The error code, if it is 
+nonzero, is written as a byte to the console. Any open files are 
+closed and a 
+warm start is performed. <p>
+<B> 
+The BDOS Interface <p>
+</B> 
+A bare-bones BDOS interface is provided as a function called <i>
+_bdos()</i>. It takes 
+two arguments--first the function code to be placed in the C 
+register, then the 
+value to be placed in the DE register pair before calling address 
+5. On return, HL 
+(the primary register for Small-C) receives the CP/M return code 
+from the A 
+register. This simple interface is sufficient to support the 
+library functions. A 
+more complete BDOS interface was described by Terje Bolstad (see 
+&quot;CP/M 
+BDOS and BIOS Calls for C&quot; on this CD-ROM). His ideas could 
+be applied here to 
+provide more flexibility, if that is desirable. <p>
+<B>
+Memory Management <p>
+</B> 
+Memory is allocated in unlinked, contiguous blocks beginning at 
+the end of the 
+program. Each call to <i>_alloc()</i> allocates one block of 
+zeroed or uninitialized 
+memory, depending on the value of the second argument. The 
+standard 
+functions <i>malloc()</i> and <i>calloc() call _alloc()</i>. 
+Memory may be deallocated by calling 
+<i>free()</i> or <i>cfree()</i>. But care must be taken to 
+deallocate memory in the reverse 
+order from which it was allocated. Deallocating memory simply 
+places a new 
+value in <i>_memptr</i> and everything above that address is 
+considered free. A 
+function called <i>avail()</i> may be called to find out how much 
+memory lies between 
+<i>_memptr</i> and the stack pointer. If there is a program/stack 
+overlap,<i> avail()</i> will 
+either return zero or abort the program after displaying the 
+letter M for memory 
+error, as requested. <i>Malloc()</i> and <i>calloc()</i> abort 
+this way if sufficient memory is 
+not available. <p>
+<B>
+File Management <p>
+</B> 
+Low-level Unix functions identify files by means of small integer 
+values called 
+file descriptors. By contrast, the Unix Standard I/O Library uses 
+a pointer to a 
+file control structure. Our library uses the file descriptor 
+approach throughout, 
+even though it includes functions from the Standard I/O Library. 
+The impact of 
+this difference is negligible if you restrict file references to 
+the values returned 
+by the function <i>fopen()</i> and the symbols <i>stdin</i>, <i>
+stdout</i>, and <i>stderr</i> (defined in 
+the header file STDIO.H in <a href="#list6-1">Listing 6-1</a> as 
+0, 1, and 2, respectively). The symbol 
+MAXFILES in CLIB.DEF determines how many files may be opened 
+simultaneously. Seven integer arrays are dimensioned according to 
+that value. They are: <p>
+<UL> 
+<LI> <b>_status[MAXFILES] </b> --  This is a bit-encoded status 
+word indicating whether 
+                      a file is open on the corresponding file 
+descriptor; 
+                      zero implies a closed condition. Separate 
+bits 
+                      authorize reading and writing, and there 
+are bits for 
+                      end-of-file and error conditions. 
+ 
+<LI> <b>_device[MAXFILES]</b> --  This contains a nonzero code 
+designating one of the 
+                      CP/M logical devices when a nondisk file is 
+opened 
+                      on the corresponding file descriptor. 
+ 
+<LI>  <b>_fcbptr[MAXFILES]</b> --  When a disk file is first 
+opened on a file descriptor, a 
+                      standard CP/M file control block is 
+dynamically 
+                      allocated and its address is kept here. 
+When the file is 
+                      closed, the FCB is saved for reuse. Recall 
+that the 
+                      memory allocation scheme is too primitive 
+to allow 
+                      indiscriminate freeing of memory. Likewise, 
+the 
+                      program must not free memory that was 
+allocated 
+                      before a disk file is opened. 
+ 
+<LI>  <b>_bufptr[MAXFILES]</b> -- As with the FCB, a buffer is 
+allocated when a disk file 
+                      is opened; its address is kept here. 
+Buffers, also, are 
+                      saved when a file is closed. 
+ 
+<LI>  <b>_chrpos[MAXFILES]</b> -- This is an offset to the next 
+byte to be obtained from 
+                      the corresponding buffer. NOTE: The current 
+sector 
+                      of a file is maintained in the random 
+record number 
+                      field in the FCB itself, and only random 
+CP/M reads 
+                      and writes are performed. 
+ 
+<LI>  <b>_dirty[MAXFILES] </b> --  A nonzero value here indicates 
+that the 
+                      corresponding buffer contains new data that 
+need to 
+                      be written to disk. 
+ 
+<LI>  <b>_nextc[MAXFILES]</b> --   A character that has been 
+pushed back into a file by 
+                      <i>ungetc()</i> is kept here. The value EOF 
+(defined in 
+                      STDIO.H), since it cannot be pushed back, 
+indicates 
+                      an empty bucket. <p>
+</UL> 
+There is no attempt to save space in these arrays, since Small-C 
+generates 
+significantly more code to access character values than integers. 
+Since these arrays are 
+small, more space would be tied up in code than would be saved by 
+making 
+some of them character arrays. <p>
+
+The function <i>_mode()</i> is used extensively to verify both 
+that a file 
+descriptor has a legal value and that the indicated file is open. 
+If the file 
+descriptor is valid the status of its file is returned, otherwise 
+zero is 
+returned.<p>
+ 
+The function<i> _open()</i> is called by both <i>fopen()</i> and 
+<i>freopen()</i>. It tries to 
+open a file on a designated file descriptor. It verifies that the 
+first character of 
+the mode argument is <i>r</i> (read), <i>w</i> (write), or <i>a
+</i> (append). If the filename is 
+CON:, LST:, PUN:, or RDR:, it simply assigns the indicated 
+logical device to the 
+file descriptor and returns. Otherwise, if necessary, it 
+allocates an FCB and a 
+buffer for the file. It then calls<i> _newfcb()</i> to (1) 
+validate the filename, (2) force 
+it to uppercase, and (3) initialize the FCB. Finally, it calls <i>
+_bdos()</i> to open the 
+file. In the case of read mode, the first sector (128-byte CP/M 
+record) of the file 
+is automatically read into the buffer. In the case of write mode, 
+if the file 
+already exists it is first deleted and a new one is created. In 
+the case of append 
+mode, if the file does not exist a new one is created. If the 
+file does exist it is 
+opened, then positioned at the beginning of the last block, and 
+then read to 
+end-of-file by repeatedly calling <i>fgetc()</i>. If a control-Z 
+signals end-of-file, <i>_chrpos</i> is 
+adjusted to begin writing at that position. Note that although 
+this approach 
+avoids reading the entire file, a character stream file is 
+presumed and embedded 
+control-Z characters may be missed. If + follows the mode 
+character (for 
+example, r+), an update mode is implied, and <i>_status</i> is 
+set to allow both reading 
+and writing. This new feature of Unix/C is documented by C. D. 
+Perez in <i>A 
+Guide to the C Library for Unix Users</i>. Apparently, under 
+Unix/C, you must 
+call <i>fseek()</i> or <i>rewind()</i> when switching between 
+read and write operations. 
+However, our library permits unrestricted switching between reads 
+and writes; 
+each operation begins with the byte following the last one 
+transferred. Since 
+Small-C does not yet support long integers, we do not support <i>
+fseek()</i>. Instead, 
+<i>cseek()</i> provides a seek to CP/M record boundaries. <p>
+
+When a read detects end-of-file, the EOF bit in <i>_status</i> is 
+set, thereby 
+disabling further reads. Writes are permitted, however. The EOF 
+bit is cleared by a 
+successful seek or rewind operation. Opening a file in write or 
+append mode 
+automatically sets the EOF bit. You may extend a file either by 
+opening in 
+append mode or by opening in read-update mode, reading to 
+end-of-file, and then 
+writing. <p>
+
+Unix performs only binary file transfers, and the end of a file 
+is maintained 
+as a pointer in the directory structure. It is up to the device 
+drivers to translate 
+between the newline character and the carriage-return, line-feed 
+sequence. This 
+scheme cannot be followed under CP/M, however. First, there is no 
+place in the 
+CP/M file directory to store an end-of-file pointer. Then, in 
+order to maintain 
+ASCII file compatibility with other CP/M software, control-Z must 
+be used to 
+signal end-of-file, and the newline character must be translated 
+into a carriage- 
+return, line-feed sequence on output and vice versa on input. 
+Therefore, it was 
+necessary to choose a means of discriminating between byte stream 
+(binary) 
+and character stream (ASCII) operations. It would not have 
+violated the intent 
+of the C developers to specify different, non-Unix open modes for 
+this purpose. 
+But we preferred to retain the standard open modes and 
+distinguish between the 
+I/O functions instead. In our library, calls to <i>read()</i>, <i>
+fread()</i>, <i>write()</i>, and 
+<i>fwrite()</i> give binary transfers. All other calls (for 
+example, <i>getc()</i>, <i>fgets()</i>, and so 
+on) give ASCII transfers. This makes Small-C programs upward 
+compatible with 
+Unix without changing the open modes. <p>
+
+Note that binary reads detect end-of-file only at the end of the 
+last sector in 
+a file. This is necessarily inconsistent with Unix, which can tie 
+the end of a file 
+to the byte. <p>
+
+Diagrammed in Figure 6-1 are the principal functions involved in 
+I/O 
+transfers. Lines connecting the function names illustrate the 
+possible flow of control. 
+All input/output requests pass through either <i>_read()</i> or 
+<i>_write()</i>. These 
+perform only binary data transfers, one byte at a time. The logic 
+for character 
+stream operations is in <i>fgetc()</i> and <i>fputc()</i> which, 
+in turn, are called by the 
+other character stream functions. <p>
+
+The functions<i> _conin()</i> and <i>_conout()</i> perform 
+console communication. 
+CP/M Direct Console I/O is used for all console communication. On 
+output, 
+this gives full control of the console device to the program. It 
+also allows the 
+program to reliably poll the console (by means of the function <i>
+poll()</i>) for 
+operator input while writing data to the console. Had 
+conventional console I/O been 
+used, CP/M would also poll for control characters, making it a 
+matter of chance 
+who would get an input character. A consequence of this choice is 
+that the 
+customary keyboard input services (echo, rubout, and so on) had 
+to be built 
+into <i>_conin()</i> and <i>fgets()</i>. But, as a look at these 
+functions will show, the cost 
+was modest. <p>
+<PRE> 
+<CENTER>
+<b>Figure 6-1. Data transfer flow of control</b><p>
+</CENTER>
+ 
+                _read                       _write 
+                | | |                       | | | 
+    +-----------+ | |                       | | +---------------+ 
+    |      +------+ |                       | +-----------+     | 
+    |      |     _getsec                 _putsec          |     | 
+    |      |       | | |                   | | |          |     | 
+    |      |       | | +--------+----------+ | |          |     | 
+    |      |       | |          |            | |          |     | 
+    |      |       | |       fflush          | |          |     | 
+    |      |       | |          |            | |          |     | 
+    |      |       | +----------+            | |          |     | 
+    |      |       |            |            | |          |     | 
+    |      |       | +---------(|)-----------+ |          |     | 
+    |      |       | |          |              |          |     | 
+    |   _conin  _advance     _sector       _newbuf     _conout  | 
+    |      |                    |                         |     | 
+    +------+--------------------+-------------------------+-----+ 
+                                | 
+                              _bdos <p>
+
+            
+</PRE>
+
+As their names imply, <i>_getsec()</i> and <i>_putsec()</i> 
+transfer a sector of data 
+between a buffer and the disk. They are called when buffers 
+become empty or 
+full. Getting a sector involves first flushing the buffer to disk 
+if it contains new 
+data. Next, the random record number (RRN) of the FCB is advanced 
+by calling 
+<i>_advance()</i>. Finally, the data is transferred by calling <i>
+_sector()</i> (which calls 
+<i>_bdos()</i>. The end-of-file status is set if the attempt 
+fails.<p>
+ 
+Writing a sector differs from reading by more than the direction 
+of the data 
+flow. The order of calls to <i>_sector()</i> and <i>_advance()</i>
+ are reversed, since the RRN 
+now describes the position in the file where the newly filled 
+buffer should go. 
+After transferring the data, <i>_newbuf()</i> is called to pad 
+the buffer with control-Z 
+characters in anticipation of further <i>_write()</i> calls. <p>
+
+A change to the original <i>getsec()</i> allowed the reading of 
+disk directories. A 
+directory is made to look like an ASCII file of filenames, one to 
+a line. A 
+directory is indicated by a drive specifier without a filename. 
+For example, the 
+specifier B: indicates the directory on drive B. X: indicates the 
+default directory. 
+<i>Fopen()</i> and <i>freopen()</i> accept these 
+&quot;directory&quot; names just like any other name. 
+Directory names may also be used when redirecting the standard 
+input file. 
+Directory files can only be read; writing produces an error. <i>
+Isatty()</i> answers YES to 
+directory files, <i>cseek()</i> returns EOF, <i>fflush()</i> does 
+nothing, and <i>ungetc()</i> works as 
+usual. This feature takes up .3K bytes, which can be eliminated 
+by deleting 
+<i>#define</i> DIR in CSYSLIB.C before compiling it. We have 
+dropped the original 
+function <i>dir()</i> in favor of this more generalized (and 
+Unix-like) approach.<p> 
+<B>
+User Functions <p>
+</B> 
+<a href="#list6-2">Listing 6-2</a>  shows the source code for the 
+user-level functions. Most of them are 
+patterned after Unix counterparts. However, some are unique to 
+this library and 
+are designated as Small-C functions. Several symbols, which are 
+defined in 
+STDIO.H, are mentioned. They are: <p>
+<PRE> 
+     #define stdin      0     /* fd for standard input file */ 
+     #define stdout     1     /* fd for standard output file */ 
+     #define stderr     2     /* fd for standard error file */ 
+     #define ERR       -2     /* error condition return value */ 
+     #define EOF       -1     /* end-of-file return value */ 
+     #define NULL       0     /* value of a null character */ <p>
+</PRE> 
+In addition, the abbreviation fd refers to a file descriptor.<p> 
+ 
+<b>
+Input/Output Functions</b> <p>
+<PRE>  
+     fopen (name, mode) char *name, *mode; <p>
+</PRE>  
+This function attempts to open the file indicated by the 
+null-terminated 
+character string at name. Mode points to a string indicating the 
+use for which the file 
+is to be opened. The values for mode are <i>r</i> (read), <i>w</i>
+ (write), and <i>a</i> (append). <p>
+    
+Read mode opens an existing file for input. Write mode either 
+creates a new 
+file or opens an old file and truncates it so writing will start 
+at the beginning of 
+the file. Append mode allows writing that begins at the end of an 
+existing file or 
+the beginning of a new one. <p>
+
+In addition, there are modes that allow file updating (both 
+reading and 
+writing). They are <i>r+</i> (update read), <i>w+</i> (update 
+write), and <i>a+</i> (update 
+append). <p>
+
+These modes are the same as their nonupdate counterparts in terms 
+of 
+their effect at open time, but they allow switching between<i> 
+read()</i> and <i>write()</i> 
+modes by interleaving calls to input and output functions. Unless 
+the program 
+performs a seek or rewind operation, the next read or write 
+operation begins at 
+the point where the previous one finished. If the attempt to open 
+a file is 
+successful, <i>fopen()</i> returns an <i>fd</i> value for the 
+open file; otherwise it returns NULL. 
+That <i>fd</i> is then used in subsequent input/output function 
+calls to identify the 
+file. Only the standard files may be used without first calling 
+<i>fopen()</i>. <p>
+<PRE>  
+     freopen (name, mode, fd) char *name, *mode; int fd; <p>
+</PRE>  
+This function closes the previously opened file indicated by <i>
+fd</i> and opens a new 
+one whose name is in the null-terminated character string at 
+name. Mode points 
+to a character string indicating the open mode (same as for <i>
+fopen</i>). It returns the 
+original value of <i>fd</i> on success or NULL on a failure to 
+close the old file or to 
+open the new one. Note, however, that since the fd for the 
+standard input file is 
+zero, there is no way to distinguish success from failure in that 
+case.<p> 
+<PRE>  
+     fclose (fd)   int fd; <p>
+</PRE>  
+This function closes the specified file. If any new data is being 
+held in the file's 
+buffer, it is first written to disk. It returns NULL on success, 
+or a nonzero value 
+on error. <p>
+<PRE>  
+     fgetc (fd)   int fd; (alias getc) <p>
+</PRE>  
+This function returns the next character from the file indicated 
+by fd. If no 
+more characters remain in the file or an error condition occurs, 
+it returns EOF. 
+The end of the file is detected by an occurrence of the 
+implementation-standard 
+end-of-file character or the physical end of the file. <p>
+<PRE>  
+     ungetc (c, fd) char c; int fd; <p>
+</PRE>  
+This function logically (not physically) pushes the character c 
+back into the file 
+indicated by fd. The next read from that file will retrieve that 
+character first. 
+Only one character at a time may be held in waiting. This 
+function returns the 
+character itself on success, or EOF if a previously pushed 
+character is being held 
+or if c has the value of EOF. You cannot push EOF into a file. 
+Performing a seek 
+or rewind operation on a file causes a pushed character to be 
+forgotten. <p>
+<PRE>  
+     getchar ( ) <p>
+</PRE>  
+This function is equivalent to <i>fgetc</i> (<i>stdin</i>). <p>
+<PRE>  
+     fgets (str, sz, fd) char *str; int sz, fd; <p>
+</PRE>  
+This function reads up to sz-1 characters into memory from the 
+file indicated 
+by fd, starting at the address indicated by <i>str</i>. Input is 
+terminated after 
+transferring a newline character. A null character is appended 
+after the newline or in 
+the last position if newline is not found.<i> Fgets() </i>returns 
+<i>str</i> for success, 
+otherwise NULL for end-of-file or an error. <p>
+<PRE>  
+     fread (ptr, sz, cnt, fd) char *ptr; int sz, cnt, fd; <p>
+</PRE>  
+This function reads, from the file indicated by <i>fd</i>, <i>cnt
+</i> items of data <i>sz</i> bytes in 
+length into memory starting at the address indicated by <i>ptr</i>
+. A count of the 
+actual number of items read is returned to the caller. This might 
+be less than 
+cnt if the end of the file was encountered. This function 
+performs a binary 
+transfer; it does not convert carriage-return, line-feed 
+sequences into newline 
+characters and it has no special regard for end-of-file bytes. It 
+recognizes only the 
+physical end of the file. You should call <i>feof()</i> to 
+determine when the data is 
+exhausted, and <i>ferror()</i> to detect error conditions. <p>
+<PRE>  
+     read (fd, ptr, cnt) int fd, cnt; char *ptr; <p>
+</PRE>  
+This function reads, from the file indicated by <i>fd</i>, cnt 
+bytes of data into memory 
+starting at the address indicated by <i>ptr</i>. A count of the 
+actual number of bytes 
+read is returned to the caller. This might be less than <i>cnt</i>
+ if the end of the file 
+was encountered. This function performs a binary transfer; it 
+does not convert 
+carriage-return, line-feed sequences into newline characters and 
+it has no special 
+regard for end-of-file bytes. It only recognizes the physical end 
+of the file. You 
+should call <i>feof()</i> to determine for sure when the data is 
+exhausted, and <i>ferror()</i> 
+to detect error conditions. <p>
+ <PRE> 
+     gets (str) char *str; <p>
+</PRE>  
+This function reads characters into memory from <i>stdin</i> 
+starting at the address 
+indicated by <i>str</i>. Input is terminated when a newline 
+character is encountered, 
+but the newline itself is not transferred. A null character 
+terminates the input 
+string. <i>Gets()</i> returns <i>str</i> for success, otherwise 
+NULL for end-of-file or an error. 
+Since this function may transfer any amount of data, you must 
+check the size of 
+the input string to verify that it has not gone beyond its 
+allotted space.<p> 
+<PRE>  
+     feof (fd) int fd; <p>
+</PRE>  
+This function returns a nonzero value if the file designated by 
+<i>fd</i> has reached its 
+end. Otherwise, it returns NULL. <p>
+<PRE>  
+     ferror (fd) int fd; <p>
+</PRE>  
+This function returns a nonzero value if the file designated by 
+<i>fd</i> has 
+encountered an error condition since it was opened. Otherwise, it 
+returns NULL. <p>
+<PRE>  
+     clearerr (fd) int fd; <p>
+</PRE>  
+This function clears the error status for the file indicated by 
+<i>fd</i>.<p> 
+ 
+     fputc (c, fd) char c; int fd; (alias putc) <p>
+ 
+This function writes the character <i>c</i> to the file indicated 
+by <i>fd</i>. It returns the 
+character itself on success, otherwise EOF. If <i>c</i> is a new 
+line, then a 
+carriage-return, line-feed pair is written. <p>
+<PRE>  
+     putchar (c)   char c; <p>
+</PRE>  
+This function is equivalent to fputc (c, stdout). <p>
+<PRE>  
+     fputs (str, fd) char *str; int fd;<p> 
+</PRE>  
+This function writes characters beginning at the address 
+indicated by <i>str</i> to the 
+file indicated by <i>fd</i>. Each successive character is written 
+until a null byte is 
+found. The null byte is not written and a newline character is 
+not appended.<p> 
+<PRE>  
+     puts (str) char *str; <p>
+</PRE>  
+This function works like <i>fputs (str, stdout)</i> except that 
+it appends a new line to 
+the output. <p>
+<PRE>  
+     fwrite (ptr, sz, cnt, fd) char *ptr; int sz, cnt, fd; <p>
+</PRE>  
+This function writes, to the file indicated by <i>fd</i>, <i>cnt
+</i> items of data <i>sz</i> bytes long 
+from memory starting at the address indicated by <i>ptr</i>. It 
+returns a count of the 
+number of items written. An error condition may cause the number 
+of items 
+written to be less than <i>cnt</i>. You should call <i>ferror()
+</i> to verify error conditions, 
+however. This function performs a binary transfer; it does not 
+convert newline 
+characters into carriage-return, line-feed sequences.<p> 
+<PRE>  
+     write (fd, ptr, cnt) int fd, cnt; char *ptr; <p>
+</PRE>  
+This function writes, to the file indicated by <i>fd</i>, <i>cnt
+</i> bytes of data from memory 
+starting at the address indicated by ptr. It returns a count of 
+the number of bytes 
+written. An error condition may cause the number of items written 
+to be less 
+than cnt. You should call <i>ferror()</i> to verify error 
+conditions, however. This 
+function performs a binary transfer; it does not convert newline 
+characters into 
+carriage-return, line-feed sequences. <p>
+<PRE>  
+     fflush (fd) int fd; <p>
+</PRE>  
+This function forces any system-buffered changes out to the file. 
+Ordinarily, 
+data written to a disk file is held in a memory buffer until (1) 
+the buffer 
+becomes full, (2) the buffer space is needed to hold a different 
+sector of data from 
+the disk, or (3) a close of the file is performed. <i>Fclose()</i>
+ calls this function. 
+<i>Fflush()</i> returns NULL on success or EOF on error. <p>
+<PRE>  
+     cseek (fd, offset, from) int fd, offset, from;<p> 
+</PRE>  
+This Small-C function positions the file indicated by fd to the 
+beginning of the 
+128-byte record that is offset positions from the first record, 
+current record, or 
+end of file depending on whether from is 0, 1, or 2 respectively. 
+Subsequent 
+reads and writes proceed from that point. It returns NULL for 
+success, otherwise 
+EOF. <p>
+<PRE>  
+     rewind (fd) int fd; <p>
+ </PRE> 
+This function positions the file indicated by <i>fd</i> to its 
+beginning. It is equivalent 
+to a seek to the first byte of the file. It returns NULL on 
+success, otherwise EOF.<p> 
+ <PRE> 
+     ctell (fd) int fd; <p>
+ </PRE> 
+This Small-C function returns the position of the current record 
+of the file 
+indicated by <i>fd</i>. The returned value is the offset of the 
+current 128-byte record with 
+respect to the first record of the file. If fd is not assigned to 
+a disk file, -1 is 
+returned. <p>
+<PRE>  
+     unlink (name) char *name; (alias delete) <p>
+</PRE>  
+This function deletes the file indicated by the null-terminated 
+character string 
+at name. It returns NULL on success, otherwise ERR. <p>
+<PRE>  
+     rename (old, new) char *old, *new; <p>
+</PRE>  
+This Small-C function changes the name of the file specified by 
+old to the name 
+indicated by <i>new</i>. It returns NULL on success, otherwise 
+ERR. <p>
+<PRE>  
+     auxbuf (fd, size) int fd, size; <p>
+</PRE>  
+This Small-C function allocates an auxiliary buffer of size bytes 
+for <i>fd</i>. It returns 
+zero on success and ERR on failure, <i>fd</i> must be open, and 
+size must be greater 
+than zero and less than the amount of free memory. If <i>fd</i> 
+is a device, the buffer 
+is allocated but ignored. Extra buffering is useful in reducing 
+disk head 
+movement or drive switching during sequential operations. Once an 
+auxiliary buffer 
+is allocated it sticks for the duration of program execution, 
+even if <i>fd</i> is closed. 
+Calling this function a second time for the same fd returns ERR, 
+but otherwise 
+has no effect. Alternating read and write operations or 
+performing seeks will 
+produce unpredictable results. <i>Ungetc()</i> will operate 
+normally, however. 
+Ordinarily, it is counterproductive to allocate auxiliary buffers 
+to both input and 
+output files. <p>
+<PRE>  
+     iscons (fd) int fd; <p>
+</PRE>  
+This Small-C function returns a nonzero value if <i>fd</i> is 
+assigned to the console, 
+otherwise NULL. <p>
+<PRE>  
+     isatty (fd) int fd; <p>
+</PRE>  
+This function returns a nonzero value if <i>fd</i> is assigned to 
+a device rather than a 
+disk file, otherwise NULL.<p> 
+<B> 
+Formatted Input/Output Functions <p>
+</B> 
+<PRE> 
+     printf(str, arg1, arg2, ...) char *str; <p>
+</PRE>  
+This function writes to the standard output file a formatted 
+character string 
+consisting of the null-terminated character array at <i>str</i> 
+laced at specified points 
+with the character-string equivalents of the arguments 
+<PRE>  
+     arg1, arg2 ... <p>
+</PRE>  
+It returns a count of the total number of characters written. The 
+string at <i>str</i> is 
+called a control string. It is required, but the other arguments 
+are optional. The 
+control string contains ordinary characters and groups of 
+characters called 
+conversion specifications. Each conversion specification informs 
+<i>printf()</i> how to 
+convert the corresponding argument into a character string for 
+output. The 
+converted argument replaces its conversion specification in the 
+output. The 
+character % signals the start of a conversion specification, and 
+one of the letters b, c, d, 
+o, s, u, or x ends it. <p>
+
+Between these may be found, in the order listed and with no 
+intervening 
+blanks, a minus sign (-), a decimal integer constant (<i>nnn</i>
+), and/or a decimal 
+fraction (.mmm). These subfields are all optional. In fact, you 
+frequently see 
+conversion specifications with none of them. The minus sign 
+indicates that the 
+string, produced by applying a specified conversion to its 
+argument, is to be 
+left-adjusted in its field in the output. <p>
+
+The decimal integer indicates the minimum width of that field (in 
+
+characters). If more space is needed it will be used, but at 
+least the number of positions 
+indicated will be generated. The decimal fraction is used where 
+the argument 
+being converted is itself a character string (more correctly, the 
+address of a 
+character string). In this case the decimal fraction indicates 
+how many characters 
+maximum to take from the string. If there is no decimal fraction 
+in the 
+specification, then all of the string is used.<p>
+ 
+The terminating letter indicates the type of conversion to be 
+applied to the 
+argument. It may be one of the following: <p>
+<UL> 
+<LI>     b -- The argument should be considered an unsigned 
+integer and converted to binary 
+        format for output. No leading zeroes are generated. This 
+specification is unique 
+        to Small-C and should be used with that in mind. 
+<LI>     c -- This argument should be output as a character 
+without any conversion. In that 
+        case, the high-order byte will be ignored. 
+<LI>     d -- The argument should be considered a signed integer 
+and converted to a (possibly 
+        signed) decimal digit string for output. No leading 
+zeroes are generated. The sign 
+        is the left-most character; it is blank for positive and 
+&quot;-&quot; for negative.
+<LI>     o -- The argument should be considered an unsigned 
+integer and converted to octal 
+        format for output. No leading zeroes are generated. 
+<LI>     s -- The argument is the address of a null-terminated 
+character string that should be 
+        output as is but subject to the justification, minimum 
+width, and maximum size 
+        specifications indicated. 
+<LI>     u -- The argument should be considered an unsigned 
+integer and converted to an 
+        unsigned decimal character string for output. No leading 
+zeroes are generated. 
+<LI>     x -- The argument should be considered an unsigned 
+integer and converted to 
+        hexadecimal format for output. No leading zeroes are 
+generated.<p> 
+</UL>  
+If % is followed by anything other than a valid specification, it 
+is ignored and 
+the next character is written without change. So %% writes %. <p>
+
+<i>Printf()</i> scans the control string from left to right 
+sending everything to 
+<i>stdout</i> until it finds a % character. It then evaluates the 
+following conversion 
+specification and applies it to the first argument (following the 
+control string). 
+The resultant string is written to <i>stdout</i>. It then resumes 
+writing data from the 
+control string until it finds another conversion specification; 
+it applies that one 
+to the second argument. The procedure continues until the control 
+string is 
+exhausted. The result is a formatted output message consisting of 
+both literal 
+and variable data. <p>
+<PRE>  
+     fprintf(fd, str, arg1, arg2, ...) int fd; char *str; <p>
+</PRE>  
+This function works like printf() except that output goes to the 
+file indicated by 
+<i>fd</i>. <p>
+<PRE>  
+     scanf(str, arg1, arg2, ...) char *str; <p>
+</PRE>  
+This function reads a series of fields from the standard input 
+file, converts them 
+to internal format according to conversion specifications 
+contained in the 
+control string <i>str</i>, and stores them at the locations 
+indicated by the arguments: <p>
+<PRE>  
+     arg1, arg2, ... <p>
+</PRE>  
+It returns a count of the number of fields read. A field in the 
+input stream is a 
+contiguous string of graphic characters. It ends with the next 
+white-space 
+character (blank, tab, or newline) or, if its conversion 
+specification indicates a 
+maximum field width, it ends when the field width is exhausted. A 
+field normally 
+begins with the first graphic character after the previous field; 
+that is, leading 
+white space is skipped. Since the newline character is skipped 
+while searching 
+for the next field, <i>scanf()</i> reads as many input lines as 
+required to satisfy the 
+number of conversion specifications in its control string. Each 
+of the arguments 
+following the control string must yield an address value. <p>
+
+The control string contains conversion specifications and white 
+space 
+(which is ignored). Each conversion specification informs <i>
+scanf()</i> how to 
+convert the corresponding field into interal format, and each 
+argument following str 
+indicates the address where the corresponding converted field is 
+to be stored. 
+The character % signals the start of a conversion specification 
+and one of the 
+letters b, c, d, o, s, u, or x ends it.<p>
+ 
+Between these may be found, with no intervening blanks, an 
+asterisk 
+and/or a decimal integer constant. These subfields are both 
+optional. In fact, 
+conversion specifications frequently include neither of them. The 
+asterisk 
+indicates that the corresponding field in the input stream is to 
+be skipped. Skip 
+specifications do not have corresponding arguments. The numeric 
+field 
+indicates the maximum field width in characters. If present, it 
+causes the field to be 
+terminated when the indicated number of characters has been 
+scanned, even if 
+no white space is found. However, if a white-space character is 
+found before the 
+field width is exhausted, the field is terminated at that point. 
+<p>
+
+The terminating letter indicates the type of conversion to be 
+applied to the 
+field. It may be one of the following: <p>
+<UL> 
+<LI>     b  The field should be considered a binary integer and 
+converted to an integer 
+        value. The corresponding argument should be an integer 
+address. Leading zeroes 
+        are ignored. This specification is unique to Small-C and 
+should be used with that 
+        in mind. 
+<LI>     c  The field should be accepted as a single character 
+without any conversion. This 
+        specification inhibits the normal skip over white-space 
+characters. The argument 
+        for such a field should be a character address. 
+<LI>     d  The input field should be considered a (possibly 
+signed) decimal integer and 
+        converted into an integer value. The corresponding 
+argument should be an 
+        integer address. Leading zeroes are ignored. 
+<LI>     o  The field should be considered an octal integer and 
+converted to an integer 
+        value. The corresponding argument should be an integer 
+address. Leading zeroes 
+        are ignored. 
+<LI>     s  The field should be considered a character string and 
+stored with a null 
+        terminator at the character address indicated by its 
+argument. There must be enough 
+        space at that address to hold the string and its 
+terminator. Remember, you can 
+        specify a maximum field width to prevent overflow. The 
+specification %ls will 
+        read the next graphic character, whereas %c will read the 
+next character, 
+        whatever it is. 
+<LI>     u  The field should be considered an unsigned decimal 
+integer and converted to an 
+        integer value. The corresponding argument should be an 
+integer address. Leading 
+        zeroes are ignored. This specification is unique to 
+Small-C and should be used 
+        with that in mind. 
+<LI>     x	 The field should be considered a hexadecimal number 
+and converted to an 
+        integer value. The corresponding argument should be an 
+integer address. Leading 
+        zeroes or a leading 0x or 0X will be ignored. <p>
+</UL> 
+<i>Scanf()</i> scans the control string from left to right, 
+processing input fields until 
+the control string is exhausted or a field is found that does not 
+match its 
+conversion specification. If the value returned by <i>scanf()</i> 
+is less than the number of 
+conversion specifications, an error has occurred or the end of 
+the input file has 
+been reached. EOF is returned if no fields are processed because 
+end-of-file has 
+been reached. <p>
+<PRE>  
+     fscanf(fd, str, arg1, arg2, ...) int fd; char *str; <p>
+</PRE>  
+This function works like scanf() except that the input is taken 
+from the file 
+indicated by fd. <p>
+<B> 
+Format Conversion Functions <p>
+</B>
+<PRE>  
+     atoi(str) char *str; <p>
+</PRE>  
+This function converts the decimal number represented by the 
+string at str to 
+an integer, and returns its value. Leading white space is skipped 
+and an optional 
+sign (+ or -) may precede the left-most digit. The first 
+non-numeric character 
+terminates the conversion. <p>
+<PRE>  
+     atoib(str, base) char *str; int base; <p>
+</PRE>  
+This Small-C function converts the unsigned integer of radix base 
+represented 
+by the string at <i>str</i> to an integer, and returns its value. 
+Leading white space is 
+skipped. The first non-numeric character terminates the 
+conversion. <p>
+<PRE>  
+     itoa(nbr, str) int nbr; char *str; <p>
+</PRE>  
+This function converts the number nbr to its decimal 
+character-string 
+representation at <i>str</i>. The result is left-justified at <i>
+str</i> with a leading minus sign if nbr is 
+negative. A null character terminates the string, which must be 
+large enough to 
+hold the result. <p>
+<PRE>  
+     itoab(nbr, str, base) int nbr; char *str; int base;<p> 
+</PRE>  
+This Small-C function converts the unsigned integer <i>nbr</i> to 
+its character-srting 
+representation at <i>str</i> in radix base. The result is 
+left-justified at <i>str</i>. A null 
+character terminates the string, which must be large enough to 
+hold the result. <p>
+<PRE>  
+     dtoi(str, nbr) char *str; int *nbr; <p>
+</PRE>  
+This Small-C function converts the (possibly) signed decimal 
+number in the 
+character string at <i>str</i> to an integer at <i>nbr</i> and 
+returns the length of the numeric 
+field found. The conversion stops when it finds the end of the 
+string or any 
+illegal numeric character. Working with 16-bit integers, a 
+leading sign and five 
+digits at most will be used. <i>Dtoi()</i> returns ERR if the 
+absolute value of the 
+number exceeds 32767. <p>
+<PRE>  
+     otoi(str, nbr) char *str; int *nbr; <p>
+</PRE>  
+This Small-C function converts the octal number in the character 
+string at <i>str</i> to 
+an integer at <i>nbr</i> and returns the length of the octal 
+field found. It stops when it 
+encounters a non-octal digit in <i>str</i>. Working with 16-bit 
+integers, six digits at 
+most will be used. An octal number larger than 177777 causes <i>
+otoi()</i> to return 
+ERR. <p>
+<PRE>  
+     utoi(str, nbr) char *str; int *nbr; <p>
+</PRE>  
+This Small-C function converts the unsigned decimal number 
+represented by 
+the character string at <i>str</i> to an integer at <i>nbr</i> 
+and returns the length of the 
+numeric field found. It stops when it encounters the end of the 
+string or any 
+nondecimal character. Working with 16-bit integers, five digits 
+at most will be 
+used. A number larger than 65535 causes <i>utoi()</i> to return 
+ERR.<p> 
+<PRE>  
+     xtoi(str, nbr) char *str; int *nbr; <p>
+</PRE>  
+This Small-C function converts the hexadecimal number in the 
+character string 
+at <i>str</i> to an integer at <i>nbr</i> and returns the length 
+of the hexadecimal field found. 
+It stops when it encounters a nonhexadecimal digit in <i>str</i>. 
+Working with 16-bit 
+integers, four digits at most will be used. If more digits are 
+present, <i>xtoi() </i>
+returns ERR. <p>
+<PRE>  
+     itod(nbr, str, sz) int nbr, sz; char *str; <p>
+</PRE>  
+This Small-C function converts <i>nbr</i> to a signed (if 
+negative) character string at 
+str. The result is right-justified and blank-filled in <i>str</i>
+. The sign and possibly high 
+order digits are truncated if the destination string is too 
+small. It returns <i>str</i>. <i>Sz</i> 
+indicates the length of the string. If <i>sz</i> is greater than 
+zero, a null byte is placed 
+at <i>str[sz-1]</i>. If <i>sz</i> is zero, a search for the first 
+null byte following str locates the 
+end of the string. If <i>sz</i> is less than zero, all <i>sz</i> 
+characters of <i>str</i> are used including 
+the last one. <p>
+<PRE>  
+     itoo(nbr, str, sz) int nbr, sz; char *str;<p> 
+</PRE>  
+This Small-C function converts nbr to an octal character string 
+at <i>str</i>. The result 
+is right-justified and blank-filled in the destination string. 
+High order digits are 
+truncated if the destination string is too small. It returns <i>
+str</i>. <i>Sz</i> indicates the 
+length of the string. If <i>sz</i> is greater than zero, a null 
+byte is placed at <i>str[sz-1]</i>. If 
+<i>sz</i> is zero, a search for the first null byte following <i>
+str</i> locates the end of the 
+string. If <i>sz</i> is less than zero, all <i>sz</i> characters 
+of <i>str</i> are used including the last 
+one. <p>
+<PRE>
+      itou(nbr, str, sz) int nbr, sz; char *str; <p>
+</PRE>  
+This Small-C function converts <i>nbr</i> to an unsigned decimal 
+character string at 
+<i>str</i>. It works like <i>itod()</i> except that the high 
+order bit of <i>nbr</i> is taken for a 
+magnitude bit. <p>
+<PRE>  
+     itox(nbr, str, sz) int nbr, sz; char *str;<p> 
+</PRE>  
+This Small-C function converts <i>nbr</i> to a hexadecimal 
+character string at <i>str</i>. The 
+result is right-justified and blank-filled in the destination 
+string. High order 
+digits are truncated if the destination string is too small. It 
+returns <i>str</i>. <i>Sz</i> indicates 
+the length of the string. If sz is greater than zero, a null byte 
+is placed at 
+<i>str[sz1]</i>. If <i>sz</i> is zero, a search for the first 
+null byte following <i>str</i> locates the end of the 
+string. If <i>sz</i> is less than zero, all <i>sz</i> characters 
+of <i>str</i> are used including the last 
+one. <p>
+ 
+String Handling Functions <p>
+<PRE>  
+     left(str) char *str; <p>
+</PRE>  
+This Small-C function left-adjusts the character string at <i>str
+</i>. Starting with the 
+first non-blank character and proceeding through the null 
+terminator, the string 
+is moved to the address indicated by <i>str</i>.<p> 
+<PRE>  
+     pad (str, ch, n) char *str, ch; int n; <p>
+</PRE>  
+This Small-C function fills the string at <i>str</i> with n<i> 
+</i>occurrences of the character 
+<i>ch</i>. 
+<PRE>  
+     reverse(str) char *str; <p>
+</PRE>  
+This function reverses the order of the characters in the null 
+terminated string 
+at <i>str</i>. <p>
+<PRE>  
+     strcat(dest, sour) char *dest, *sour; <p>
+</PRE>  
+This function appends the string at <i>sour</i> to the end of the 
+string at <i>dest</i>. The 
+null character at the end of <i>dest</i> is replaced by the 
+leading character of <i>sour</i>. A 
+null character terminates the new <i>dest</i> string. The space 
+reserved for <i>dest</i> must 
+be large enough to hold the result. This function returns <i>dest
+</i>. <p>
+<PRE>  
+     strncat(dest, sour, n) char *dest, *sour; int n;<p> 
+</PRE>  
+This function works like <i>strcat()</i> except that a maximum of 
+<i>n</i> characters from 
+the source string will be transferred to the destination string. 
+<p>
+<PRE>  
+     strcmp(str1, str2) char *str1, *str2; <p>
+</PRE>  
+This function returns an integer less than, equal to, or greater 
+than zero 
+depending on whether the string at <i>str1</i> is less than, 
+equal to, or greater than the string 
+at <i>str2</i>. Character-by-character comparisons are made 
+starting at the left end of 
+the strings until a difference is found. Comparison is based on 
+the numeric 
+values of the characters. <i>Str2</i> is considered less than <i>
+str1</i> if <i>str2</i> is equal to but 
+shorter than <i>str1</i>, and vice versa. <p>
+<PRE>  
+     lexcmp(str1, str2) char *str1, *str2; <p>
+</PRE>  
+This Small-C function works like <i>strcmp()</i> except that a 
+lexicographical 
+comparison is used. For meaningful results, only characters in 
+the ASCII character set 
+(0- 127 decimal) should appear in the strings. Alphabetics are 
+compared in 
+dictionary order, with uppercase letters matching their lowercase 
+equivalents. 
+Special characters precede the alphabetics and are themselves 
+preceded by the 
+control characters, except DEL, which compares highest.<p> 
+<PRE>  
+     strncmp(str1, str2, n) char *str1, *str2; int n; <p>
+</PRE>  
+This function works like <i>strcmp()</i> except that a maximum of 
+n characters are 
+compared. <p>
+<PRE>  
+     strcpy(dest, sour) char *dest, *sour; <p>
+</PRE>  
+This function copies the string at <i>sour</i> to <i>dest</i>. <i>
+Dest</i> is returned. The space at 
+<i>dest</i> must be large enough to hold the string at <i>sour</i>
+.<p> 
+<PRE>  
+     strncpy(dest, sour, n) char *dest, *sour; int n; <p>
+ </PRE> 
+This function works like <i>strcpy()</i> except that <i>n</i> 
+characters are placed in the 
+destination string regardless of the length of the source string. 
+If the source 
+string is too short, null padding occurs. If it is too long, it 
+is truncated in <i>dest</i>. A 
+null character follows the last character placed in the 
+destination string. <p>
+<PRE>  
+     strlen(str) char *str;<p> 
+</PRE>  
+This function returns a count of the number of characters in the 
+string at <i>str</i>. It 
+does not count the null character that terminates the string. <p>
+<PRE>  
+     strchr(str, c) char *str, c; <p>
+</PRE>  
+This function returns a pointer to the first occurrence of the 
+character <i>c</i> in the 
+string at <i>str</i>. It returns NULL if the character is not 
+found. Searching ends with 
+the first null character. <p>
+<PRE>  
+     strrchr(str, c) char *str, c; <p>
+</PRE>  
+This function works like<i> strchr()</i> except that the 
+right-most occurrence of the 
+character is sought. <p>
+<B>
+Character Classification Functions <p>
+</B> 
+The following functions determine whether a character belongs to 
+a designated 
+class of characters. They return true (nonzero) if it does and 
+false (zero) if it 
+does not. <p>
+<PRE>  
+     isalnum(c) char c; <p>
+</PRE>  
+This function determines if c is alphanumeric (A-Z, a-z, or 0-9). 
+<p>
+<PRE>  
+     isalpha(c) char c;<p> 
+</PRE>  
+This function determines if c is alphabetic (A-Z or a-z). <p>
+<PRE>  
+     isascii(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is an ASCII character 
+(decimal values 0-127). <p>
+<PRE>  
+     iscntrl(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a control character 
+(ASCII codes 0-31 or 127). <p>
+<PRE>  
+     isdigit(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a digit (0-9).<p> 
+<PRE>  
+     isgraph(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a graphic symbol (ASCII 
+codes 33-126). <p>
+<PRE>  
+     islower(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a lowercase letter (ASCII 
+codes 97-122). <p>
+<PRE>  
+     isprint(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a printable character 
+(ASCII codes 32-126). 
+Spaces are considered printable. <p>
+<PRE>  
+     ispunct(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a punctuation character 
+(all ASCII codes except 
+control characters and alphanumeric characters). <p>
+<PRE>  
+     isspace(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a white-space character 
+(ASCII SP, HT, VT, CR, 
+IF, or FF). <p>
+<PRE>  
+     isupper(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is an uppercase letter 
+(ASCII codes 65-90). <p>
+<PRE>  
+     isxdigit(c) char c; <p>
+</PRE>  
+This function determines if <i>c</i> is a hexadecimal digit (0-9, 
+A-F, or a-f). <p>
+<PRE>  
+     lexorder(c1, c2) char c1, c2; <p>
+</PRE>  
+This Small-C function returns an integer less than, equal to, or 
+greater than zero 
+depending on whether <i>c1</i> is less than, equal to, or greater 
+than <i>c2</i> 
+lexicographically. For meaningful results, only characters in the 
+ASCII character set (0 - 127 
+decimal) should be passed. Alphabetics are compared in dictionary 
+order, with 
+uppercase letters matching their lowercase equivalents. Special 
+characters 
+precede the alphabetics and are themselves preceded by the 
+control characters, 
+except DEL, which compares highest. <p>
+<B> 
+Character Translation Functions <p>
+</B>
+<PRE>  
+     toascii(c) char c; <p>
+</PRE>  
+This function returns the ASCII equivalent of <i>c</i>. In 
+systems that use the ASCII 
+character set, it merely returns <i>c</i> unchanged. This 
+function makes it possible to 
+use the properties of the ASCII code set without introducing 
+implementation 
+dependencies into programs. <p>
+<PRE>  
+     tolower(c) char c; <p>
+</PRE>  
+This function returns the lowercase equivalent of <i>c</i> if <i>
+c</i> is an uppercase letter; 
+otherwise, it returns <i>c</i> unchanged.<p> 
+<PRE>  
+     toupper(c) char c; <p>
+</PRE> 
+This function returns the uppercase equivalent of <i>c</i> if <i>
+c</i> is a lowercase letter; 
+otherwise, it returns <i>c</i> unchanged.<p> 
+ 
+<b>
+Mathematical Functions </b><p>
+<PRE>  
+     abs(nbr) int nbr; <p>
+</PRE>  
+This function returns the absolute value of <i>nbr</i>.<p> 
+<PRE>  
+     sign(nbr) int nbr; <p>
+</PRE>  
+This function returns -1, 0, or + 1 depending on whether <i>nbr
+</i> is less than, equal 
+to, or greater than zero.<p> 
+ 
+<b>
+Program-Control Functions</b> <p>
+<PRE>  
+     calloc(nbr, sz) int nbr, sz;<p> 
+</PRE>  
+This function allocates <i>nbr*sz</i> bytes of zeroed memory. It 
+returns the address of 
+the memory block on success, otherwise zero. <p>
+<PRE>  
+     malloc(nbr) int nbr; <p>
+</PRE>  
+This function allocates nbr bytes of uninitialized memory. It 
+returns the address 
+of the memory block on success, otherwise zero. <p>
+<PRE>  
+     avail(abort) int abort; <p>
+</PRE>  
+This Small-C function returns the number of bytes of free memory 
+available 
+between the program and the stack. It also checks to see if the 
+stack overlaps 
+allocated memory; if so and if abort is not zero, the program is 
+aborted and the 
+console displays the letter M to indicate that a memory error has 
+occurred. 
+However, if abort is zero, <i>avail()</i> returns zero to the 
+caller. This function makes 
+it possible to make full use of all available memory. However, 
+care should be 
+taken to leave enough space for the stack to use. <p>
+<PRE>  
+     free(addr) char *addr; (alias cfree) <p>
+</PRE>  
+This function frees up a block of allocated memory beginning at 
+<i>addr</i>. It returns 
+addr on success, otherwise NULL. It is necessary to free memory 
+in the reverse 
+order from which it was allocated. Freeing memory that was 
+allocated before 
+opening a file should be avoided, since the open function 
+dynamically allocates 
+buffer and FCB space. You should not assume that closing a file 
+relinquishes its 
+space. <p>
+<PRE>  
+     getarg(nbr, str, sz, argc, argv) char *str; 
+                         int nbr, sz, argc, *argv; <p>
+</PRE>  
+This Small-C function locates the command-line argument indicated 
+by <i>nbr</i>, 
+moves it (null-terminated) to the string <i>str</i> of maximum 
+size <i>sz</i>, and returns the 
+length of the field obtained. Argc and argv must be the same 
+values provided to 
+the function <i>main()</i> when the program is started. If <i>nbr
+</i> is zero, the program 
+name is requested. If it is one, the first argument following the 
+program name is 
+requested, and so on. CP/M does not deliver the program name to a 
+program, so 
+an asterisk is substituted in its place. If no argument 
+corresponds to <i>nbr</i>, <i>getarg()</i> 
+puts a null byte at <i>str</i> and returns EOF.<p> 
+<PRE>  
+     poll(pause) int pause;<p> 
+</PRE>  
+This Small-C function polls the console for operator input. If no 
+input is 
+pending, zero is returned. If a character is waiting, the value 
+of pause determines 
+what happens. If pause is zero, the character is returned 
+immediately. If pause is 
+not zero and the character is a control-S, there is a pause in 
+program execution; 
+when the next character is entered from the keyboard, zero is 
+returned to the 
+caller. If the character is a control-C, program execution is 
+terminated. All other 
+characters are returned to the caller immediately. <p>
+<PRE>  
+     exit(errcode) int errcode;         (alias abort) <p>
+</PRE>  
+This function closes all open files and returns to the operating 
+system. If errcode 
+is not zero, it is written to the console; a program that exits 
+with a control-G 
+(bell), for instance, would sound the console beeper. <p>
+ 
+<b>
+Conclusion</b> <p>
+ 
+No doubt the Small-C compiler and its library will continue to 
+develop as more 
+people with access to the source code take an interest in it and 
+report their 
+developments. Some obvious areas for improvement in the library 
+are: <p>
+<OL> 
+<LI> Achieving a better memory allocation scheme that would 
+permit allocation and 
+    deallocation operations to be performed in any order.  
+<LI> Adapting this implementation to other CPUs and operating 
+systems; this library 
+    should be especially portable to other environments because 
+it is written in C 
+    and, to the authors at least, the logic is easy to follow. 
+<LI> Improving the efficiency. No doubt there are many ways in 
+which this code can 
+    be made smaller and faster. We hope, however, that these 
+efforts would not 
+    obscure the simplicity and transparency of logic.<p> 
+</OL> 
+We would like to express our appreciation to Ron Cain, who 
+started the ball 
+rolling in 1980, and to <i>Dr. Dobb's Journal</i> for its 
+continued support of Small-C.<p> 
+ 
+
+ 
+<b><a name="list6-1">LISTING 6-1</a><p></b> 
+<PRE>  
+--------------------------------------------------------------FILE:STDIO.H 
+  /* 
+  ** STDIO.H -- Standard Small-C Definitions 
+  ** 
+  ** Copyright 1984  L. E. Payne and J. E. Hendrix 
+  */ 
+  #define stdin     0 
+  #define stdout    1 
+  #define stderr    2 
+  #define ERR    (-2) 
+  #define EOF    (-1) 
+  #define YES       1 
+  #define NO        0 
+  #define NULL      0 
+  #define CR       13 
+  #define LF       10 
+  #define BELL      7 
+  #define SPACE   ' ' 
+  #define NEWLINE LF     /*23*/ /*45*/ 
+ 
+--------------------------------------------------------------FILE:CLIB.DEF 
+  /* 
+  ** CLIB.DEF -- Definitions for Small-C library functions. 
+  ** 
+  ** Copyright 1983 L. E. Payne and J. E. Hendrix 
+  ** 
+  ** Credits: 
+  ** 1) This library of Small-C functions was produced 
+  **    jointly by: 
+  ** 
+  **    Ernest Payne 
+  **    1331 W. Whispering Hills Drive 
+  **    Tucson, AZ 85704 
+  ** 
+  **    and 
+  ** 
+  **    James E. Hendrix 
+  **    Box 8378 
+  **    University, MS 38677-8378 
+  ** 
+  ** 2) The function Ubdos() is an adaption of 
+  **    Gene Cotton's work reported by Ron Cain (DDJ #48). 
+  ** 
+  ** 3) The functions Uparse(), Ufield(), and Uredirect() 
+  **    are a revision of Jan-Henrik Johansson's setarg() 
+  **    (DDJ #74), and getarg() is a modification of his 
+  **    revision of James Hendrix' function (DDJ #75). 
+  ** 
+  ** 4) The standard C functions were obtained from 
+  **    &quot;A Guide to the C Library for UNIX Users&quot; 
+  **    by C. D. Perez of Bell Laboratories. 
+  ** 
+  */ 
+ 
+  /* 
+  ** Definition of CP/M FCB and additional parameters 
+  */ 
+  #define FCBSIZE    36 /* size of file control block */ 
+  #define DRIVE       0 /* CP/M drive designator offset */ 
+  #define NAMEOFF     1 /* CP/M file name offset */ 
+  #define NAMEOFF2   16 /* CP/M 2nd file name offset */ 
+  #define NAMESIZE    8 /* CP/M file name size */ 
+  #define TYPEOFF     9 /* CP/M file type offset */ 
+  #define TYPESIZE    3 /* CP/M file type size */ 
+  #define NTSIZE     11 /* CP/M file name &amp; type size */ 
+  #define RRNOFF     33 /* CP/M random record number offset */ 
+  #define CPMEOF     26 /* CP/M end-of-file byte */ 
+  #define BUFSIZE   128 /* size of I/O buffer */ 
+  #define MAXFILES   10 /* maximum open files */ 
+  /* 
+  ** CP/M function calls 
+  */ 
+  #define CLOFIL    16 /* close file */ 
+  #define DCONIO     6 /* direct console i/o */ 
+  #define DELFIL    19 /* delete file */ 
+  #define FNDFIL    17 /* find first occurrence of a file */ 
+  #define FNDNXT    18 /* find next occurrence of a file */ 
+  #define GETPOS    36 /* get number of current sector */ 
+  #define GOCPM     00 /* go to CP/M */ 
+  #define LSTOUT    05 /* list output */ 
+  #define MAKFIL    22 /* make file */ 
+  #define OPNFIL    15 /* open file */ 
+  #define POSEND    35 /* position file to end */ 
+  #define PUNOUT    04 /* punch output */ 
+  #define RENAME    23 /* rename file */ 
+  #define RDRND     33 /* read sector randomly */ 
+  #define RDRINP    03 /* reader input */ 
+  #define SETDMA    26 /* set dma */ 
+  #define WRTRND    40 /* write sector randomly */ 
+  /* 
+  ** Device codes 
+  */ 
+  #define CPMCON DCONIO /* console */ 
+  #define CPMRDR RDRINP /* reader  */ 
+  #define CPMPUN PUNOUT /* punch   */ 
+  #define CPMLST LSTOUT /* list    */ 
+  /* 
+  ** File status bits 
+  */ 
+  #define RDBIT       1 /* open for read */ 
+  #define WRTBIT      2 /* open for write */ 
+  #define EOFBIT      4 /* eof condition */ 
+  #define ERRBIT      8 /* error condition */ 
+  /* 
+  ** ASCII characters 
+  */ 
+  #define ABORT      3 
+  #define RUB        8 
+  #define PAUSE     19 
+  #define WIPE      24 
+  #define DEL      127 
+ 
+--------------------------------------------------------------FILE:CSYSLIB.C 
+  /* 
+  ** CSYSLIB -- System-Level Library Functions 
+  ** 
+  ** Copyright 1984 L. E. Payne and J. E. Hendrix 
+  */ 
+ 
+  #include stdio.h 
+  #include clib.def 
+  #define NOCCARGC   /* no argument count passing */ 
+  #define DIR        /* compile directory option */ 
+ 
+  /* 
+  ****************** System Variables ******************** 
+  */ 
+ 
+  int 
+   *Uauxsz,            /* addr of Uxsize[] in AUXBUF */ 
+    Uauxin,            /* addr of Uxinit() in AUXBUF */   /*58*/ 
+    Uauxrd,            /* addr of Uxread() in AUXBUF */ 
+    Uauxwt,            /* addr of Uxwrite() in AUXBUF */ 
+    Uauxfl,            /* addr of Uxflush() in AUXBUF */ 
+ 
+    Ucnt=1,            /* arg count for main */ 
+    Uvec[20],          /* arg vectors for main */ 
+ 
+    Ustatus[MAXFILES] = {RDBIT, WRTBIT, RDBIT|WRTBIT}, 
+                       /* status of respective file */ 
+    Udevice[MAXFILES] = {CPMCON, CPMCON, CPMCON}, 
+                       /* non-disk device assignments */ 
+    Unextc[MAXFILES] = {EOF, EOF, EOF}, 
+                       /* pigeonhole for ungetc bytes */ 
+    Ufcbptr[MAXFILES], /* FCB pointers for open files */ 
+ 
+    Ubufptr[MAXFILES], /* buffer pointers for files */ 
+    Uchrpos[MAXFILES], /* character position in buffer */ 
+    Udirty[MAXFILES];  /* &quot;true&quot; if changed buffer */ 
+ 
+  char 
+   *Umemptr,           /* pointer to free memory. */ 
+    Uarg1[]=&quot;*&quot;;       /* first arg for main */ 
+ 
+  /* 
+  *************** System-Level Functions ***************** 
+  */ 
+ 
+  /* 
+  ** -- Process Command Line, Execute main(), and Exit to CP/M 
+  */ 
+  Umain() { 
+    Uparse(); 
+    main(Ucnt,Uvec); 
+    exit(0); 
+    } 
+ 
+  /* 
+  ** Parse command line and setup argc and argv. 
+  */ 
+  Uparse() { 
+    char *count, *ptr; 
+    count = 128; /* CP/M command buffer address */ 
+    ptr = Ualloc((count = *count&amp;255)+1, YES);       /*65*/ 
+    strncpy(ptr, 129, count);                                  /*65*/ 
+    Uvec[0]=Uargl;                                /* first arg = &quot;*&quot; */ 
+    while (*ptr) { 
+      if(isspace(*ptr)) {++ptr; continue;} 
+      switch(*ptr) { 
+        case '&lt;': ptr = Uredirect(ptr, &quot;r&quot;, stdin); 
+                  continue; 
+        case '&gt;': if(*(ptr+1) == '&gt;') 
+                       ptr = Uredirect(ptr+1, &quot;a&quot;,stdout); 
+                  else ptr = Uredirect(ptr, &quot;w&quot;, stdout); 
+                  continue; 
+        default:  if(Ucnt &lt; 20) Uvec[Ucnt++] = ptr; 
+                  ptr = Ufield(ptr); 
+        } 
+      } 
+    } 
+ 
+  /* 
+  ** Isolate next command-line field. 
+  */ 
+  Ufield(ptr) char *ptr; { 
+    while(*ptr) { 
+      if(isspace(*ptr)) { 
+        *ptr = NULL; 
+        return (++ptr); 
+        } 
+      ++ptr; 
+      } 
+    return (ptr); 
+    } 
+ 
+  /* 
+  ** Redirect stdin or stdout. 
+  */ 
+  Uredirect(ptr, mode, std) char *ptr, *mode; int std; { 
+    char *fn; 
+    fn = ++ptr; 
+    ptr = Ufield(ptr); 
+    if(Uopen(fn, mode, std)==ERR) exit('R'); 
+    return (ptr); 
+    } 
+ 
+  /* 
+  ** ------------ File Open 
+  */ 
+ 
+  /* 
+  ** Open file on specified fd. 
+  */ 
+  Uopen(fn, mode, fd) char *fn, *mode; int fd; { 
+    char *fcb; 
+    if(!strchr(&quot;rwa&quot;, *mode)) return (ERR); 
+    Unextc[fd] = EOF; 
+    if(Uauxin) Uauxin(fd);                           /*58*/ 
+    if(strcmp(fn,&quot;CON:&quot;)==0) { 
+      Udevice[fd]=CPMCON; Ustatus[fd]=RDBIT|WRTBIT; return (fd); 
+      } 
+    if(strcmp(fn,&quot;RDR:&quot;)==0) { 
+      Udevice[fd]=CPMRDR; Ustatus[fd]=RDBIT; return (fd); 
+      } 
+    if(strcmp(fn,&quot;PUN:&quot;)==0) { 
+      Udevice[fd]=CPMPUN; Ustatus[fd]=WRTBIT; return (fd); 
+      } 
+    if(strcmp(fn,&quot;LST:&quot;)==0) { 
+      Udevice[fd]=CPMLST; Ustatus[fd]=WRTBIT; return (fd); 
+      } 
+    if(fcb = Ufcbptr[fd]) pad(fcb, NULL, FCBSIZE); 
+    else { 
+      if((fcb = Ufcbptr[fd] = Ualloc(FCBSIZE, YES)) == NULL 
+            || (Ubufptr[fd] = Ualloc(BUFSIZE, YES)) == NULL) 
+          return (ERR); 
+      } 
+    pad(Ubufptr[fd], CPMEOF, BUFSIZE); 
+    Udirty[fd] = Udevice[fd] = Uchrpos[fd] = 0; 
+  #ifdef DIR 
+    if(fn[1] == ':' &amp;&amp; fn[2] == NULL) { /* directory file */ 
+      pad(fcb, NULL, FCBSIZE); 
+      pad(fcb+NAMEOFF, '?', NTSIZE); 
+      if(toupper(fn[O]) != 'X') *fcb= toupper(fn[0]) - 64; 
+      Uchrpos[fd] = BUFSIZE; 
+      Udevice[fd] = FNDFIL; 
+      Ustatus[fd] = RDBIT; 
+      return (fd); 
+      } 
+  #endif 
+    if(!Unewfcb(fn,fcb)) return (ERR); 
+    switch(*mode) { 
+      case 'r': { 
+        if(Ubdos(OPNFIL, fcb)==255) return (ERR); 
+        Ustatus[fd] = RDBIT; 
+        if(Usector(fd, RDRND)) Useteof(fd); 
+        break; 
+        } 
+      case 'w': { 
+        if(Ubdos(FNDFIL,fcb)!=255) Ubdos(DELFIL,fcb); 
+      create: 
+        if(Ubdos(MAKFIL,fcb)==255) return (ERR); 
+        Ustatus[fd] = EOFBIT|WRTBIT; 
+        break; 
+        } 
+      default: {     /* append mode */ 
+        if(Ubdos(OPNFIL,fcb)==255) goto create; 
+        Ustatus[fd] = RDBIT; 
+        cseek(fd, -1, 2); 
+        while(fgetc(fd)!=EOF); 
+        Ustatus[fd] = EOFBIT|WRTBIT; 
+        } 
+      } 
+  if(*(mode+1)=='+') Ustatus[fd] |= RDBIT|WRTBIT; 
+  return (fd); 
+  } 
+ 
+  /* 
+  ** Create CP/M file control block from file name. 
+  ** Entry: fn  = Legal CP/M file name (null terminated) 
+  **              May be prefixed by letter of drive. 
+  **        fcb = Pointer to memory space for CP/M fcb. 
+  ** Returns the pointer to the fcb. 
+  */ 
+ 
+  Unewfcb(fn, fcb) char *fn, *fcb; { 
+    char *fnptr; 
+    pad(fcb+1, SPACE, NTSIZE); 
+    if(*(fn + 1) == ':') { 
+      *fcb = toupper(*fn) - 64; 
+      fnptr = fn + 2; 
+      } 
+    else fnptr = fn; 
+    if(*fnptr == NULL) return (NO); 
+    fnptr = Uloadfn(fcb + NAMEOFF, fnptr, NAMESIZE); 
+    if(*fnptr == '.') ++fnptr; 
+    else if(*fnptr) return (NO); 
+    fnptr = Uloadfn(fcb + TYPEOFF, fnptr, TYPESIZE); 
+    if(*fnptr) return (NO); 
+    return (YES); 
+    } 
+ 
+  /* 
+  ** Load into fcb and validate file name. 
+  */ 
+  Uloadfn(dest, sour, max) char *dest, *sour; int max; { 
+    while(*sour &amp;&amp; !strchr(&quot;&lt;&gt;.,;:=?*[]&quot;, *sour)) { 
+      if(max--) *dest++ = toupper(*sour++); 
+      else break; 
+      } 
+    return (sour); 
+    } 
+ 
+  /* 
+  ** ------------ File Input 
+  */ 
+ 
+  /* 
+  ** Binary-stream input of one byte from fd. 
+  */ 
+  Uread(fd) int fd; { 
+    char *bufloc; 
+    int ch; 
+    switch (Umode(fd)) { 
+      default: Useterr(fd); return (EOF); 
+      case RDBIT: 
+      case RDBIT|WRTBIT: 
+      } 
+    if((ch = Unextc[fd]) != EOF) { 
+      Unextc[fd] = EOF; 
+      return (ch); 
+      } 
+    switch(Udevice[fd]) { 
+      /* PUN &amp; LST can't occur since they are write mode */ 
+    case CPMCON: return (Uconin()); 
+    case CPMRDR: return (Ubdos(RDRINP,NULL)); 
+    default: 
+         if(Uauxsz &amp;&amp; Uauxsz[fd]) return (Uauxrd(fd)); 
+         if(Uchrpos[fd]&gt;=BUFSIZE &amp;&amp; !Ugetsec(fd)) 
+           return (EOF); 
+         bufloc = Ubufptr[fd] + Uchrpos[fd]++; 
+         return (*bufloc); 
+     } 
+   } 
+ 
+  /* 
+  ** Console character input. 
+  */ 
+  Uconin() { 
+    int ch; 
+    while(!(ch = Ubdos(DCONIO, 255))) ; 
+    switch(ch) { 
+      case ABORT: exit(0); 
+      case    LF: 
+      case    CR: Uconout(LF); return (Uconout(CR)); 
+      case   DEL: ch = RUB; 
+         default: if(ch &lt; 32) { Uconout('^'); Uconout(ch+64);} 
+
+                  else Uconout(ch); 
+                  return (ch); 
+      } 
+    } 
+ 
+  /* 
+  ** Read one sector from fd. 
+  */ 
+  Ugetsec(fd) int fd; { 
+  #ifdef DIR 
+    if(Udevice[fd]) {        /* directory file */ 
+      char *bp, *name, *type, *end; 
+      Ubdos(SETDMA, 128); 
+      if((name = Ubdos(Udevice[fd], Ufcbptr[fd])) == 255) { 
+        Useteof(fd); 
+        return (NO); 
+        } 
+      Udevice[fd] = FNDNXT; 
+      name = (name &lt;&lt; 5) + (128 + NAMEOFF); 
+      type = name + NAMESIZE; 
+      end = name + NTSIZE; 
+      bp = Ubufptr[fd] + BUFSIZE; 
+      *--bp = CR; 
+      while(--end &gt;= name) ( /* put filename at end of buffer */ 
+        if(*end == SPACE) continue; 
+        *--bp = *end; 
+        if(end == type) *--bp = '.'; 
+        } 
+      Uchrpos[fd] = bp - Ubufptr[fd]; 
+      return (YES); 
+      } 
+  #endif 
+    if(fflush(fd)) return (NO); 
+    Uadvance(fd); 
+    if(Usector(fd, RDRND)) { 
+      pad(Ubufptr[fd], CPMEOF, BUFSIZE); 
+      Useteof(fd); 
+      return (NO); 
+      } 
+    return (YES); 
+    } 
+ 
+  /* 
+  ** ------------ File Output 
+  */ 
+ 
+  /* 
+  ** Binary-Stream output of one byte to fd. 
+  */ 
+  Uwrite(ch, fd) int ch, fd; { 
+    char *bufloc; 
+    switch (Umode(fd)) { 
+      default: Useterr(fd); return (EOF); 
+      case WRTBIT: 
+      case WRTBIT|RDBIT: 
+      case WRTBIT|EOFBIT: 
+      case WRTBIT|EOFBIT|RDBIT: 
+      } 
+    switch(Udevice[fd]) { 
+      /* RDR can't occur since it is read mode */ 
+      case CPMCON: return (Uconout(ch)); 
+      case CPMPUN: 
+      case CPMLST: Ubdos(Udevice[fd], ch); 
+                   break; 
+      default: 
+        if(Uauxsz &amp;&amp; Uauxsz[fd]) return (Uauxwt(ch, fd)); 
+
+        if(Uchrpos[fd]&gt;=BUFSIZE &amp;&amp; !Uputsec(fd)) return (EOF); 
+        bufloc = Ubufptr[fd] + Uchrpos[fd]++; 
+        *bufloc = ch; 
+        Udirty[fd] = YES; 
+      } 
+    return (ch); 
+    } 
+ 
+  /* 
+  ** Console character output. 
+  */ 
+  Uconout(ch) int ch; { 
+    Ubdos(DCONIO, ch); 
+    return (ch); 
+    } 
+ 
+  /* 
+  ** Write one sector to fd. 
+  */ 
+  Uputsec(fd) int fd; { 
+    if(fflush(fd)) return (NO); 
+    Uadvance(fd); 
+    if(Ustatus[fd]&amp;EOFBIT || Usector(fd, RDRND))     /*63*/ 
+      pad(Ubufptr[fd], CPMEOF, BUFSIZE); 
+    return (YES); 
+    } 
+ 
+  /* 
+  ** ------------ Buffer Service 
+  */ 
+ 
+  /* 
+  ** Advance to next sector. 
+  */ 
+  Uadvance(fd) int fd; { 
+    int *rrn; 
+    rrn = Ufcbptr[fd] + RRNOFF; 
+    ++(*rrn); 
+    Uchrpos[fd] = 0; 
+    } 
+ 
+  /* 
+  ** Sector I/O. 
+  */ 
+  Usector(fd, func) int fd, func; { 
+    int error; 
+    Ubdos(SETDMA, Ubufptr[fd]); 
+    error = Ubdos(func, Ufcbptr[fd]); 
+    Ubdos(SETDMA, 128); 
+    Udirty[fd] = NO; 
+    return (error); 
+    } 
+ 
+  /* 
+  ** ------------ File Status 
+  */ 
+ 
+  /* 
+  ** Return fd's open mode, else NULL. 
+  */ 
+  Umode(fd) char *fd; { 
+    if(fd &lt; MAXFILES) return (Ustatus[fd]); 
+    return (NULL); 
+    } 
+ 
+  /* 
+  ** Set eof status for fd and 
+  ** disable future i/o unless writing is allowed. 
+  */ 
+  Useteof(fd) int fd; { 
+    Ustatus[fd] |= EOFBIT; 
+    } 
+ 
+  /* 
+  ** Clear eof status for fd. 
+  */ 
+  Uclreof(fd) int fd; { 
+    Ustatus[fd] &amp;= ~EOFBIT; 
+    } 
+ 
+  /* 
+  ** Set error status for fd. 
+  */ 
+  Useterr(fd) int fd; { 
+    Ustatus[fd] |= ERRBIT; 
+    } 
+ 
+  /* 
+  ** ------------ Memory Allocation 
+  */ 
+ 
+  /* 
+  ** Allocate n bytes of (possibly zeroed) memory. 
+  ** Entry: n = Size of the items in bytes. 
+  **    clear = &quot;true&quot; if clearing is desired. 
+  ** Returns the address of the allocated block of memory 
+  ** or NULL if the requested amount of space is not available. 
+  */ 
+  Ualloc(n, clear) char *n; int clear; { 
+    char *oldptr; 
+    if(n &lt; avail(YES)) { 
+      if(clear) pad(Umemptr, NULL, n); 
+      oldptr = Umemptr; 
+      Umemptr += n; 
+      return (oldptr); 
+      } 
+    return (NULL); 
+     } 
+ 
+   /* 
+  ** ------------ CP/M Interface 
+  */ 
+ 
+  /* 
+  ** Issue CP/M function and return result. 
+  ** Entry: c  = CP/M function code (register C) 
+  **        de = CP/M parameter (register DE or E) 
+  ** Returns the CP/M return code (register A) 
+  */ 
+  Ubdos(c,de) int c,de; { 
+  #asm 
+          pop     h       ;hold return address 
+          pop     d       ;load CP/M function parameter 
+          pop     b       ;load CP/M function number 
+          push    b       ;restore 
+          push    d       ; the 
+          push    h       ;    stack 
+          call    5       ;call bdos 
+          mvi     h,0     ; 
+          mov     l,a     ;return the CP/M response 
+  #endasm 
+    }<p> 
+</PRE>  
+<b><a name="list6-2">LISTING 6-2</a><p></b> 
+<PRE> 
+-------------------------------------------------------------- 
+FILE:ABS.C 
+  /* 
+  ** abs -- returns absolute value of nbr 
+  */ 
+  abs(nbr) int nbr; { 
+    if (nbr &lt; 0) return (-nbr); 
+    return (nbr); 
+    } 
+ 
+-------------------------------------------------------------- 
+FILE:ATOI.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** atoi(s) - convert s to integer. 
+  */ 
+  atoi(s) char *s; { 
+    int sign, n; 
+    while(isspace(*s)) ++s; 
+    sign = 1; 
+    switch(*s) { 
+      case '-': sign = -1; 
+      case '+': ++s; 
+      } 
+    n = 0; 
+    while(isdigit(*s)) n = 10 * n + *s++ - '0'; 
+    return (sign * n); 
+    } 
+ 
+-------------------------------------------------------------- 
+FILE:ATOIB.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** atoib(s,b) - Convert s to &quot;unsigned&quot; integer in base b. 
+  **              NOTE: This is a non-standard function. 
+  */ 
+  atoib(s, b) char *s; int b; { 
+    int n, digit; 
+    n = 0; 
+    while(isspace(*s)) ++s; 
+    while((digit = (127 &amp; *s++)) &gt;= '0') { 
+      if(digit &gt;= 'a')      digit -= 87; 
+      else if(digit &gt;= 'A') digit -= 55; 
+      else                  digit -= '0'; 
+      if(digit &gt;= b) break; 
+      n = b* n + digit; 
+      } 
+    return (n); 
+    } 
+ 
+-------------------------------------------------------------- 
+FILE:AUXBUF.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int *Uauxsz, Uauxin, Uauxrd, Uauxwt, Uauxfl, /*58*/ 
+              Ustatus[]; 
+  /* 
+  ** This module is loaded with a program only if auxbuf() 
+  ** is called. It links to Uopen(), Uread(), Uwrite(), and 
+  ** fflush() through Uauxsz, Uauxin, Uauxrd, Uauxwt, and Uauxfl 
+  ** in CSYSLIB. This technique reduces the overhead for 
+  ** programs which don't use auxiliary buffering. Presumably, 
+  ** if there is enough memory for extra buffering, there is 
+  ** room to spare for this overhead too. A bug in some 
+  ** versions of Small-C between 2.0 and 2.1 may cause the calls 
+  ** to Uauxrd, Uauxwt, and Uauxfl in Uread(), Uwrite(), and 
+  ** fflush(), respectively, to produce bad code. The current 
+  ** compiler corrects the problem. 
+  */ 
+  int 
+    Uxsize[MAXFILES],  /* size of buffer */ 
+    Uxaddr[MAXFILES],  /* aux buffer address */ 
+    Uxnext[MAXFILES],  /* address of next byte in buffer */ 
+    Uxend[MAXFILES],   /* address of end-of-data in buffer */ 
+    Uxeof[MAXFILES];   /* true if current buffer ends file */ 
+  /* 
+  ** auxbuf -- allocate an auxiliary input buffer for fd 
+  ** fd = file descriptor of an open file 
+  ** size = size of buffer to be allocated 
+  ** Returns NULL on success, else ERR. 
+  ** Note: Ungetc() still works. 
+  **       A 2nd call returns ERR, but has no effect. 
+  **       If fd is a device, buffer is allocated but ignored. 
+  **       Buffer stays allocated when fd is closed. 
+  **       Do not mix reads and writes or perform seeks on fd. 
+  */ 
+  auxbuf(fd, size) int fd; char *size; { /* fake unsigned */ 
+    if(!Umode(fd) || !size || avail(NO) &lt; size || Uxsize[fd]) 
+      return (ERR); 
+    Uxaddr[fd] = malloc(size); Uxinit(fd);                   /*58*/ 
+    Uauxin = Uxinit;    /* tell Uopen() where Uxinit() is */    /*58*/ 
+    Uauxrd = Uxread;    /* tell Uread() where Uxread() is */ 
+    Uauxwt = Uxwrite;   /* tell Uwrite() where Uxwrite() is */ 
+    Uauxsz = Uxsize;    /* tell both where Uxsize[] is */ 
+    Uauxfl = Uxflush;   /* tell fflush() where Uxflush() is */ 
+    Uxsize[fd] = size;  /* tell Uread() that fd has aux buf */ 
+    return (NULL); 
+    } 
+ 
+  /* 
+  ** Initialize aux buffer controls 
+  */ 
+  Uxinit(fd) int fd; {                                       /*58*/ 
+    Uxnext[fd]: Uxend[fd] = Uxaddr[fd]; 
+    Uxeof[fd] = NO; 
+    } 
+ 
+  /* 
+  ** Fill buffer if necessary, and return next byte. 
+  */ 
+  Uxread(fd) int fd; { 
+    char *ptr; 
+    while(YES) { 
+      ptr = Uxnext[fd]; 
+      if(ptr &lt; Uxend[fd]) {++Uxnext[fd]; return (*ptr);} 
+      if(Uxeof[fd]) {Useteof(fd); return (EOF);} 
+      Uauxsz = NULL;           /* avoid recursive loop */ 
+      Uxend[fd] = Uxaddr[fd] 
+                + read(fd, Uxnext[fd]=Uxaddr[fd], Uxsize[fd]); 
+      Uauxsz = Uxsize;         /* restore Uauxsz */ 
+      if(feof(fd)) {Uxeof[fd] = YES; Uclreof(fd);} 
+      } 
+    } 
+  /* 
+  ** Empty buffer if necessary, and store ch in buffer. 
+  */ 
+  Uxwrite(ch, fd) int ch, fd; { 
+    char *ptr; 
+    while(YES) { 
+      ptr = Uxnext[fd]; 
+      if(ptr &lt; (Uxaddr[fd] + Uxsize[fd])) 
+        {*ptr: ch = ++Uxnext[fd]; return (ch);} 
+      if(Uxflush(fd)) return (EOF); 
+      } 
+    } 
+ 
+  /* 
+  ** Flush aux buffer to file. 
+  */ 
+  Uxflush(fd) int fd; { 
+    int i, j; 
+    i = Uxnext[fd] - Uxaddr[fd]; 
+    Uauxsz = NULL; /* avoid recursive loop */ 
+    j = write(fd, Uxnext[fd]=Uxaddr[fd], i); 
+    Uauxsz = Uxsize; /* restore Uauxsz */ 
+    if(i != j) return (EOF); 
+    return (NULL); 
+    } 
+ 
+-------------------------------------------------------------- 
+FILE:AVAIL.C 
+  #define NOCCARGC /* no argument count passing */ 
+  extern char *Umemptr; 
+  /* 
+  ** Return the number of bytes of available memory. 
+  ** In case of a stack overflow condition, if 'abort' 
+  ** is non-zero the program aborts with an 'S' clue, 
+  ** otherwise zero is returned. 
+  */ 
+  avail(abort) int abort; { 
+    char x; 
+    if(&amp;x &lt; Umemptr) { 
+      if(abort) exit('M'); 
+      return (0); 
+      } 
+    return (&amp;x - Umemptr); 
+    } 
+ 
+-------------------------------------------------------------- 
+FILE: CALL.MAC 
+  ; 
+  ;----- CALL: Small-C arithmetic and logical library 
+  ; 
+  CCDCAL:: 
+ 
+          PCHL 
+  ; 
+  CCDDGC:: 
+          DAD    D 
+          JMP    CCGCHAR 
+  ; 
+  CCDSGC:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+  ; 
+  ;FETCH A SINGLE BYTE FROM THE ADDRESS IN HL AND SIGN INTO HL 
+  CCGCHAR:: 
+          MOV    A,M 
+  ; 
+  ;PUT THE ACCUM INTO HL AND SIGN EXTEND THROUGH H. 
+  CCARGC:: 
+  CCSXT:: 
+          MOV    L,A 
+          RLC 
+          SBB    A 
+          MOV    H,A 
+          RET 
+  ; 
+  CCDDGI:: 
+          DAD    D 
+          JMP    CCGINT 
+  ; 
+  CCDSGI:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+  ; 
+  ;FETCH A FULL 16-BIT INTEGER FROM THE ADDRESS IN HL INTO HL 
+  CCGINT:: 
+          MOV    A,M 
+          INX    H 
+          MOV    H,M 
+          MOV    L,A 
+          RET 
+  ; 
+  CCDECC:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+          MOV    D,H 
+          MOV    E,L 
+          CALL   CCGCHAR 
+          DCX    H 
+          MOV    A,L 
+          STAX   D 
+          RET 
+  ; 
+  CCINCC:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+          MOV    D,H 
+          MOV    E,L 
+          CALL   CCGCHAR 
+          INX    H 
+          MOV    A,L 
+          STAX   D 
+          RET 
+  ; 
+  CDPDPC:: 
+          DAD    D 
+  CCPDPC:: 
+          POP    B       ;RET ADDR 
+          POP    D 
+          PUSH   B 
+  ; 
+  ;STORE A SINGLE BYTE FROM HL AT THE ADDRESS IN DE 
+  CCPCHAR:: 
+  PCHAR:  MOV    A,L 
+          STAX   D 
+          RET 
+  ; 
+  CCDECI:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+          MOV    D,H 
+          MOV    E,L 
+          CALL   CCGINT 
+          DCX    H 
+          JMP    CCPINT 
+  ; 
+  CCINCI:: 
+          INX    H 
+          INX    H 
+          DAD    SP 
+          MOV    D,H 
+          MOV    E,L 
+          CALL   CCGINT 
+          INX    H 
+          JMP    CCPINT 
+  ; 
+  CDPDPI:: 
+          DAD    D 
+  CCPDPI:: 
+          POP    B     ;RET ADDR 
+          POP    D 
+          PUSH   B 
+  ; 
+  ;STORE A 16-BIT INTEGER IN HL AT THE ADDRESS IN DE 
+  CCPINT:: 
+  PINT:   MOV    A,L 
+          STAX   D 
+          INX    D 
+          MOV    A,H 
+          STAX   D 
+          RET 
+  ; 
+  ;INCLUSIVE &quot;OR&quot; HL AND DE INTO HL 
+  CCOR:: 
+          MOV    A,L 
+          ORA    E 
+          MOV    L,A 
+          MOV    A,H 
+          ORA    D 
+          MOV    H,A 
+          RET 
+  ; 
+  ;EXCLUSIVE &quot;OR&quot; HL AND DE INTO HL 
+  CCXOR:: 
+          MOV    A,L 
+          XRA    E 
+          MOV    L,A 
+          MOV    A,H 
+          XRA    D 
+          MOV    H,A 
+          RET 
+  ; 
+  ;&quot;AND&quot; HL AND DE INTO HL 
+  CCAND:: 
+          MOV    A,L 
+          ANA    E 
+          MOV    L,A 
+          MOV    A,H 
+          ANA    D 
+          MOV    H,A 
+          RET 
+  ; 
+  ;IN ALL THE FOLLOWING COMPARE ROUTINES, HL IS SET TO 1 IF THE 
+  ;  CONDITION IS TRUE, OTHERWISE IT IS SET TO 0 (ZERO). 
+  ; 
+  ;TEST IF HL = DE 
+  ; 
+  CCEQ:: 
+          CALL    CCCMP 
+          RZ 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE != HL 
+  CCNE:: 
+          CALL    CCCMP 
+          RNZ 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &gt; HL (SIGNED) 
+  CCGT:: 
+          XCHG 
+          CALL    CCCMP 
+          RC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &lt;= HL (SIGNED) 
+  CCLE:: 
+          CALL    CCCMP 
+          RZ 
+          RC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &gt;= HL (SIGNED) 
+  CCGE:: 
+          CALL    CCCMP 
+          RNC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &lt; HL (SIGNED) 
+  CCLT:: 
+          CALL    CCCMP 
+          RC 
+          DCX      H 
+          RET 
+  ; 
+  ;COMMON ROUTINE TO PERFORM A SIGNED COMPARE OF DE AND HL 
+  ; THIS ROUTINE PERFORMS DE - HL AND SETS THE CONDITIONS: 
+  ; CARRY REFLECTS SIGN OF DIFFERENCE (SET MEANS DE &lt; HL) 
+  ; ZERO/NON-ZERO SET ACCORDING TO EQUALITY. 
+  CCCMP:: 
+          MOV     A,H     ;INVERT SIGN OF HL 
+          XRI     80H 
+          MOV     H,A 
+          MOV     A,D     ;INVERT SIGN OF DE 
+          XRI     8OH 
+          CMP     H       ;COMPARE MSBS 
+          JNZ     CCCMP1  ;DONE IF NEQ 
+          MOV     A,E     ;COMPARE LSBS 
+          CMP     L 
+  CCCMP1: LXI H,1          ;PRESET TRUE COND 
+          RET 
+  ; 
+  ;TEST IF DE &gt;= HL (UNSIGNED) 
+  CCUGE:: 
+          CALL    CCUCMP 
+          RNC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &lt; HL (UNSIGNED) 
+  CCULT:: 
+          CALL    CCUCMP 
+          RC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &gt; HL (UNSIGNED) 
+  CCUGT:: 
+          XCHG 
+          CALL    CCUCMP 
+          RC 
+          DCX     H 
+          RET 
+  ; 
+  ;TEST IF DE &lt;= HL (UNSIGNED) 
+  CCULE:: 
+          CALL    CCUCMP 
+          RZ 
+          RC 
+          DCX     H 
+          RET 
+  ; 
+  ;COMMON ROUTINE TO PERFORM UNSIGNED COMPARE 
+  ; CARRY SET IF DE &lt; HL 
+  ; ZERO/NONZERO SET ACCORDINGLY 
+  CCUCMP:: 
+          MOV     A,D 
+          CMP     H 
+          JNZ     UCMP1 
+          MOV     A,E 
+          CMP     L 
+  UCMP1:  LXI     H,1 
+          RET 
+  ; 
+  ;SHIFT DE ARITHMETICALLY RIGHT BY HL AND RETURN IN HL 
+  CCASR:: 
+          XCHG 
+          DCR     E 
+          RM 
+          MOV     A,H 
+          RAL 
+          MOV     A,H 
+          RAR 
+          MOV     H,A 
+          MOV     A,L 
+          RAR 
+          MOV     L,A 
+          JMP     CCASR+1 
+  ; 
+ ;SHIFT DE ARITHMETICALLY LEFT BY HL AND RETURN IN HL 
+ CCASL:: 
+          XCHG 
+          DCR     E 
+          RM 
+          DAD     H 
+          JMP     CCASL+1 
+  ; 
+  ;SUBTRACT HL FROM DE AND RETURN IN HL 
+  CCSUB:: 
+          MOV     A,E 
+          SUB     L 
+          MOV     L,A 
+          MOV     A,D 
+          SBB     H 
+          MOV     H,A 
+          RET 
+  ; 
+  ;FORM THE TWO'S COMPLEMENT OF HL 
+  CCNEG:: 
+          CALL    CCCOM 
+          INX     H 
+          RET 
+  ; 
+  ;FORM THE ONE'S COMPLEMENT OF HL 
+  CCCOM:: 
+          MOV     A,H 
+          CMA 
+          MOV     H,A 
+          MOV     A,L 
+          CMA 
+          MOV     L,A 
+          RET 
+  ; 
+  ;MULTIPLY DE BY HL AND RETURN IN HL (SIGNED MULTIPLY) 
+  CCMULT:: 
+  MULT:   MOV     B,H 
+          MOV     C,L 
+          LXI     H,O 
+  MULT1:  MOV     A,C 
+          RRC 
+          JNC     MULT2 
+          DAD     D 
+  MULT2:  XRA A 
+          MOV     A,B 
+          RAR 
+          MOV     B,A 
+          MOV     A,C 
+          RAR 
+          MOV     C,A 
+          ORA     B 
+          RZ 
+          XRA     A 
+          MOV     A,E 
+          RAL 
+          MOV     E,A 
+          MOV     A,D 
+          RAL 
+          MOV     D,A 
+          ORA     E 
+          RZ 
+          JMP     MULT1 
+  ; 
+  ;DIVIDE DE BY HL AND RETURN QUOTIENT IN HL, REMAINDER IN DE (SIGNED DIVIDE) 
+  CCDIV:: 
+  DIV:    MOV     B,H 
+          MOV     C,L 
+          MOV     A,D 
+          XRA     B 
+          PUSH    PSW 
+          MOV     A,D 
+          ORA     A 
+          CM      CCDENEG 
+          MOV     A,B 
+          ORA     A 
+          CM      CCBCNEG 
+          MVI     A,16 
+          PUSH    PSW 
+          XCHG 
+          LXI     D,0 
+  CCDIV1: DAD     H 
+          CALL    CCRDEL 
+          JZ      CCDIV2 
+          CALL    CCCMPBCDE 
+          JM      CCDIV2 
+          MOV     A,L 
+          ORI     1 
+          MOV     L,A 
+          MOV     A,E 
+          SUB     C 
+          MOV     E,A 
+          MOV     A,D 
+          SBB     B 
+          MOV     D,A 
+  CCDIV2: POP     PSW 
+          DCR     A 
+          JZ      CCDIV3 
+          PUSH    PSW 
+          JMP     CCDIV1 
+  CCDIV3: POP     PSW 
+          RP 
+          CALL    CCDENEG 
+          XCHG 
+          CALL    CCDENEG 
+          XCHG 
+          RET 
+  ; 
+  ;NEGATE THE INTEGER IN DE (INTERNAL ROUTINE) 
+  CCDENEG: MOV    A,D 
+          CMA 
+          MOV     D,A 
+          MOV     A,E 
+          CMA 
+          MOV     E,A 
+          INX     D 
+          RET 
+  ; 
+  ;NEGATE THE INTEGER IN BC (INTERNAL ROUTINE) 
+  CCBCNEG: MOV    A,B 
+          CMA 
+          MOV     B,A 
+          MOV     A,C 
+          CMA 
+          MOV     C,A 
+          INX     B 
+          RET 
+  ; 
+  ;ROTATE DE LEFT ONE BIT (INTERNAL ROUTINE) 
+  CCRDEL: MOV     A,E 
+          RAL 
+          MOV     E,A 
+          MOV     A,D 
+          RAL 
+          MOV     D,A 
+          ORA     E 
+          RET 
+  ; 
+  ;COMPARE BC TO DE (INTERNAL ROUTINE) 
+  CCCMPBCDE: MOV  A,E 
+          SUB     C 
+          MOV     A,D 
+          SBB     B 
+          RET 
+  ; 
+  ;LOGICAL NEGATION 
+  CCLNEG:: 
+          MOV     A,H 
+          ORA     L 
+          JNZ     $+6 
+          MVI     L,1 
+          RET 
+          LXI     H,O 
+          RET 
+  ; 
+  ; EXECUTE &quot;SWITCH&quot; STATEMENT 
+  ; 
+  ; HL   =  SWITCH VALUE 
+  ; (SP) -&gt; SWITCH TABLE 
+  ;         DW ADDR1, VALUE1 
+  ;         DW ADDR2, VALUE2 
+  ;         ... 
+  ;         DW 0 
+  ;         [JMP default] 
+  ;         continuation 
+  ; 
+  CCSWITCH:: 
+          XCHG             ;DE = SWITCH VALUE 
+          POP     H        ;HL -&gt; SWITCH TABLE 
+  SWLOOP: MOV     C,M 
+          INX     H 
+          MOV     B,M      ;BC -&gt; CASE ADDR, ELSE 0 
+          INX     H 
+          MOV     A,B 
+          ORA     C 
+          JZ      SWEND    ;DEFAULT OR CONTINUATION CODE 
+          M0V     A,M 
+          INX     H 
+          CMP     E 
+          MOV     A,M 
+          INX     H 
+          JNZ     SWLOOP 
+          CMP     D 
+          JNZ     SWLOOP 
+          MOV     H,B      ;CASE MATCHED 
+          M0V     L,C 
+  SWEND:   PCHL 
+  ; 
+  Uend: lhld 6             ;get bdos address 
+        sphl               ;use for base of stack 
+        lxi  h,Uend        ;get start of free memory 
+        shld Umemptr##     ;use for memory allocation 
+        jmp  Umain##       ;parse command line, execute program 
+        end  Uend 
+ 
+---------------------------------------------------------FILE:CALLOC.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Cleared-memory allocation of n items of size bytes. 
+  ** n     = Number of items to allocate space for. 
+  ** size  = Size of the items in bytes. 
+  ** Returns the address of the allocated block, 
+  ** else NULL for failure. 
+  */ 
+  calloc(n, size) char *n, *size; { 
+    return (Ualloc(n*size, YES)); 
+    } 
+ 
+-------------------------------------------------------FILE:CLEARERR.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Ustatus[]; 
+  /* 
+  ** Clear error status for fd. 
+  */ 
+  clearerr(fd) int fd; { 
+    if(Umode(fd)) Ustatus[fd] &amp;= ~ERRBIT; 
+    } 
+ 
+---------------------------------------------------------FILE:CSEEK.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Ufcbptr[], Uchrpos[], Unextc[]; 
+  /* 
+  ** Position fd to the 128-byte record indicated by 
+  ** &quot;offset&quot; relative to the point indicated by &quot;base.&quot; 
+  ** 
+  **     BASE     OFFSET-RELATIVE-TO 
+  **       0      first record 
+  **       1      current record 
+  **       2      end of file (last record + 1) 
+  ** 
+  ** Returns NULL on success, else EOF. 
+  */ 
+  cseek(fd, offset, base) int fd, offset, base; { 
+    int oldrrn, *rrn; 
+    if(!Umode(fd) || isatty(fd) || fflush(fd)) return (EOF); 
+    rrn = Ufcbptr[fd] + RRNOFF; 
+    oldrrn = *rrn; 
+    switch (base) { 
+      case 2: Ubdos(POSEND, Ufcbptr[fd]); 
+      case 1: *rrn += offset; 
+              break; 
+      case 0: *rrn = offset; 
+              break; 
+      default: return (EOF); 
+      } 
+    if(Usector(fd,  RDRND)) { 
+      *rrn = oldrrn; 
+      return (EOF); 
+      } 
+    Uchrpos[fd] = 0; 
+    Unextc[fd] = EOF; 
+    Uclreof(fd); 
+    return (NULL); 
+    } 
+ 
+---------------------------------------------------------FILE:CTELL.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Ufcbptr[], Uchrpos[]; 
+  /* 
+  ** Return offset to current 128-byte record. 
+  */ 
+  ctell(fd) int fd; { 
+    int *rrn; 
+    if(!Umode(fd) || isatty(fd)) return (-1); 
+    rrn=Ufcbptr[fd]+RRNOFF; 
+    return (*rrn); 
+    } 
+  /* 
+  ** Return offset to next character in current buffer. 
+  */ 
+  ctellc(fd) int fd; { 
+    return (Uchrpos[fd]); 
+    } 
+ 
+-----------------------------------------------------------FILE:DTOI.C 
+   #define NOCCARGC /* no argument count passing */ 
+   #include stdio.h 
+   /* 
+   ** dtoi -- convert signed decimal string to integer nbr 
+   **         returns field length, else ERR on error 
+   */ 
+   dtoi(decstr, nbr) char *decstr; int *nbr; { 
+    int len, s; 
+    if((*decstr)=='-') {s=1; ++decstr;} else s=0; 
+    if((len=utoi(decstr, nbr))&lt;O) return ERR; 
+    if(*nbr&lt;O) return ERR; 
+    if(s) (*nbr = -*nbr; return ++len;} else return len; 
+    } 
+ 
+----------------------------------------------------------FILE:EXIT.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Close all open files and exit to CP/M. 
+  ** Entry: errcode = Character to be sent to stderr. 
+  ** Returns to CP/M rather than the caller. 
+  */ 
+  exit(errcode) char errcode; { 
+    int fd; 
+    if(errcode) Uconout(errcode); 
+    for(fd=0; fd &lt; MAXFILES; fclose(fd++)); 
+    Ubdos(GOCPM,NULL); 
+    } 
+  #asm 
+  abort equ   exit 
+        entry abort 
+  #endasm 
+ 
+---------------------------------------------------------FILE:FCLOSE.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Close fd 
+  ** Entry: fd = File descriptor for file to be closed. 
+  ** Returns NULL for success, otherwise ERR 
+  */ 
+  extern int Ufcbptr[], Ustatus[], Udevice[]; 
+  fclose(fd) int fd; { 
+    if(!Umode(fd)) return (ERR); 
+    if(!isatty(fd)) { 
+      if(fflush(fd) || Ubdos(CLOFIL,Ufcbptr[fd])==255) 
+        return (ERR); 
+      } 
+    return (Ustatus[fd]=Udevice[fd]=NULL); 
+    } 
+ 
+---------------------------------------------------------FILE:FEOF.C 
+  #define NOCCARGC  /* no argument count passing */ 
+  #include clib.def 
+  extern int Ustatus[]; 
+  /* 
+  ** Test for end-of-file status. 
+  ** Entry: fd = file descriptor 
+  ** Returns non-zero if fd is at eof, else zero. 
+  */ 
+  feof(fd) int fd; { 
+    return (Ustatus[fd] &amp; EOFBIT); 
+    } 
+ 
+---------------------------------------------------------FILE:FERROR.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern Ustatus[]; 
+  /* 
+  ** Test for error status on fd. 
+  */ 
+  ferror(fd) int fd; { 
+    return (Ustatus[fd] &amp; ERRBIT); 
+    } 
+ 
+---------------------------------------------------------FILE:FFLUSH.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Udirty[], *Uauxsz, Uauxfl; 
+  /* 
+  ** Write buffer for fd if it has changes. 
+  ** Entry: fd = File descriptor of pertinent file. 
+  ** Returns NULL on success, otherwise EOF. 
+  ** Returns NULL if file is opened for input only 
+  **         or if it is not a disk file. 
+  */ 
+    fflush(fd) int fd; { 
+      if(Umode(fd) &amp; WRTBIT) { 
+        if((Uauxsz &amp;&amp; Uauxsz[fd] &amp;&amp; Uauxfl(fd)) II 
+           (!isatty(fd) &amp;&amp; Udirty[fd] &amp;&amp; Usector(fd, WRTRND))) { 
+          Useterr(fd); 
+          return (ERR); 
+          } 
+        } 
+      return (NULL); 
+      } 
+ 
+---------------------------------------------------------FILE:FGETC.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Uchrpos[]; 
+  /* 
+  ** Character-stream input of one character from fd. 
+  ** Entry: fd = File descriptor of pertinent file. 
+  ** Returns the next character on success, else EOF. 
+  */ 
+  fgetc(fd) int fd; { 
+    int ch; 
+    while(1) { 
+      switch(ch = Uread(fd)) { 
+        default:      return (ch); 
+        case  CPMEOF: switch(Uchrpos[fd]) { 
+                        default: -- Uchrpos[fd]; 
+                        case 0: 
+                        case BUFSIZE: 
+                        } 
+                      Useteof(fd); 
+                      return (EOF); 
+        case CR:      return  ('\n'); 
+        case LF:     /* NOTE:  Uconin() maps LF -&gt; CR */ 
+        } 
+      } 
+    } 
+  #asm 
+  getc equ   fgetc 
+       entry getc 
+  #endasm 
+ 
+---------------------------------------------------------FILE:FGETS.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Gets an entire string (including its newline 
+  ** terminator) or size-1 characters, whichever comes 
+  ** first. The input is terminated by a null character. 
+  ** Entry: str  = Pointer to destination buffer. 
+  **        size = Size of the destination buffer. 
+  **        fd   = File descriptor of pertinent file. 
+  ** Returns str on success, else NULL. 
+  */ 
+  fgets(str, size, fd) char *str; int size, fd; { 
+    return (Ugets(str, size, fd, 1)); 
+    } 
+ 
+  /* 
+  ** Gets an entire string from stdin (excluding its newline 
+  ** terminator) or size-1 characters, whichever comes 
+  ** first. The input is terminated by a null character. 
+  ** The user buffer must be large enough to hold the data. 
+  ** Entry: str = Pointer to destination buffer. 
+  ** Returns str on success, else NULL. 
+  */ 
+  gets(str) char *str; { 
+    return  (Ugets(str, 32767, stdin, 0)); 
+    } 
+ 
+  Ugets(str, size, fd, nl) char *str; int size, fd, nl; { 
+    int backup; 
+    char *next; 
+    next =  str; 
+    while(--size &gt; 0) { 
+      switch (*next =  fgetc(fd)) { 
+        case  EOF: *next = NULL; 
+                   if(next == str) return (NULL); 
+                   return  (str); 
+        case '\n': *(next + nl) = NULL; 
+                   return  (str); 
+        case RUB:  if(next &gt; str) backup = 1; else backup = 0; 
+
+                   goto backout; 
+        case WIPE: backup = next -  str; 
+          backout: 
+                   if(iscons(fd)) { 
+                     fputs(&quot;\b \b\b \b&quot;, stderr); 
+                     ++size; 
+                     while(backup--) { 
+                       fputs(&quot;\b \b&quot;, stderr); 
+                       if(*--next &lt; 32) fputs(&quot;\b \b&quot;, stderr); 
+                       ++size; 
+                       } 
+                     continue; 
+                     } 
+        default: ++next; 
+        } 
+      } 
+    *next = NULL; 
+    return (str); 
+    } 
+ 
+---------------------------------------------------------FILE:FOPEN.C 
+  #define  NOCCARGC /* no arg count passing */ 
+  #include  stdio.h 
+  #include  clib.def 
+  /* 
+  ** Open file indicated by fn. 
+  ** Entry: fn   = Null-terminated CP/M file name. 
+  **               May be prefixed by letter of dirve. 
+  **               May be just CON:, RDR:, PUN:, or LST:. 
+  ** ;      mode = &quot;a&quot;  - append 
+  **               &quot;r&quot;  - read 
+  **               &quot;w&quot;  - write 
+  **               &quot;a+&quot; - append update 
+  **               &quot;r+&quot; - read update 
+  **               &quot;w+&quot; - write update 
+  ** Returns a file descriptor on success, else NULL. 
+  */ 
+  fopen(fn, mode) char *fn, *mode; { 
+    int fd; 
+    fd = 0; /* skip stdin (= error return) */ 
+    while(++fd &lt; MAXFILES) { 
+      if(Umode(fd) == NULL) { 
+        if(Uopen(fn, mode, fd)!=ERR) return (fd); 
+        break; 
+        } 
+      } 
+    return (NULl); 
+    } 
+ 
+---------------------------------------------------------FILE:FPRINTF.C 
+  #define NOCCARGC 
+  /* 
+  ** Yes, that is correct. Although these functions use an 
+  ** argument count, they do not call functions which need one. 
+  */ 
+  #include  stdio.h 
+  /* 
+  ** fprintf(fd, ctlstring, arg, arg, ...) - Formatted print. 
+  ** Operates as described by Kernighan &amp; Ritchie. 
+  ** b, c, d, o, s, u, and x specifications are supported. 
+  ** Note: b (binary) is a non-standard extension. 
+  */ 
+  fprintf(argc) int argc; { 
+    int *nxtarg; 
+    nxtarg = CCARGC() + &amp;argc; 
+    return(Uprint(*(--nxtarg), --nxtarg)); 
+    } 
+ 
+  /* 
+  ** printf(ctlstring, arg, arg, ...) - Formatted print. 
+  ** Operates as described by Kernighan &amp; Ritchie. 
+  ** b, c, d, o, s, u, and x specifications are supported. 
+  ** Note: b (binary) is a non-standard extension. 
+  */ 
+  printf(argc) int argc;{ 
+    return(Uprint(stdout, CCARGC() + &amp;argc - 1)); 
+    } 
+ 
+  /* 
+  ** Uprint(fd, ctlstring, arg, arg, ...) 
+  ** Called by fprintf() and printf(). 
+  */ 
+  Uprint(fd, nxtarg) int fd, *nxtarg; { 
+    int  arg, left, pad, cc, len, maxchr, width; 
+    char *ctl, *sptr, str[17]; 
+    cc =  O; 
+    ctl = *nxtarg--; 
+    while(*ctl) { 
+      if(*ctl!='%') {fputc(*ctl++, fd); ++cc; continue;} 
+      else  ++ctl; 
+      if(*ctl=='%') {fputc(*ctl++, fd); ++cc; continue;} 
+      if(*ctl=='-') (left = 1; ++ctl;} else left = 0; 
+      if(*ctl=='O') pad = '0'; else pad = ' '; 
+      if(isdigit(*ctl)) { 
+        width = atoi(ctl++); 
+        while(isdigit(*ctl)) ++ctl; 
+        } 
+      else width = 0; 
+      if(*ctl=='.') { 
+        maxchr = atoi(++ctl); 
+        while(isdigit(*ctl)) ++ctl; 
+        } 
+      else  maxchr = 0; 
+      arg = *nxtarg--; 
+      sptr = str; 
+      switch(*ctl++) { 
+        case 'c': str[0]: = arg; str[1] = NULL; break; 
+        case 's': sptr = arg;        break; 
+        case 'd': itoa(arg,str);     break; 
+        case 'b': itoab(arg,str,2);  break; 
+        case 'o': itoab(arg,str,8);  break; 
+        case 'u': itoab(arg,str,10); break; 
+        case 'x': itoab(arg,str,16); break; 
+        default: return (cc); 
+        } 
+      len = strlen(sptr); 
+      if(maxchr &amp;&amp; maxchr&lt;len) len = maxchr; 
+      if(width&gt;len) width = width - len; else width = 0; 
+      if(!left) while(width--) {fputc(pad,fd); ++cc;} 
+      while(len--) {fputc(*sptr++,fd); ++cc; } 
+      if(left) while(width--) {fputc(pad,fd); ++cc;} 
+      } 
+    return(cc); 
+    } 
+ 
+--------------------------------------------------- FILE:FPUTC.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  extern int Ustatus[]; 
+  /* 
+  ** Character-stream output of a character to fd. 
+  ** Entry: ch = Character to write. 
+  **       fd = File descriptor of pertinent file. 
+  ** Returns character written on success, else EOF. 
+  */ 
+  fputc(ch, fd) int ch, fd; { 
+    switch(ch) { 
+      case EOF: Uwrite(CPMEOF, fd); break; 
+      case '\n': Uwrite(CR, fd); Uwrite(LF, fd); break; 
+      default: Uwrite(ch, fd); 
+      } 
+    if(Ustatus[fd] &amp; ERRBIT) return (EOF); 
+    return (ch); 
+    } 
+  #asm 
+  putc equ   fputc 
+       entry putc 
+  #endasm 
+ 
+--------------------------------------------------- FILE:FPUTS.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Write a string to fd. 
+  ** Entry: string = Pointer to null-terminated string. 
+  **        fd     = File descriptor of pertinent file. 
+  */ 
+  fputs(string,fd) char *string; int fd; { 
+    while(*string) 
+      fputc(*string++,fd) ; 
+    } 
+ 
+--------------------------------------------------- FILE:FREAD.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include clib.def 
+  extern int Ustatus[]; 
+  /* 
+  ** Item-stream read from fd. 
+  ** Entry: buf = address of target buffer 
+  **         sz = size of items in bytes 
+  **          n = number of items to read 
+  **         fd = file descriptor 
+  ** Returns a count of the items actually read. 
+  ** Use feof() and ferror() to determine file status. 
+  */ 
+  fread(buf, sz, n, fd) char *buf; int sz, n, fd; { 
+    return (read(fd, buf, n*sz)/sz); /*62*/ 
+    } 
+ 
+  /* 
+  ** Binary-stream read from fd. 
+  ** Entry: fd = file descriptor 
+  **       buf = address of target buffer 
+  **         n = number of bytes to read 
+  ** Returns a count of the bytes actually read. 
+  ** Use feof() and ferror() to determine file status. 
+  */ 
+  read(fd, buf, n) int fd, n; char *buf; { 
+    char *cnt; /* fake unsigned */ 
+    cnt: O; 
+    while(n--) { 
+      *buf++ = Uread(fd); 
+      if(Ustatus[fd] &amp; (ERRBIT | EOFBIT)) break; 
+      ++cnt; 
+      } 
+    return (cnt); 
+    } 
+ 
+--------------------------------------------------- FILE:FREE.C 
+  #define NOCCARGC /* no argument count passing */ 
+  extern char *Umemptr; 
+  /* 
+  ** free(ptr) - Free previously allocated memory block. 
+  ** Memory must be freed in the reverse order from which 
+  ** it was allocated. 
+  ** ptr    = Value returned by calloc() or malloc(). 
+  ** Returns ptr if successful or NULL otherwise. 
+  */ 
+  free(ptr) char *ptr; { 
+     return (Umemptr = ptr); 
+     } 
+  #asm 
+  cfree  equ    free 
+         entry  cfree 
+  #endasm 
+ 
+--------------------------------------------------- 
+FILE:FREOPEN.C 
+  #define NOCCARGC  /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Close previously opened fd and reopen it. 
+  ** Entry: fn   = Null-terminated CP/M file name. 
+  **               May be prefixed by letter of drive. 
+  **               May be just CON:, RDR:, PUN:, or LST:. 
+  **        mode = &quot;a&quot;  - append 
+  **               &quot;r&quot;  - read 
+  **               &quot;w&quot;  - write 
+  **               &quot;a+&quot; - append update 
+  **               &quot;r+&quot; - read update 
+  **               &quot;w+&quot; - write update 
+  **        fd   = File descriptor of pertinent file. 
+  ** Returns the original fd on success, else NULL. 
+  */ 
+  freopen(fn, mode, fd) char *fn, *mode; int fd; { 
+    if(fclose(fd)) return (NULL); 
+    if(Uopen(fn, mode, fd)==ERR) return (NULL); 
+    return (fd); 
+    } 
+ 
+--------------------------------------------------- FILE:FSCANF.C 
+  #define NOCCARGC   /* no argument count passing */ 
+  /* 
+  ** Yes, that is correct. Although these functions use an 
+  ** argument count, they do not call functions which need one. 
+  */ 
+  #include stdio.h 
+  /* 
+  ** fscanf(fd, ctlstring, arg, arg, ...) - Formatted read. 
+  ** Operates as described by Kernighan &amp; Ritchie. 
+  ** b, c, d, o, s, u, and x specifications are supported. 
+  ** Note: b (binary) is a non-standard extension. 
+  */ 
+  fscanf(argc) int argc; { 
+    int *nxtarg; 
+    nxtarg = CCARGC() +&amp;argc; 
+    return (Uscan(*(--nxtarg), --nxtarg)); 
+    } 
+  /* 
+  ** scanf(ctlstring, arg, arg, ...) - Formatted read. 
+  ** Operates as described by Kernighan &amp; Ritchie. 
+  ** b, c, d, o, s, u, and x specifications are supported. 
+  ** Note: b (binary) is a non-standard extension. 
+  */ 
+  scanf(argc) int argc; { 
+    return (Uscan(stdin, CCARGC() +&amp;argc - 1)); 
+    } 
+ 
+  /* 
+  ** Uscan(fd, ctlstring, arg, arg, ...) - Formatted read. 
+  ** Called by fscanf() and scanf(). 
+  */ 
+  Uscan(fd,nxtarg) int fd, *nxtarg; { 
+    char *carg, *ctl, *unsigned; 
+    int *narg, wast, ac, width, ch, cnv, base, ovfl, sign; 
+    ac = 0; 
+    ctl = *nxtarg--; 
+    while(*ctl) { 
+      if(isspace(*ctl)) {++ctl; continue;} 
+      if(*ctl++ != '%') continue; 
+      if(*ctl == '*') {narg = carg = &amp;wast; ++ctl;} 
+      else             narg = carg = *nxtarg--; 
+      ctl += utoi(ctl, &amp;width); 
+      if(!width) width = 32767; 
+      if(!(cnv = *ctl++)) break; 
+      while(isspace(ch = fgetc(fd))); 
+      if(ch == EOF) {if(ac) break; else return(EOF);} 
+      ungetc(ch,fd); 
+      switch(cnv) { 
+        case 'c': 
+          *carg = fgetc(fd); 
+          break; 
+        case 's': 
+          while(width--) { 
+            if((*carg = fgetc(fd)) == EOF) break; 
+            if(isspace(*carg)) break; 
+            if(carg != &amp;wast) ++carg; 
+            } 
+          *carg = O; 
+          break; 
+        default: 
+          switch(cnv) { 
+            case 'b': base =  2; sign = 1; ovfl = 32767; break; 
+            case 'd': base = 10; sign = O; ovfl =  3276; break; 
+            case 'o': base =  8; sign = 1; ovfl =  8191; break; 
+            case 'u': base = 10; sign = 1; ovfl =  6553; break; 
+            case 'x': base = 16; sign = 1; ovfl =  4095; break; 
+            default: return (ac); 
+            } 
+          *narg = unsigned = O; 
+          while(width-- &amp;&amp; !isspace(ch=fgetc(fd)) &amp;&amp; ch!=EOF) { 
+            if(!sign) 
+              if(ch == '-') {sign = -1; continue;} 
+              else sign = 1; 
+            if(ch &lt; '0') return (ac); 
+            if(ch &gt;= 'a')     ch -= 87; 
+            else if(ch &gt;= 'A') ch -= 55; 
+            else               ch -= '0'; 
+            if(ch &gt;= base || unsigned &gt; ovfl) return (ac); 
+            unsigned = unsigned * base + ch; 
+            } 
+          *narg = sign * unsigned; 
+        } 
+      ++ac; 
+      } 
+    return (ac); 
+    } 
+ 
+--------------------------------------------------- FILE:FWRITE.C 
+
+  #define NOCCARGC /* no argument count passing */ 
+  #include clib.def 
+  extern int Ustatus[]; 
+  /* 
+  ** Item-stream write to fd. 
+  ** Entry: buf = address of source buffer 
+  **         sz = size of items in bytes 
+  **          n = number of items to write 
+  **         fd = file descriptor 
+  ** Returns a count of the items actually written or 
+  ** zero if an error occurred. 
+  ** May use ferror(), as always, to detect errors. 
+  */ 
+  fwrite(buf, sz, n, fd) char *buf; int sz, n, fd; {    /*62*/ 
+    if(write(fd, buf, n*sz) == -1) return (0); 
+    return (n); 
+    } 
+ 
+  /* 
+  ** Binary-stream write to fd. 
+  ** Entry: fd = file descriptor 
+  **       buf = address of source buffer 
+  **         n = number of bytes to write 
+  ** Returns a count of the bytes actually written or 
+  ** -1 if an error occurred. 
+  ** May use ferror(), as always, to detect errors. 
+  */ 
+  write(fd, buf, n) int fd, n; char *buf; { /*62*/ 
+    char *cnt; /* fake unsigned */ 
+    cnt = n; 
+    while(cnt--) { 
+      Uwrite(*buf++, fd); 
+      if(Ustatus[fd] &amp; ERRBIT) return (-1); 
+      } 
+    return (n); 
+    } 
+ 
+--------------------------------------------------- FILE:GETARG.C 
+
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Get command line argument. 
+  ** Entry: n    = Number of the argument. 
+  **        s    = Destination string pointer. 
+  **        size = Size of destination string. 
+  **        argc = Argument count from main(). 
+  **        argv = Argument vector(s) from main(). 
+  ** Returns number of characters moved on success, 
+  ** else EOF. 
+  */ 
+  getarg(n,s,size,argc,argv) 
+    int n; char *s; int size, argc, argv[]; { 
+    char *str; 
+    int i; 
+    if(n &lt; 0 | n &gt;= argc) { 
+      *s = NULL; 
+      return EOF; 
+      } 
+    i = 0; 
+    str=argv[n]; 
+    while(i&lt;size) { 
+      if((s[i]=str[i])==NULL) break; 
+      ++i; 
+      } 
+    s[i]=NULL; 
+    return i; 
+    } 
+ 
+--------------------------------------------------- 
+FILE:GETCHAR.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Get next character from standard input. 
+  */ 
+  getchar() { 
+    return (fgetc(stdin)); 
+   } 
+ 
+--------------------------------------------------- 
+FILE:ISALNUM.C 
+  /* 
+  ** return 'true' if c is alphanumeric 
+  */ 
+  isalnum(c) int c; { 
+    return ((c&lt;='z' &amp;&amp; c&gt;='a') || 
+            (c&lt;='Z' &amp;&amp; c&gt;='A') || 
+            (c&lt;='9' &amp;&amp; c&gt;='0')); 
+    } 
+ 
+--------------------------------------------------- FILE:ISALPHA.C 
+  /* 
+  ** return 'true' if c is alphabetic 
+  */ 
+  isalpha(c) int c; { 
+    return ((c&lt;='z' &amp;&amp; c&gt;='a') || (c&lt;='Z' &amp;&amp; c&gt;='A')); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ASASCII.C 
+  /* 
+  ** return 'true' if c is an ASCII character (0-127) 
+  */ 
+  isascii(c) char *c; { 
+    /* c is a simulated unsigned integer */ 
+    return (c &lt;= 127); 
+    } 
+ 
+--------------------------------------------------- FILE:ISATTY.C 
+
+  extern int Udevice[]; 
+  /* 
+  ** Return &quot;true&quot; if fd is a device, else &quot;false&quot; 
+  */ 
+  isatty(fd) int fd; { 
+    return (Udevice[fd]); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISCNTRL.C 
+  /* 
+  ** return 'true' if c is a control character 
+  ** (0-31 or 127) 
+  */ 
+  iscntrl(c) char *c; { 
+    /*  c is a simulated unsigned integer */ 
+    return  ((c &lt;= 31) || (c == 127)); 
+    } 
+ 
+--------------------------------------------------- FILE:ISCONS.C 
+
+  #include stdio.h 
+  #include clib.def 
+  extern int Udevice[]; 
+  /* 
+  ** Determine if fd is the console. 
+  */ 
+  iscons(fd) int fd; { 
+    return (Udevice[fd] == CPMCON); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISDIGIT.C 
+  /* 
+  ** return 'true' if  c is a decimal digit 
+  */ 
+  isdigit(c) int c; { 
+    return  (c&lt;='9' &amp;&amp; c&gt;='O'); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISGRAPH.C 
+  /* 
+  ** return 'true' if  c is a graphic character 
+  ** (33-126) 
+  */ 
+  isgraph(c) int c; { 
+    return (c&gt;=33 &amp;&amp; c&lt;=126); 
+    } 
+ 
+--------------------------------------------------- FILE:ISLOWER.C 
+  /* 
+  ** return 'true' if c is lower-case alphabetic 
+  */ 
+  islower(c) int c; { 
+    return (c&lt;='z' &amp;&amp; c&gt;='a'); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISPRINT.C 
+  /* 
+  ** return 'true' if c is a printable character 
+  ** (32-126) 
+  */ 
+  isprint(c) int c; { 
+    return (c&gt;=32 &amp;&amp; c&lt;=126); 
+    } 
+ 
+--------------------------------------------------- FILE:ISPUNCT. C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** return 'true' if  c is a punctuation character 
+  ** (all but control and alphanumeric) 
+  */ 
+  ispunct(c) int c; { 
+    return  (!isalnum(c) &amp;&amp; !iscntrl(c)); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISSPACE.C 
+  /* 
+  ** return 'true' if  c is a white-space character 
+  */ 
+  isspace(c) int c; { 
+    /* first check gives quick exit in most cases */ 
+    return(c&lt;=' ' &amp;&amp; (c==' ' || (c&lt;=13 &amp;&amp; c&gt;=9))); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISUPPER.C 
+  /* 
+  ** return 'true' if  c is upper-case alphabetic 
+  */ 
+  isupper(c) int c; { 
+    return (c&lt;='Z' &amp;&amp; c&gt;='A'); 
+    } 
+ 
+--------------------------------------------------- 
+FILE:ISXDIGIT.C 
+  /* 
+  ** return 'true' if c is a hexadecimal digit 
+  ** (0-9, A-F, or a-f) 
+  */ 
+  isxdigit(c) int c; { 
+    return ((c&lt;='f' &amp;&amp; c&gt;='a') || 
+            (c&lt;='F' &amp;&amp; c&gt;='A') || 
+            (c&lt;='9' &amp;&amp; C&gt;='0')); 
+    } 
+ 
+--------------------------------------------------- FILE:ITOA.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** itoa(n,s) - Convert n to characters in s 
+  */ 
+  itoa(n, s) char *s; int n; { 
+    int sign; 
+    char  *ptr; 
+     ptr = s; 
+    if ((sign =  n) &lt; 0) /* record sign */ 
+      n = -n;      /* make n positive */ 
+    do { /* generate digits in reverse order */ 
+      *ptr++ = n % 10 + '0'; /* get next digit */ 
+      } while  ((n = n / 10) &gt; 0);      /* delete it */ 
+    if (sign &lt; 0) *ptr++ = '-'; 
+    *ptr = '\0'; 
+    reverse(s); 
+    } 
+ 
+--------------------------------------------------- FILE:ITOAB.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** itoab(n,s,b) - Convert &quot;unsigned&quot; n to characters in s using base b. 
+  **                NOTE: This is a non-standard function. 
+  */ 
+  itoab(n, s, b) int n; char *s; int b; { 
+    char  *ptr; 
+    int  lowbit; 
+    ptr = s; 
+    b &gt;&gt;= 1; 
+    do { 
+      lowbit = n &amp; 1; 
+      n = (n &gt;&gt; 1) &amp; 32767; 
+      *ptr = ((n % b) &lt;&lt; 1) + lowbit; 
+      if(*ptr &lt; 10) *ptr += '0'; else *ptr += 55; 
+      ++ptr; 
+      } while(n /= b); 
+    *ptr = 0; 
+    reverse (s); 
+    } 
+ 
+--------------------------------------------------- FILE:ITOD.C 
+  #include stdio.h 
+  /* 
+  ** itod -- convert nbr to signed decimal string of width sz 
+  **         right adjusted, blank filled; returns str 
+  ** 
+  **         if sz &gt; 0 terminate with null byte 
+  **         if  sz = 0 find end of string 
+  **         if sz &lt; 0 use last byte for data 
+  */ 
+  itod(nbr, str, sz) int nbr; char str[]; int sz; { 
+    char  sgn; 
+    if(nbr&lt;0) {nbr = -nbr; sgn='-';} 
+    else  sgn=' '; 
+    if(sz&gt;0) str[--sz]=NULL; 
+    else  if(sz&lt;0) sz = -sz; 
+    else while(str[sz]!=NULL) ++sz; 
+    while(sz) { 
+      str[--sz]=(nbr%10+'0'); 
+      if((nbr=nbr/10)==0) break; 
+      } 
+    if(sz) str[--sz]=sgn; 
+    while(sz&gt;0) str[--sz]=' '; 
+    return str; 
+    } 
+ 
+---------------------------------------------------------------FILE:ITOO.C 
+  /* 
+  ** itoo -- converts nbr to octal string of length sz 
+  **         right adjusted and blank filled, returns str 
+  ** 
+  **        if sz &gt; 0 terminate with null byte 
+  **        if sz = 0 find end of string 
+  **        if sz &lt; 0 use last byte for data 
+  */ 
+  itoo(nbr, str, sz) int nbr; char str[]; int sz; { 
+    int digit; 
+    if(sz&gt;0) str[--sz]=0; 
+    else if(sz&lt;0) sz = -sz; 
+    else while(str[sz]!=0) ++sz; 
+    while(sz) { 
+      digit=nbr&amp;7; nbr=(nbr&gt;&gt;3)&amp;8191; 
+      str[--sz]=digit+48; 
+      if(nbr==0) break; 
+      } 
+    while(sz) str[--sz]=' '; 
+    return str; 
+    } 
+ 
+---------------------------------------------------------------FILE:ITOU.C 
+  #include stdio.h 
+  /* 
+  ** itou -- convert nbr to unsigned decimal string of width sz 
+  **         right adjusted, blank filled; returns str 
+  ** 
+  **        if sz &gt; 0 terminate with null byte 
+  **        if sz = 0 find end of string 
+  **        if sz &lt; 0 use last byte for data 
+  */ 
+  itou(nbr, str, sz) int nbr; char str[]; int sz; { 
+    int lowbit; 
+    if(sz&gt;0) str[--sz]=NULL; 
+    else if(sz&lt;0) sz = -sz; 
+    else while(str[sz]!=NULL) ++sz; 
+    while(sz) { 
+      lowbit=nbr&amp;1; 
+      nbr=(nbr&gt;&gt;1)&amp;32767; /* divide by 2 */ 
+      str[--sz]=((nbr%5)&lt;&lt;1)+lowbit+'0'; 
+      if((nbr=nbr/5)==0) break; 
+      } 
+    while(sz) str[--sz]=' '; 
+    return str; 
+  } 
+ 
+---------------------------------------------------------------FILE:ITOX. C 
+  /* 
+  ** itox -- converts nbr to hex string of length sz 
+  **         right adjusted and blank filled, returns str 
+  ** 
+  **        if sz &gt; 0 terminate with null byte 
+  **        if sz = 0 find end of string 
+  **        if sz &lt; 0 use last byte for data 
+  */ 
+  itox(nbr, str, sz) int nbr; char str[]; int sz; { 
+    int digit, offset; 
+    if(sz&gt;0) str[--sz]=0; 
+    else if(sz&lt;0) sz = -sz; 
+    else while(str[sz]!=0) ++sz; 
+    while(sz) { 
+      digit=nbr&amp;15; nbr=(nbr&gt;&gt;4)&amp;4095; 
+      if(digit&lt;10) offset=48; else offset=55; 
+      str[--sz]=digit+offset; 
+      if(nbr==0) break; 
+      } 
+    while(sz) str[--sz]=' '; 
+    return str; 
+    } 
+ 
+---------------------------------------------------------------FILE:LEFT.C 
+  /* 
+  ** left -- left adjust and null terminate a string 
+  */ 
+  left(str) char *str; { 
+    char *str2; 
+    str2=str; 
+    while(*str2==' ') ++str2; 
+    while(*str++ = *str2++); 
+    } 
+ 
+---------------------------------------------------------------FILE:LEXCMP.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** lexcmp(s, t) - Return a number &lt;0, 0, or&gt;0 
+  **                as s is &lt;, =, or &gt; t. 
+  */ 
+  lexcmp(s, t) char *s, *t; { 
+    while(lexorder(*s, *t) == 0) 
+      if(*s++) ++t; 
+      else return (0); 
+    return (lexorder(*s, *t)); 
+    } 
+  /* 
+  ** lexorder(c1, c2) 
+  ** 
+  ** Return a negative, zero, or positive number if 
+  ** c1 is less than, equal to, or greater than c2, 
+  ** based on a lexicographical (dictionary order) 
+  ** collating sequence. 
+  ** 
+  */ 
+  char Ulex[128] = { 
+       /**** NUL - / ****/ 
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 
+        10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
+        20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
+        30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 
+        40, 41, 42, 43, 44, 45, 46, 47, 
+       /**** 0-9 ****/ 
+        65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 
+       /**** : ; &lt; = &gt; ? @ ****/ 
+        48, 49, 50, 51, 52, 53, 54, 
+       /**** A-Z ****/ 
+        75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 
+        88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,100, 
+       /**** [ \ ] ^ U ****/ 
+        55, 56, 57, 58, 59, 60, 
+       /**** a-z ****/ 
+        75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 
+        88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,100, 
+       /**** { | } ~ ****/ 
+        61, 62, 63, 64, 
+       /**** DEL ****/ 
+       101 
+       }; 
+ 
+  lexorder(c1, c2) char c1, c2; { 
+    return(Ulex[c1] - Ulex[c2]); 
+    } 
+ 
+---------------------------------------------------------------FILE:LINK.MAC 
+  Ulink:: ext Umain 
+          end 
+ 
+---------------------------------------------------------------FILE:MALLOC.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Memory allocation of size bytes. 
+  ** size = Size of the block in bytes. 
+  ** Returns the address of the allocated block, 
+  ** else NULL for failure. 
+  */ 
+  malloc(size) char *size; { 
+    return (Ualloc(size, NO)); 
+    } 
+ 
+---------------------------------------------------------------FILE:OTOI.C 
+  #include stdio.h 
+  /* 
+  ** otoi -- convert unsigned octal string to integer nbr 
+  **          returns field size, else ERR on error 
+  */ 
+  otoi(octstr, nbr) char *octstr; int *nbr; { 
+    int d,t; d=0; 
+    *nbr=0; 
+    while((*octstr&gt;='0')&amp;(*octstr&lt;='7')) { 
+      t=*nbr; 
+      t=(t&lt;&lt;3) + (*octstr++ - '0'); 
+      if ((t&gt;=0)&amp;(*nbr&lt;0)) return ERR; 
+      d++; *nbr=t; 
+      } 
+    return d; 
+    } 
+ 
+---------------------------------------------------------------FILE:PAD.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** Place n occurrences of ch at dest. 
+  */ 
+  pad(dest, ch, n) char *dest, *n; int ch; { 
+    /* n is a fake unsigned integer */ 
+    while(n--) *dest++ = ch; 
+    } 
+ 
+---------------------------------------------------------------FILE:POLL.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Poll for console input or interruption 
+  */ 
+  poll(pause) int pause; { 
+    int i; 
+    i = Ubdos(DCONIO, 255); 
+    if(pause) { 
+      if(i == PAUSE) { 
+        while(!(i = Ubdos(DCONIO, 255))) ; 
+        if(i == ABORT) exit(0); 
+        return (0); 
+      } 
+    if(i == ABORT) exit(0); 
+    } 
+  return (i); 
+  } 
+ 
+---------------------------------------------------------------FILE:PUTCHAR.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Write character to standard output. 
+  */ 
+  putchar(ch) int ch; { 
+    return (fputc(ch, stdout)); 
+    } 
+ 
+---------------------------------------------------------------FILE:PUTS.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  /* 
+  ** Write string to standard output. 
+  */ 
+  puts(string) char *string; { 
+    fputs(string, stdout); 
+    fputc('\n', stdout); 
+    } 
+ 
+---------------------------------------------------------------FILE:RENAME.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Rename a file. 
+  ** from = address of old filename. 
+  **   to = address of new filename. 
+  ** Returns NULL on success, else ERR. 
+  */ 
+  rename(from, to) char *from, *to; { 
+    char fcb[FCBSIZE]; 
+    pad(fcb, NULL, FCBSIZE); 
+    if(!Unewfcb(to, fcb) || Ubdos(OPNFIL, fcb) != 255) { 
+      Ubdos(CLOFIL, fcb); 
+      return (ERR); 
+      } 
+    if(Unewfcb(from, fcb) &amp;&amp; 
+       Unewfcb(to, fcb+NAMEOFF2) &amp;&amp; 
+       Ubdos(RENAME, fcb) != 255) 
+      return (NULL); 
+    return (ERR); 
+    } 
+ 
+---------------------------------------------------------------FILE:REVERSE.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** reverse string in place 
+  */ 
+  reverse(s) char *s; { 
+    char *j; 
+    int c; 
+    j = s + strlen(s) - 1; 
+    while(s &lt; j) { 
+      c = *s; 
+      *s++ = *j; 
+      *j-- = c; 
+      } 
+    } 
+ 
+---------------------------------------------------------------FILE:REWIND.C 
+  #define NOCCARGC /* no argument count passing */ 
+  /* 
+  ** Rewind file to beginning. 
+  */ 
+  rewind(fd) int fd; { 
+    return(cseek(fd, 0, 0)); 
+    } 
+ 
+------------------------------------------------------------------FILE:SIGN.C 
+  /* 
+  ** sign -- return -1, 0, +1 depending on the sign of nbr 
+  */ 
+  sign(nbr) int nbr; { 
+    if(nbr&gt;0) return 1; 
+    if(nbr==0) return 0; 
+    return -1; 
+    } 
+ 
+---------------------------------------------------------------FILE:STRCAT.C 
+  /* 
+  ** concatenate t to end of s 
+  ** s must be large enough 
+  */ 
+  strcat(s, t) char *s, *t; { 
+    char *d; 
+    d = s; 
+    --s; 
+    while (*++s); 
+    while (*s++ = *t++) ; 
+    return(d); 
+    } 
+ 
+---------------------------------------------------------------FILE:STRCHR.C 
+  /* 
+  ** return pointer to 1st occurrence of c in str, else 0 
+  */ 
+  strchr(str, c) char *str, c; { 
+    while(*str) { 
+      if(*str == c) return (str); 
+      ++str; 
+      } 
+  return (0); 
+  } 
+ 
+---------------------------------------------------------------FILE:STRCMP.C 
+  /* 
+  ** return &lt;0, 0, &gt;0 aUording to 
+  **       s&lt;t, s=t, s&gt;t 
+  */ 
+  strcmp(s, t) char *s, *t; { 
+    while(*s == *t) { 
+      if(*s == 0) return (0); 
+      ++s; ++t; 
+      } 
+    return (*s - *t); 
+    } 
+ 
+---------------------------------------------------------------FILE:STRCPY.C 
+  /* 
+  ** copy t to s 
+  */ 
+  strcpy(s, t) char *s, *t; { 
+    char *d; 
+    d = s; 
+    while (*s++ = *t++); 
+    return(d); 
+    } 
+ 
+---------------------------------------------------------------FILE:STRLEN.C 
+  /* 
+  ** return length of s 
+  */ 
+  strlen(s) char *s; { 
+    char *t; 
+    t = s - 1; 
+    while (*++t); 
+    return (t - s); 
+    } 
+ 
+---------------------------------------------------------------FILE:STRCAT.C 
+  /* 
+  ** concatenate n bytes max from t to end of s 
+  ** s must be large enough 
+  */ 
+  strncat(s, t, n) char *s, *t; int n; { 
+    char *d; 
+    d = s; 
+    --s; 
+    while(*++s); 
+    while(n--) { 
+      if(*s++ = *t++) continue; 
+      return(d); 
+      } 
+    *s = 0; 
+    return(d); 
+    } 
+ 
+--------------------------------------------------------------FILE:STRNCMP.C 
+  /* 
+  ** strncmp(s,t,n) - Compares two strings for at most n 
+  **                  characters and returns an integer 
+  **                  &gt;0, =0, or &lt;0 as s is &gt;t, =t, or &lt;t. 
+  */ 
+  strncmp(s, t, n) char *s, *t; int n; { 
+    while(n &amp;&amp; *s==*t) { 
+      if (*s == 0) return (0); 
+      ++s; ++t; --n; 
+      } 
+    if(n) return (*s - *t); 
+    return (0); 
+    } 
+ 
+--------------------------------------------------------------FILE:STRNCPY.C 
+  /* 
+  ** copy n characters from sour to dest (null padding) 
+  */ 
+  strncpy(dest, sour, n) char *dest, *sour; int n; { 
+    char *d; 
+    d = dest; 
+    while(n-- &gt; 0) { 
+      if(*d++ = *sour++) continue; 
+      while(n-- &gt; 0) *d++: 0; 
+      } 
+    *d = 0; 
+    return (dest); 
+    } 
+ 
+--------------------------------------------------------------FILE:STRRCHR.C 
+  /* 
+  ** strrchr(s,c) - Search s for rightmost occurrence of c. 
+  ** s      = Pointer to string to be searched. 
+  ** c      = Character to search for. 
+  ** Returns pointer to rightmost c or NULL. 
+  */ 
+  strrchr(s, c) char *s, c; { 
+    char *ptr; 
+    ptr = 0; 
+    while(*s) { 
+      if(*s==c) ptr = s; 
+      ++s; 
+      } 
+    return (ptr); 
+    } 
+ 
+--------------------------------------------------------------FILE:TOASCII.C 
+  /* 
+  ** return ASCII equivalent of c 
+  */ 
+  toascii(c) int c; { 
+    return (c); 
+    } 
+ 
+--------------------------------------------------------------FILE:TOLOWER.C 
+  /* 
+  ** return lowercase of c if uppercase, else c 
+  */ 
+  tolower(c) int c; { 
+    if(c&lt;='Z' &amp;&amp; c&gt;='A') return (c+32); 
+    return (c); 
+    } 
+ 
+--------------------------------------------------------------FILE:TOUPPER.C 
+  /* 
+  ** return uppercase of c if it is lowercase, else c 
+  */ 
+  toupper(c) int c; { 
+    if(c&lt;='z' &amp;&amp; c&gt;='a') return (c-32); 
+    return (c); 
+    } 
+ 
+--------------------------------------------------------------FILE:UNGETC.C 
+  #define NOCCARGC /* no argument count passing */ 
+  #include stdio.h 
+  extern Unextc[]; 
+  /* 
+  ** Put c back into file fd. 
+  ** Entry: c = character to put back 
+  **       fd = file descriptor 
+  ** Returns c if successful, else EOF. 
+  */ 
+  ungetc(c, fd) int c, fd; { 
+    if(!Umode(fd) || Unextc[fd]!=EOF || c==EOF) return (EOF); 
+    return (Unextc[fd] = c); 
+    } 
+ 
+---------------------------------------------------------------FILE:UNLINK.C 
+  #define NOCCARGC /* no arg count passing */ 
+  #include stdio.h 
+  #include clib.def 
+  /* 
+  ** Unlink (delete) the named file. 
+  ** Entry: fn = Null-terminated CP/M file name. 
+  **             May be prefixed by letter of drive. 
+  ** Returns NULL on success, else ERR. 
+  */ 
+  unlink(fn) char *fn; { 
+    char fcb[FCBSIZE]; 
+    pad(fcb, NULL, FCBSIZE); 
+    if(Unewfcb(fn, fcb) &amp;&amp; Ubdos(DELFIL, fcb) != 255) 
+      return (NULL); 
+    return (ERR); 
+    } 
+  #asm 
+  delete equ    unlink 
+         entry  delete 
+  #endasm 
+ 
+---------------------------------------------------------------FILE:UTOI.C 
+  #include stdio.h 
+  /* 
+  ** utoi -- convert unsigned decimal string to integer nbr 
+  **          returns field size, else ERR on error 
+  */ 
+  utoi(decstr, nbr) char *decstr; int *nbr; { 
+    int d,t; d=0; 
+    *nbr=0; 
+    while((*decstr&gt;='0')&amp;(*decstr&lt;='9')) { 
+      t=*nbr;t=(10*t) + (*decstr++ - '0'); 
+      if ((t&gt;=0)&amp;(*nbr&lt;0)) return ERR; 
+      d++; *nbr=t; 
+      } 
+    return d; 
+    } 
+ 
+---------------------------------------------------------------FILE:XTOI.C 
+  #include stdio.h 
+  /* 
+  ** xtoi -- convert hex string to integer nbr 
+  **         returns field size, else ERR on error 
+  */ 
+  xtoi(hexstr, nbr) char *hexstr; int *nbr; { 
+    int d,t; d=0; 
+    *nbr=0; 
+    white(1) 
+      { 
+      if((*hexstr&gt;='0')&amp;(*hexstr&lt;='9')) t=48; 
+      else if((*hexstr&gt;='A')&amp;(*hexstr&lt;='F')) t=55; 
+      else if((*hexstr&gt;='a')&amp;(*hexstr&lt;='f')) t=87; 
+      else break; 
+      if(d&lt;4) ++d; else return ERR; 
+      *nbr=*nbr&lt;&lt;4; 
+      *nbr=*nbr+(*hexstr++)-t; 
+      } 
+    return d; 
+    } 
+</PRE>  
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 
+

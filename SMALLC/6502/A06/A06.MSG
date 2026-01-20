@@ -1,0 +1,117 @@
+Title:			PRINTTO
+Author:			Mike Brudenell
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Mike_Brudenell@UK.AC.NCL.MTS
+Date:			14/09/87
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a06
+Date mounted/updated:	14/09/87
+File names:		a06prt.bas
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+      Transfer a copy of the file "a06prt.bas" to a BBC micro using a file
+      transfer program.
+ 
+      The file should be saved with the name "PRINSRC".
+
+Description:
+
+A printer output redirection program
+
+                      PRINTTO :: Printer Output Redirection
+                      -------------------------------------
+ 
+                               September 2nd, 1987
+ 
+                     Authors: Steve Greenley & Mike Brudenell
+ 
+ 
+ 
+      Introduction
+      ------------
+ 
+      PRINTTO is a BBC Basic program assembles a machine code file to enable
+      printer output to be intercepted and redirected to a disk file.  It
+      has several advantages over the *SPOOL command:
+ 
+      *   The *SPOOL command intercepts all codes sent to the VDU drivers,
+          not just those for the printer.  This means that PLOTs, MODE
+          changes, etc are also intercepted.
+ 
+      *   PRINTTO intercepts only those characters which would actually be
+          sent to the printer, (ie.  excluding any leading Hex 01 "send next
+          character to printer only" codes) thus producing much smaller
+          files.
+ 
+ 
+ 
+      Special Requirements
+      --------------------
+ 
+      *   At least one disk drive.
+ 
+      *   Basic version 2 (or later).
+ 
+          Basic version 1 was only fitted to early BBC micros.  To find out
+          whether your Basic is version 1, simply give the commands:
+ 
+              *BASIC
+              REPORT
+ 
+          If the copyright message so displayed is dated 1981, you are using
+          Basic version 1, and this program will not run.
+ 
+ 
+ 
+      Using the Program
+      -----------------
+ 
+      The following description is taken from a (comprehensive) comment
+      within the Basic program.
+ 
+      The program implements a "User Printer Driver" which sends all output
+      normally going to a printer to a disk file.
+ 
+      Run this program and answer the questions it asks you.  The machine
+      code assembles into less than 256 bytes and always runs in the main
+      BBC micro (known as the I/O processor if you are lucky enough to have
+      a 6502 second processor).  Select a suitable area of memory that you
+      won't be using (eg.  the cassette output buffer).
+ 
+      The program will generate the User Printer Driver routine in a file
+      called "PrintTo".  To set up the User Printer Driver at any time, run
+      the file as:
+ 
+          *PrintTo filename
+ 
+      where "filename" is the name of the file to which printer output is to
+      be redirected.
+ 
+      Once the User Printer Driver has been set up, using *FX5,3 will cause
+      a disk file to be opened.  From then on, all information that would
+      normally have gone to the printer will be redirected to the disk.
+      When you have finished using this facility, type *FX5,n where n is the
+      number of the printer type you wish to use (for the default, parallel,
+      printer n=1)
+ 
+      If the micro gives a Beep when the User Printer Driver is selected
+      using the *FX5,3 command, the file you specified could not be
+      created/emptied for some reason, and the "printer sink" is selected
+      (ie.  all print output discarded)
+

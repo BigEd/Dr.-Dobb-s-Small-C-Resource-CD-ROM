@@ -1,0 +1,143 @@
+Title:			STRIP
+Author:			Mike Brudenell
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Mike_Brudenell@UK.AC.NCL.MTS
+Date:			15/09/87
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a07
+Date mounted/updated:	15/09/87
+File names:		a07fks.bas
+			a07fks.eg
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+      Transfer a copy of the file "a07fks.bas" to a BBC micro using a file
+      transfer program.
+ 
+      The file "a07fks.eg" contains an example datafile for use with this
+      program.
+
+Description:
+
+                       STRIP :: Function Key Strip Printer
+                       -----------------------------------
+ 
+                               September 2nd, 1987
+ 
+                              Author: Mike Brudenell
+ 
+ 
+ 
+      Introduction
+      ------------
+ 
+      STRIP is a program to print stips for the BBC micro's function keys.
+      It works with Epson or compatible printers.  The program contains a
+      comment listing the codes used to help identify "compatibles".
+ 
+ 
+ 
+      Special Requirements
+      --------------------
+ 
+      *   Basic version 2 (or later).  This program has been tested with
+          Basic 2, but it may well work with Basic version 1 (it uses an
+          OPENIN statement, and so SHOULD be OK)
+ 
+ 
+ 
+      Using the Program
+      -----------------
+ 
+      The STRIP program asks for the name of a file containing the text to
+      be used on the labels.  Given this, it then runs, and displays any
+      warning messages as it does so.
+ 
+ 
+ 
+      Datafile Format
+      ---------------
+ 
+      STRIP needs a datafile with eleven lines of text in it, each line
+      terminated with a Carriage-Return, (not Line-Feed Carriage-Return).
+ 
+      The first line specifies the title to be printed at the top of the
+      key-strip.  Subsequent lines define the text for the each of the ten
+      function keys.
+ 
+      Each key has three "areas": 'normal' (fn key alone), 'shift' and
+      'ctrl'.  The text for the three areas is entered on one line, areas
+      being separated by a vertical bar ("|").  Trailing blank areas can be
+      omitted.
+ 
+      Each area has up to two lines of text, with maximum length either ten
+      or eleven character (depending on whether the key number is odd or
+      even).  Text for the lines is separated with a comma (",").
+ 
+          TITLE
+          key-defn-0
+          key-defn-1
+          key-defn-2
+          key-defn-3
+          key-defn-4
+          key-defn-5
+          key-defn-6
+          key-defn-7
+          key-defn-8
+          key-defn-9
+ 
+      where,
+ 
+      TITLE
+          is the name of the key strip (printed large at the top),
+ 
+      key-defn-n
+          is a line of text specifying the text to be placed on the
+          unshifted key, shifted key, and key with Ctrl areas of the key
+          strip.
+ 
+ 
+ 
+      Examples
+      --------
+ 
+      The file "a07fks.eg" is an example data file for the View word
+      processor key strip.
+ 
+ 
+      Some examples:
+ 
+          One,Two|Three|Four,Five       gives   Ctrl:       Four
+                                                            Five
+                                                Shift:      Three
+                                                Normal:     One
+                                                            Two
+ 
+          One||Two                      gives   Ctrl:       Two
+ 
+                                                Shift:
+ 
+                                                Normal:     One
+ 
+ 
+          One                           gives   Ctrl:
+ 
+                                                Shift:
+ 
+                                                Normal:     One
+

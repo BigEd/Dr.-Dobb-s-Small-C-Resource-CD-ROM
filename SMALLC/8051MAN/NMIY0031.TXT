@@ -1,0 +1,2412 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+						NMIY-0031
+
+
+
+				SINGLE BOARD COMPUTER MANUAL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 1
+
+		TABLE OF CONTENTS
+
+
+TABLE OF CONTENTS								 3
+
+PART I:  INTRODUCTION							 5
+
+GETTING STARTED								 5
+BASIC Users									 5
+Monitor Users								 6
+FORTH Users									 7
+
+PART II:  HARDWARE							 9
+
+CIRCUIT DESCRIPTION							10
+Power										10
+Processor									11
+
+BOARD CONFIGURATION							12
+Memory Sockets								12
+I/O Interfaces								12
+Prototyping Area								13
+
+I/ O CONNECTORS								13
+Power - J12									13
+Keypad - J3									13
+LCD - J6									14
+RS232 - J10									14
+
+OPTIONAL CONNECTORS							15
+RS422/485 - J11								15
+Vertical Stacking Connectors - J1, J7, J9				15
+Latched and Non-Latched I/O - J4 and J5				15
+
+JUMPERS									16
+Memory Configuration Jumpers						17
+Reset										17
+LCD Contrast								18
+Vertical Stacking Component (VSC) Configuration Jumpers	18
+Serial Communications Configuration Jumpers			18
+
+TROUBLESHOOTING								19
+Mounting									19
+Power Supply								19
+Memory									19
+Terminal									20
+Keypad and LCD I/O							20
+Physical Installation of Devices					20
+
+BOARD MOUNTING								20
+NMIY-0031 Mounting							20
+VSC Mounting								21
+
+
+
+
+
+
+					Page 2
+
+PART III:  SOFTWARE							22
+
+PROGRAMMING									23
+Memory									23
+Data Ports									24
+Keypad I/F									25
+LCD I/F									25
+Serial I/O									27
+
+PROGRAM SEGMENTS								28
+Monitor									28
+BASIC										30
+C										32
+FORTH										35
+
+PART IV:  PARTS LIST							39
+
+APPENDICES									40
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 3
+
+PART I
+
+INTRODUCTION
+
+The NMIY-0031 board is a low cost, production oriented, computer board.
+Facilities are included for serial communications, LCD interface, key-
+pad, memory expansion to 64Kbytes of data and memory each, and raw and
+latched parallel I/O.  It can serve as host for the NMIL
+series of Vertical Stacking Component (VSC) cards.  This ability allows
+a great degree of flexibility in meeting customer application require-
+ments.  The NMIY-0031 design allows purchasers to configure the board,
+including only the hardware facilities required by their application.
+
+The NMIY-0031 has several options that make it adaptable to many uses.  The standard 
+configuration is used as a base to allow the user many paths to achiev-
+ing the control configuration that suits their application.  To provide
+the facilities that promote application development, the installed
+headers option allow flexibility in configuring memory. Three languages
+for development, as well as a monitor, are also available.  Other
+options include an on board power supply, up to a 64K program EPROM, up
+to two 32K data ram chips, and three COM port standards.  Customized
+circuitry can be added in the prototyping area.  Vertical Stacking Com-
+ponent (VSC) options further enhance flexibility.  More than a dozen
+NMIL series peripheral cards are available to enhance off the shelf
+hardware solutions for control systems.  Custom card designs can also
+make use of the VSC connector  for connection.  With the combination of
+64K program space, 64K data space, and fully customizable interfaces,
+the NMIY-0031 processor board provides the user with the ability to
+construct a cost-effective, digital control unit for a wide range of
+applications.
+
+Getting Started provides some basic functional checks so that the user
+may quickly determine the status of the hardware.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 4
+
+GETTING STARTED
+
+System operation requires power and communications connections.  A
+standard configuration board requires 250 mA of regulated +5 VDC at
+connector J12.  The on-board power supply option requires 6.3 to 10.0
+VAC input at connector J2.  The MAX232 chip develops its own +/-10 VDC
+for RS-232C compatibility. 
+
+For development systems, a terminal (or PC with terminal emulation
+software) must be connected.  A cable with an RS-232 connector (DB25 or
+DB9) on one end and a 10-pin dual-row header connector on the other end
+is required.  This cable is not included with the NMIY-0031, and must
+be provided by the user or purchased separately from the supplier.  The
+RS-232 serial connections are present at J10.  Pin J10-3 is data-out
+and pin J10-5 is data-in to the 0031 board.  See the section on I/O
+Connectors for additional detail on J10 connections.
+
+Once power and terminal connections are established, the operating
+system or monitor EPROM in U2 can be used to work with basic board
+functions, such as the LCD or keypad interfaces.  The RS232 terminal
+connection requires a 9600 baud terminal with no parity, 8 data bits,
+and one stop bit (8N1).  On a PC, also check that the terminal emulator
+program is set to use the same physical port to which you have attached
+the serial interface cable( i.e. COM1:, COM2:, etc.).
+
+Examples follow for users of BASIC, Monitor, and FORTH.  The examples
+are intended as quick checks of board function.  When the cursor
+(underscore) is present in an example, it will blink.  FORTH does not
+use a cursor.
+
+BASIC USERS
+
+The BASIC EPROM should be installed in U2.  BASIC also requires a 32K
+RAM chip be installed in U3.  Additional RAM may be used in U4 at the
+user's option.  At power on, the terminal (or emulator) will display:
+
+*MCS-51 T BASIC V1.1*		(Board power on message at the terminal)
+READY
+>_ 					(Prompt (>) followed by cursor ( _) )
+
+To verify operation, enter the command:
+>PRINT "HELLO!"			(User input)
+HELLO!				( BASIC response; Note: no prompt on
+						 this line)
+>_
+
+If you see something significantly different, please consult the sec-
+tion on Troubleshooting.  For additional information on BASIC please
+consult the MCS-51 BASIC manual from Intel.
+
+
+
+
+
+
+
+
+
+					Page 5
+
+MONITOR USERS
+
+For users with the Monitor EPROM in U2, power-on causes the system to
+start up and display the message:
+
+NMI 8051 MONITOR V1.10
+TYPE `H' FOR HELP
+>_
+
+Please note that the monitor commands must be upper case.  We strongly
+recommend that the user put the keyboard in CAPS LOCK mode when using
+the monitor.  When the user enters H (no enter needed), the following
+help menu appears on the terminal:
+
+H
+-----------------------------------------------------------------------
+H					:help
+R <addr>				:read internal data memory
+D <addr>				:read external data memory
+P <addr>				:read program memory
+S <addr>				:read special function register
+A <addr>  <size>			:dump internal data memory
+U <addr>  <size>			:dump external data memory
+M <addr>  <size>			:dump program memory
+W <addr>  <size>			:write onto internal data memory
+O <addr>  <size>			:write onto external data memory
+T <addr>  <size>			:write onto special function register
+F <addr>  <size>  <value>	:fill external data memory with value
+X <addr>				:execute
+Z <addr>  <size>			:erase internal data memory
+E <addr>  <size>			:erase external data memory
+L					:load INTEL HEX file
+I <addr>  <size>			:dump memory in INTEL HEX format
+-----------------------------------------------------------------------
+>_
+
+Under monitor control, the computer's response appears on the terminal
+screen as soon as the complete command is entered.  When using this
+monitor, an enter on the terminal keyboard is NOT required to begin
+command execution.  Execution begins as soon as all command characters 
+are fully entered at the keyboard.  An enter before giving a valid com-
+mand with its required data, the monitor will issue an appropriate
+error message followed by a prompt.  Whenever the Monitor displays the
+prompt, it is ready for the next user command.  The Monitor does not
+recognize the backspace key.
+
+Data format and position are crucial to success when using a monitor.
+Fields in angle brackets are required and expect an exact number of
+characters.  Numeric values such as addr, size, and value are entered
+in hexadecimal (`hex').  Example:  <addr> expects a four digit hex
+value, <size> expects a two digit hex value.  Note that the hex digits
+greater than 9 require upper case.  
+
+It is recommended that the terminal be set to CAPS LOCK whenever hex
+values are to be entered.
+
+
+
+					Page 6
+
+FORTH USERS
+
+At power on,  EPROM based FORTH users will see:
+
+Max-FORTH V1.0
+
+This message should appear any time the card is reset including power
+on.  The card should be connected through J10 to a terminal or emulator
+at 9600 baud, 8-N-1.  With the prototype area of the board to your
+left, looking at the component side of the card, J10 is in the upper
+right hand corner of the board.  Also, J10-Pin1 will be toward the
+right edge of the card, away from the processor, U1, and the prototype
+area.
+
+A quick check that FORTH is operating is to enter the command WORDS.
+Note that this entry will be in all caps.  The screen will display a
+list of words (commands) and addresses provided by the system.  Expect
+the list to scroll off the screen:
+
+WORDS
+1E4E	TASK		134F	(		1EAE	Z		1EE2	IC!
+1EE4	IC@		589	@		57C	C@		561	!
+572	C!		151	2@		140	2!		F4E	:
+F64	;		550	+		53E	-		1B2F	1-!
+1B25	1+!		1A9	+!		1E46	*		1E3C	/
+49E	><		4A8	SWA_		1ACD	2OV__		1AD9	2SW__
+4FF	DUP		1AC5	2DU_		490	OVE_		476	ROT
+1AB7	2RO_		196	PIC_		16F	ROL_		1AF3	-R__
+4E5	DRO_		136	2DR__		4CB	>R		4D8	R>
+1B39	=		390	NOT		385	0=		1EA6	D0=
+375	0>		36A	0<		358	U<		332	<
+DF	DU<		AA	D<		1E9E	D=		1B49	>
+52D	AND		50B	OR		51C	XOR		161C	IF
+1610	THE_		15FA	ELS_		15F0	BEG__		15E2	UNT__
+15D0	REP___	15C8	WHI__		15BA	AGA__		15E2	END
+1552	DO		1576	LOO_		1566	+LO__		229	K
+220	J		1F9	I		1E5	R@		1586	LEA__
+630	EXI_		790	KEY		789	EMI_		770	?T________
+1B41	S->_		322	ABS		1E8A	DAB_		318	MIN
+1E78	DMI_		308	MAX		1E66	DMAX		1D4A	SPA___
+1AE5	DEP__		1CC5	CR		1CA5	TYP_		1C99	COU__
+1C71	-TR_______	3BC	1+		3D8	2+		3C9	1-
+3E1	2-		3AB	2/		39D	2*		103	D+
+1AA5	D-		59B	D2/		1DF8	/MO_		1DF0	MOD
+1DE4	*/M__		1DDA	*/		2BA	UM*		27F	UM/___
+23A	NEG_	__	122	DNEG	__	F8C	CON______	F7C	VAR______
+F9A	2C________	F72	2V________	232	EXE____	4C3	RP@
+4BA	SP@		1D9A	CMO	___	6F0	CMO__		630	;S
+FC4	COD_		FB4	END-C___	FA6	USE_		1B7B	.
+1B8D	.R		1B99	D.		1B73	U.		1B83	U.R
+1BA3	D.R		1BFA	#S		1C08	#		1BE9	SIG_
+1BD9	#>		1BCF	<#		1B6B	?		1CD3	EXP___
+E92	QUE__		1C2B	BL		1A8C	STA__		1A89	CUR____
+1A86	CONT___	1A83	SCR		1A80	BLK		1A41	DP
+1A62	OFF___	1A77	FLD		1A74	DPL		1A6B	>IN
+1A35	BAS_		1A26	SO		1A29	TIB		1A71	#T
+1A6E	SPA_		1A9D	C/L		1836	FIR__		182E	LIM__
+
+					Page 7
+
+1A95	PAD		1650	HER_		1648	ALL__		163C	,
+1630	C,		1D62	SPA__		4ED	?D__		14F2	TRA_____
+1628	LAT___	13D0	COM____	13C8	[		13BE	]
+1A0C	HEX		1A03	DEC____	13A6	;CO__		139E	<BU____
+138E	DOE__		135E	."		1381	.(		1D7A	FIL_
+1D72	ERA__		1D6A	BLA__		1BC1	HOL_		1892	WOR_
+19C3	CON____	196D	NUM	__	132D	FIN_		124F	ID.
+1012	CRE___	123F	[CO______	121B	LIT____	EE4	INT______
+117C	IM_______	FE0	VO_________	1172	FO___		116A	ED____
+1162	AS_______	1158	RE_____	1150	RE______	153C	>M___
+1650	<M___		152E	>R______	1524	<R_______	FD0	:CA__
+1315	`		1315	[`]		3E1	LFA		3D8	>BO__
+151C	CFA		150D	NFA		14E5	PFA___	EBE	LO__
+EAC	TH__		1684	...		17F4	UPD___	17DA	EM_________
+1722	SA__________1722	FL___		170A	(L____	1700	.L___
+16DD	>L		1790	BUF___	1742	BLO__		1969	B/B__
+14AF	H/C		146B	HW___		1455	AU________	10B2	UN__
+10BF	FO____	185A	DUM_		1936	.S		141D	WO___
+169B	LI__		E73	QU__		136A	AB____	E69	AB___
+1EF3	COL_		444	BR____	454	?BR____	1C59	NEXT
+1E4E	FORTH-83        OK
+
+Another command line check can be easily made with the computation of:
+
+1 2 + 3 * .
+
+which should return the value 9.  FORTH follows each command with an
+OK .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 8
+
+PART II
+
+
+
+
+
+
+
+
+
+
+HARDWARE
+
+The Hardware section provides details about circuit components, connect-
+or pinouts, configuration jumpers, troubleshooting, and board mounting.
+Each section gives appropriate details relevant to a specific area of
+hardware use.
+
+The Circuit Description describes the chips and components on the
+NMIY-0031, their locations on the board, and basic use.  Available op-
+tions also are described.  I/O Connectors gives I/O connector locations
+and pinouts.
+
+Jumpers describes the location and use of the NMIY-0031 configuration
+jumpers.  The Troubleshooting guide has suggestions for items to check
+if difficulty is encountered getting your board to boot and run.  These
+items are ordered in a reasonable sequence for typical troubleshooting.
+Additional items are included for users new to hardware installation.
+Board Mounting provides physical details about the mounting facilities
+built into the NMIY-0031.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 9
+
+CIRCUIT DESCRIPTION
+
+The NMIY-0031 Card is the first in a family of "Y" cards from New
+Micros Inc. (NMI).  The "Y" specifies a mechanical format. The "Y"
+format is based on the earlier NMI "X" format with improved mounting
+capability. The NMIY boards are wider than the similar NMIX boards. On 
+either side of the NMIY card, a 3/8" mounting tab runs the length of
+the board. Three Vertical Stacking Connectors (VSC's) are positioned
+across the NMIY board. These VSC's allow NMIL peripheral cards
+to be stacked onto the NMIY SBC.  The NMIY family is designed to be
+used as low cost processors for custom applications.  
+
+The processor is used in the 8031 mode, with external memory only.
+Three 28-pin memory sockets are on the board. Serial communications are
+supported by an on board RS-232C level interface.  A keypad and LCD
+display are also supported on board.
+
+The standard NMIY-0031, is a low cost version, intended for volume
+product manufacturing. For a development system, desirable options
+include:  on-board power supply, expanded memory, a development lang-
+uage, RS-422 or RS-485 support as needed, and headers.
+
+Programming options include EPROM based monitor(standard), BASIC,
+FORTH, and a PC based C cross compiler.  Three interface connectors for
+Vertical Stacking Components (VSC).  The VSC connectors allow addi-
+tional input/output capabilities.  The three VSC card sites each accept
+one or more stacked  NMIL board.  Some available VSC cards
+are:
+
+  prototyping card
+  memory card up to 16M byte memory
+  24-bit parallel I/O cards
+  32 and 64-ch. I/O
+  8-ch. high current source or sink
+  8, 12, 16-bit D/A cards
+  8, 12, 16, 20-bit A/D cards
+  3-ch. 16-bit counter
+  PC compatible printer port
+  serial port, 1-ch. (RS232C, 422,  or  485)
+  serial ports, 2-ch. (RS232)
+  PC compatible serial port
+  serial ports, 8-ch. (TTL)
+  16-ch. opto-isolated in or out
+  8-ch. opto-isolated I/O
+  8-ch. solid state relay 400VAC @ 1.5A
+  various mechanical relay cards
+  stepper motor control
+  servo motor control
+  real time clock card
+
+Power
+
+Standard boards require 250 mA of regulated +5 VDC at J12.  Boards with
+the optional power supply circuit installed require 6.3 to 10 VAC or
++9 to +14 VDC at J2.  The power supply option has a bridge (CR1) and
+regulator (VR1) with input and output capacitors (C19 and C20) which
+provide +5 VDC for board use.
+
+					Page 10
+
+Processor
+
+The processor model for the NMIY-0031 is the 8031.  The main features
+are:
+ 
+    8-bit CPU Optimized for Control Applications
+    Extensive Boolean Processing (Single-Bit Logic) Capabilities
+    32 Bi-directional and Individually 
+    Addressable I/O Lines (4 8-bit ports)
+    128 Bytes of On-Chip Data RAM
+    Two 16-Bit Timer/Counters
+        5 Source Interrupt Structure with 2 Priority Levels
+    On-Chip Clock Oscillator
+    64K Program  and Data Memory Address Spaces
+    Full Duplex UART
+    Most instructions execute in < 1 uS
+
+The 8031 uses three control lines for reads and writes.  PSEN* is used
+for all program instruction fetches.  Data memory reads and writes use
+RD* and WD*.  These signals provide separate program and data spaces,
+as shown in 8031/8051 manufacturer's data sheets.
+
+Bus memory and control lines use three I/O ports.  Eight I/O lines of
+the fourth port are available for user definition.  These eight lines
+are available directly from the processor at J5.  The NMIY-0031 uses
+an 11.0592 MHz crystal.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 11
+
+BOARD CONFIGURATION
+
+Configuration is managed by jumper settings.  Several configuration
+jumper groups adjust the board to accommodate various memory options.
+Others set options for communications standards and miscellaneous
+items.  See Jumpers for configuration details.
+
+Memory Sockets
+
+U2, U3, and U4 are the memory sockets provided.  U2 may be configured
+as either program only or program & data.  U3 may be configured as
+either data only or program & data.  U4 is data only.  See Jumpers for
+additional details.  U2, U3, and U4 accept 8Kx8, 16Kx8, or 32K x 8 
+devices.  U2 can also accept 64K x 8 devices.
+
+BASIC, FORTH, and Assembly are EPROM based operating systems as well as
+languages for the NMIY-0031.  U2 is intended to accept the system
+EPROM, whether it is language based, or a fully custom system.  The
+EPROM installed at U2 determines which language is used.  U3 and U4
+allow additional memory and EPROM.  C is available, via an external
+cross compiler for PC compatible computers.  A compiled C program can
+be installed in EPROM at either U2 or U3.
+
+Data and Program Spaces
+
+U8 is the lower address latch for the U2 - U4 memory devices, U9 (GAL
+device), J6 (LCD interface), J1, J7, and J9 (VSC connectors).  U8 uses
+the ALE control line, generated by the processor,  to latch address
+outputs A0 - A7.
+
+U9 and U10 are GAL devices providing additional control lines for the
+NMIY-0031.  U9 supports the data I/O latches, U5 and U6, and LCD con-
+trol.  U10 controls chip select for memory and U9, and memory disable
+for VSC connectors:  J1, J7, and J9.
+
+See the memory map description in the section `Programming' for
+addressing details.
+
+MINIMUM MEMORY REQUIREMENTS
+
+BASIC requires at least 32K x 8 in U4, C requires a minimum of 8K x 8
+in either U3 or U4 as set by the user in "common51.c" (in Clib), and
+FORTH requires at least 8k x 8 in both U3 and U4.
+
+
+I/O Interfaces
+
+Parallel I/O
+
+Memory mapped and non-memory mapped parallel I/O are both available on
+the NMIY-0031.  J5 provides direct access to Port 1 of the processor,
+while J3, J4, and J6 support memory mapped I/O.  Memory map details are
+included in "Programming."  The processor also supports an RS-232 port
+internally.  
+
+Unlatched, or raw, peripheral I/O is available at J5 directly from Port
+1 of the processor.  J5 also provides direct access to two timer/count-
+er processor pins as well as interrupts 0 and 1.  System reset and CSX
+signals also appear on J5.  CSX details are discussed in "Programming."
+Care is necessary to ensure that all lines connected to J5 are compati-
+ble electrically with 8031 inputs.  J3 is a 9-pin, single row header
+for latched keypad interface.  The keypad interface is externally mem-
+ory mapped.  Details are provided in "Programming."  J4 is an expansion
+
+
+					Page 12
+ 
+of the signals on J3 to a full 8-bit input and 8-bit output. This
+allows, among other applications, use of up to an 8x8 matrix keypad. U5
+and U6 are transparent latches serving connectors J3 and J4.  Connect-
+ors J3, J4, and J5 are located between U1 (the processor) and the
+prototype area.
+
+J6 provides an interface for LCD's up to 4x40.  Two of the three rows
+of pins in J6 are used by single controller LCD modules.  The third row
+is used with dual controller LCD's(4x40).  Note on the schematic that
+the two outside rows of the connector are electrically identical. Jump-
+er selector H1 controls contrast range of the LCD, while R4 provides
+fine contrast control.  J6 is located between U2 and the prototyping
+area.  H1 and R4 are located between the four electrolytic capacitors
+and the processor crystal.
+
+Serial I/O
+
+Serial I/O utilizes U11, 12, 13 for communications standards compati-
+bility.  RS232 (U11), RS422 (U12/13), and  RS485 (U12) formats are
+available, dependent on hardware installed.  RS232 signals are on J10,
+while RS422/485 signals are on J11.  A MAX232CWE (U11) interfaces to 
+RS232C level data lines.  S1 and S2 provide two additional RS232C con-
+trol lines.  J10 and J11 are located near the power connectors along
+the edge of the board.  The S1 and S2 headers are located between U11
+and U12/13.
+
+Prototyping Area
+
+One third of the board area is available for user applications.  There
+are 600 pads arranged on 0.1 inch centers for bread-boarding of proto-
+type circuits.  A portion of these pads is arranged to accommodate a
+VME 1/3U connector.  The main pad group is arranged as a 3-5/8 x 1-3/4
+inch rectangle less a minimal amount of space to accommodate J7, a VSC
+expansion connector.  The prototype area provides the user a facility
+for custom circuitry.  Together with the VSC components available, the
+prototyping area allows a significant degree of flexibility as well as
+an increase in computing power under user control.
+
+I/ O CONNECTORS
+
+The standard configuration of the NMIY-0031 board provides three I/O
+connectors and one power connector.
+
+Power - J12
+
++5 VDC power is applied at J12.  J12 is located along a short edge of
+the board between J1, VSC, and VR1, 7805 locations.  The terminal near-
+est the 7805 is for the positive lead, and the other terminal, nearest
+to the reset jumper is ground.  When connecting power, be certain you 
+use correct polarity.
+
+Keypad - J3
+
+J3 is the keypad connector.  J3 is located between U1 and J4, near the
+user component area.  Pin 1 is located nearest the edge of the board.
+J3 is designed to support a 4 x 5 matrix-type keypad.  
+
+
+					Page 13
+
+Pin connections are:
+			    Pin #	Signal	Keypad
+					Name
+
+				1	PB.0		Y1
+				2	PB.1		Y2
+				3	PA.2		X3
+				4	PA.1		X2
+				5	PB.2		Y3
+				6	PA.0		X1
+				7	PA.3		X4
+				8	PB.3		Y4
+				9	PB.4		Y5
+
+Input from J3 is latched by U5.  See the  Programming section for de-
+tails on using the latch.
+
+LCD - J6
+
+J6 is the LCD connector.  J6 is located between U2, EPROM socket, and
+J7, VSC, near the user component area.  Three rows of pins are avail-
+able.  Only two rows should be used by an LCD.  The outside two rows of
+pins are identical to allow for the two common mirror imaged pinouts of
+ribbon cable connectors.  Pin 1 is located in the row nearest to U2 and
+closest to the board edge.  Pin connections are:
+
+Pin #	Signal		Pin #	Signal		Pin # Signal
+
+ 1	GND			 2	+5 VDC		 3	GND
+ 4	contrast		 5	A0			 6	contrast
+ 7	WR1			 8	E1			 9	WR1
+10	D0			11	D1			12	D0
+13	D2			14	D3			15	D2
+16	D4			17	D5			18	D4
+19	D6			20	D7			21	D6
+22	N. C.			23	E3			24	N. C.
+
+RS232 - J10
+
+J10 is the RS232 connector.  J10 is located on the edge of the board
+near R4, the pot., and U11, the 232 chip.  J10 has 10 pins in a dual
+row header configuration.  Pin 1 is the pin farthest away from U11 and
+nearest to the corner of the board.  Pin connections are:
+
+Pin #	Signal			Pin #	Signal
+
+1	N. C.				 2	N. C.
+3	SI (data out of board)	 4	to J10-6
+5	SO (data into board)	 6	to J10-4
+7	to J10-2			 8	N. C.
+9	GND				10	N. C.
+
+
+
+
+
+
+
+					Page 14
+
+OPTIONAL CONNECTORS
+
+RS422/485 - J11
+
+J11 is the RS422/485 connector.  J11 is located adjacent to J10 and is
+nearer the corner of the board.  Pin 1 is nearest the corner of the
+board.  Pin connections are:
+
+Pin #	Signal		Pin #	Signal 
+
+1	N. C.		 2	N. C.
+3	-422 XMIT	 4	+422 XMIT
+5	GND		 6	GND
+7	+422 RCV	 8	-485 XCV
+9	N. C.		10	N. C.
+
+Vertical Stacking Connectors - J1, J7, J9
+
+The Vertical Stacking Connectors, VSC, J1, J7, and J9, allow bus ex-
+tension to add-on cards that mate with the NMIY-0031.  A list of cur-
+rently available VSC card types is in the section "Circuit
+Description."  J1 is located next to U4, J7 is located next to the pro-
+totype area and near U2, and J9 is located between U2 and U3.  Each pin
+1 is near the long edge of the board and toward the short edge of the
+board at J1.  J1, J7, and J9 each uses a 34 pin, dual row header.  J1,
+J7, and J9 pin connections are:
+
+Pin #	Signal Pin # Signal	Pin #	Signal Pin # Signal
+
+ 1	D3	 2	GND		17	A11	18	A4
+ 3	D4	 4	D2		19	A9	20	A5
+ 5	D5	 6	D1		21	A8	22	A6
+ 7	D6	 8	D0		23	A13	24	A7
+ 9	D7	10	A0		25	WR*	26	A12
+11	ALE	12	A1		27	+5 V	28	A14
+13	A10	14	A2		29	INT	30	A15
+15	OE*	16	A3		31	RST*	32	E
+33	N. C.	34	MEMDIS*
+
+Latched and Non-Latched I/O - J4 and J5
+
+J4 is a 20 pin connector that accesses latched processor I/O.  J5 is a
+20 pin connector that accesses the eight lines of Port 1 directly.
+Care should be exercised at J5 in particular to ensure electrical com-
+patibility with the processor I/O line requirements.  J4 lines are
+latched by U5 and U6.  J4 and J5 are located between U1 and the proto-
+type area.  Pin is in the direction of U1 and closest to U2.
+
+
+
+
+
+
+
+
+
+
+
+					Page 15
+
+J4 Connections (Latched)
+
+Pin #	Signal	Pin #	Signal
+
+  1	+5 V		 2	+5 V
+  3	PA.0		 4	PA.1
+  5	PA.2		 6	PA.3
+  7	PA.4		 8	PA.5
+  9	PA.6		10	PA.7
+11	GND		12	GND
+13	PB.0		14	PB.1
+15	PB.2		16	PB.3
+17	PB.4		18	PB.5
+19	PB.6		20	PB.7
+
+     J5 Connections (Non-Latched)
+
+Pin #	Signal	Pin #	Signal
+
+ 1	GND		 2	GND
+ 3	RST*		 4	CSX
+ 5	P1.0		 6	P1.1
+ 7	P1.2		 8	P1.3
+ 9	P1.4		10	P1.5
+11	P1.6		12	P1.7
+13	GND		14	GND
+15	+5 V		16 	+5 V
+19	T0		20	T1
+
+JUMPERS
+
+Board configuration of the NMIY-0031 is managed through the use of
+jumpers.  Standard configuration uses soldered jumpers.  Headers are
+available as an option and are highly recommended for development sys-
+tems.
+
+Each of the memory locations U2, U3, and U4 have a set of configuration
+jumpers.  U2 has one extra pair of jumper pins to manage both EPROMs
+and RAM.  Standard settings configure all locations for an 8K x 8 mem-
+ory device.  Alternative settings accommodate 64K x 8 (U2 Configuration
+Jumpers only), 32K x 8, and 16K x 8 devices.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 16
+
+Memory Configuration Jumpers
+
+Location:  below each memory socket  U2, U3, and U4( jumpers N, O, and
+P respectively).
+
+2764, 2864, 6264
+
+N-U2  8K x 8					O-U3, P-U4 8K x8
+   to Pin 1 : Pin 26: Pin 27		to Pin 1: Pin 26: Pin 27
+|   |   | x | x |   |   | x |		|   | x | x |   |   | x |
+|   |   | x | x |   |   | x |		|   | x | x |   |   | x |
+
+27128 EPROM
+
+	N-U2 16K x 8				O-U3, P-U4 16K x 8
+   to Pin 1 : Pin 26: Pin 27		to Pin 1: Pin 26: Pin 27
+|   |   | x |   | x |  | x |		|   | x |   | x |   | x |
+|   |   | x |   | x |  | x |		|   | x |   | x |   | x |
+
+27256 EPROM
+
+	N-U2 32K x 8			     O-U3, P-U4 32K x 8
+   to Pin 1 : Pin 26: Pin 27		to Pin 1: Pin 26: Pin 27
+|   |   | x |   | x | x |   |		|   | x |   | x | x |   |
+|   |   | x |   | x | x |   |		|   | x |   | x | x |   |
+
+ 62256 RAM
+
+	N-U2 32K x 8			    O-U3, P-U4 32K x 8
+   to Pin 1 : Pin 26: Pin 27		to Pin 1: Pin 26: Pin 27
+|   | x |   |   | x |   | x |		| x |   |   | x |   | x |
+|   | x |   |   | x |   | x |		| x |   |   | x |   | x |
+
+ 27512 EPROM
+
+	N-U2 64K x 8
+   to Pin 1: Pin 26 : Pin 27
+| x |   |   |   | x | x |   |
+| x |   |   |   | x | x |   |
+
+H10, H11, and H12 configure U2, U3, and U4 respectively to allow RAM to
+emulate EPROM by tying the WR* pin to VCC.  To write protect RAM we re-
+commend removal of the corresponding jumper for pin 27 and installing a
+100K resistor across the pins of H10, H11, or H12.  With battery backup
+in use, RAM emulates ROM.
+
+Reset
+
+Header Q, Located near J1 and J2, is reset.  When shorted, reset is
+asserted.  Q is normally open.  A typical developer would install a mo-
+mentary switch at Q.
+
+
+
+
+
+
+
+					Page 17
+
+LCD Contrast
+
+H1 provides contrast selection for the LCD display.  Two ranges are
+available.
+
+NOTE:  Three-pin configuration jumpers should be viewed from the com-
+ponent side of the board with the prototype area positioned to the
+left.  Pin 1 will be toward the top of the board, and pin 3 will be
+toward the bottom of the board.
+
+Location:  Configuration headers H2 - H9 are located between the power
+supply section and U9 & 10.
+
+H2, H3, and H4 configure memory locations U2 and U3.  H2 selects data
+only(2-3) or code & data(1-2) for U3.  H3 selects code & data(2-3) or
+code only(1-2) for U2.  Lastly, H4 selects 32K(1-2) or 64K(2-3) for U2.
+
+		H4			H4
+		U2  32K		U2  64K
+	1	   x			   -
+	2	   x			   x
+	3	   -			   x
+
+Vertical Stacking Component (VSC) Configuration Jumpers
+
+H5 selects an OE for the VSC connector J1 from either U2 or U3.  See
+figure above.  H6 selects the interrupt for VSC connectors J1, J7, and
+J9.  Interrupts 0 and 1 are available for use.  See figure below.  All
+three VSC connectors J1, J7, and J9 share the same interrupt line.
+
+		H5		   H5
+         	OE-U2		 OE-U3
+         	for VSC	for VSC
+	1	   x		    -
+	2	   x		    x
+	3	   -		    x
+
+Serial Communications Configuration Jumpers
+
+H7 and H8 select which serial format will be used for communications.
+H8 selects between RS232 format and RS422/485.  H7 and H9 select be-
+tween RS422 and RS485.  Standard configuration uses RS232.  Optional
+components must be installed for either RS422 or RS485.
+
+		H6		H6			  H8		H8
+		int 0		int 1			RS232	    RS422/RS485
+	1	 x		  -			   x		-
+	2	 x		  x			   x		x
+	3	 -		  x			   -		x
+
+		H7		H7			  H9		H9
+          RS422	    RS485			RS422	    RS485
+
+	1	 x		  -			   x		-
+	2	 x		  x			   x		x
+	3	 -		  x			   -		x
+
+
+					Page 18
+
+TROUBLESHOOTING
+
+Every computer system requires certain resources to run.  The immediate
+availability and correctness of these resources should be checked
+first..  For a computer, these include:
+
+  correct voltage, polarity, and regulation power supply
+  a basic form of operating system
+  RAM
+  some form of user/application I/O
+
+Mounting
+
+Board mounting should be physically sturdy and electrically isolate all
+circuit traces from any surrounding conductive surface.  It is very im-
+portant that no metal points on the board contact external conductive
+items. We recommend nylon standoffs for mounting.  See the section on
+Board Mounting for mechanical details.
+
+Power Supply
+
++5 VDC @ 250 mA  is required at J12 for the standard version (be cer-
+tain polarity is correct).  Boards with the power supply option require
+6.3 to 10 VAC (alternatively  +9 to +14 VDC) at connector J2.  Check
+for correct power in either version with a meter or scope at the screw 
+terminals of J12.  When the supply is correct there will be + 5 VDC
++/-5% with less than 80 mV ripple (in either version) at J12.  Use of
+an oscilloscope is recommended whenever there is a question concerning
+power supply regulation.
+
+Operating System
+
+Every CPU requires a base program to become functional.  Such a program
+is usually referred to as an operating system.  Operating systems pro-
+vide usability services for the user, and interface directly with the
+hardware.  The NMYI-0031 has four hardware-based operating system op-
+tions:  BASIC, a Monitor, and FORTH in EPROM.  There is also an option-
+al PC based C cross compiler that can be used to develop a base operat-
+ing system and application.  One of these or a functional user supplied
+program, must be in location U2 with jumpers configured for the memory
+type used to make the board operational.  The type of EPROM installed
+in U2 must match the settings of jumper block N.  See the Jumpers for
+details.
+
+Memory
+
+The program in U2 usually requires some read/write bus memory, or RAM,
+to function.  Locations U3 and U4 provide this function.  An appropri-
+ate amount of memory should be installed to satisfy the operating sys-
+tem and program requirements.  BASIC and C require a minimum of 8Kx8 in
+U3 to operate.  FORTH requires 32Kx8 in both U3 and U4.  Be sure to
+check for any bent or broken pins on any devices installed in U2, U3,
+or U4.  Occasionally such checking will require removal of the device,
+but often a careful visual inspection will suffice.
+
+
+
+
+					Page 19
+
+Terminal
+
+Useful computers require some form of input/output.  Usually a human
+interface is desirable.  For the BASIC, FORTH, or Monitor options,  an
+RS232 terminal or PC with terminal emulator is typical.  The RS2332
+connector is J10.  RS232 settings are 9600 baud, 8N1. J11 provides
+RS422 or 485 support when U12/13 are installed.  Some RS232 terminal
+equipment requires support lines as well as SO and SI lines.  Check
+that your cable supports these lines if required.  See the I/O Connect-
+or section to check your cable pinout.  Remember to align pin 1 of J10
+and your cable.  Pin 1 is the J10 pin closest to the corner of the
+board.
+
+Keypad and LCD I/O
+
+Keypad input requires program support.  Keypad and LCD connectors are
+J3 and J6 respectively.  NMIY-0031 hardware supplies the necessary
+hardware control and data lines to make a keypad and LCD interfaces
+electrically functional. FORTH, BASIC, Assembly, and C options each
+provide some various levels of interface programmability.
+
+Physical Installation of Devices
+
+On the physical side, all socket mounted components should be checked
+to ensure that:
+
+  each chip is fully seated in its socket
+  no pins are bent inward , outward, or curled under
+  pin 1 of the device is mated with pin 1 of the socket(correct chip
+									 orientation)
+  screw terminals are snugly fitted to the appropriate wires
+  connectors are fully mated and properly oriented with respect to
+    header pins
+
+Additional product information is available at our world-wide-web site:
+  www.newmicros.com
+Support is available through our bulletin board by modem( 2400 maximum
+with 8-N-1) at: 214-339-2321.  If emergency support is required,
+contact us by phone at 214-339-2204.
+
+BOARD MOUNTING
+
+Six mounting holes are provided for mounting the NMIY-0031.  Each hole
+is drilled at 0.110 inches giving clearance for 4-40 hardware.  Caution
+is necessary during installation to prevent inadvertent grounding of
+printed circuit board traces.  The mounting holes located near J4 and
+J6 have traces nearby.  These are the holes near the center of the
+board's long edges.
+
+Common 3/4 inch long hex standoffs with a male screw on one end and a
+female threaded hole on the other are ideal inter-board connection
+devices.  The VSC connector was designed to work with this size spacer,
+giving reliable board to board mounting.
+
+The standard spacer length, 0.750 inches, plus the board thickness,
+0.061 inches, giving a nominal board to board spacing of 0.811 inches.
+Should an exact spacing of 0.800 inches be required, as in the case of
+
+					Page 20 
+
+standard mounting hardware having 0.800 inch PCB card guides, the
+standard spacer will require milling to reduce its length by 0.011
+inches.
+
+VSC Mounting
+
+The NMIY-0031 has connector pads for three VSC connectors.  When these
+optional connectors are installed, there are three sites for adding VSC
+cards.  A VSC card plugs into the NMIY-0031 from above the component
+side of the board.  The mounting holes for VSC cards are located in
+`ears' along both long sides of the NMIY-0031 board. The projecting,
+mounting ears each extend 3/8 inch from the edge of the board.  Con-
+nector lengths are designed to accommodate standard 3/4 inch standoffs
+with a male screw on one end and a female threaded hole on the other.
+
+The length of the standard spacer, .750 inches, plus the board thick-
+ness, .061 inches, gives a nominal spacing board to board of .811
+inches.  When an exact spacing of .800 inches is desired, (some stand-
+ard mounting hardware have .800 inch mounting board guides), .011
+inches of the mounting surface at the female end of the soft brass
+standoff can be removed by mill or metal file.
+
+The extremely small size of the boards means there are no guaranteed
+limits on how close components will be placed to the edge of the 2x4's.
+Board guides will be difficult to use and designs should take this into
+account.  They may be acceptable if non-conductive and very shallow.
+The main mounting holes are the best point of support.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 21
+
+PART III
+
+
+
+
+
+
+
+
+
+
+SOFTWARE
+
+The Software section supplies information for programming the
+NMIY-0031.  Programming gives information on program and data address
+spaces, and programming locations and commands for hardware resources.
+
+Program Segments provides sample program segments to illustrate use of
+commands to hardware resources such as the keypad port and LCD inter-
+face.  Program segments are provided for Monitor,  BASIC, C, and FORTH.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 22
+
+PROGRAMMING
+
+Programmable board resources include interfaces for:
+
+  latched 8 bit input and 8 bit output port
+  raw (direct) 8 bit I/O port including:
+   two interrupts
+  two timer/event counters
+  4x5 keypad
+  LCD
+  serial data port
+
+The 8031 processor has four memory mapped I/O ports; one is available
+to the user.  Two ports are required for bus address and data.  The
+third port provides various signals: serial I/O, external interrupts,
+timer/counter functions, and data space read/write.  The fourth port is
+available to the user.  The eight lines of this port are available on
+J5. 
+
+The raw data port, interrupts, timer/counters, and serial port are im-
+plemented internally in the 8031. The other items are memory mapped to
+the processor externally by the board. The keypad port is created with
+external logic.  An additional port (latched) with eight inputs and
+eight outputs is available at J4. 
+
+Memory
+
+Three memory sockets are provided on the NMIY-0031.  U2 is intended for
+the operating system.  Available items for U2 are BASIC, FORTH, and
+Monitor.  A Small C compiler is also available on diskette.  Using C,
+the user can install an EPROM with a custom application operating sys-
+tem for production.  To support rapid development, electrically alter-
+able devices may be used in any of the three memory sockets to provide
+rapid development turnaround, avoiding EPROM erase-reprogram cycling.
+
+External memory address space on the 8031 is divided into two parts.
+A 64K program address space and a 64K data address space.  On the
+NMIY-0031 board, this distinction can be maintained strictly by the
+user, or configured so that the two spaces overlap in U3.  U2 is mapped
+to the bottom of program memory space.  For example, if an 8Kx8 EPROM
+is installed then U2 is addressed from 0000 to 1FFF.  Through configur-
+ation, U2 accepts up to 64K of EPROM program space.  See  Jumpers for
+details.
+
+U3 is configured as either program & data, or data only.  The base
+address of U3 is 8000.  When a 16Kx8 device is installed in U3, valid
+addresses range from 8000 to BFFF.  H2 determines whether U3 is
+addressed as program & data, or data only.  Up to a 32Kx8 device may
+be used in U3.  See the Jumpers section for configuration details.
+
+U4 is addressed as data only.  The base address of U4 is 0000.  Up to a
+32Kx8 RAM may be used in U4.  A 32Kx8 RAM installed in U4 is addressed
+from 0000 to 7FFF as data.
+
+
+
+
+
+					Page 23
+
+Address Spaces
+
+	      U2			  U3				U4
+  Program	Data		     Program Data	   	   Program	Data
+  NNNN	NNNN    FFFF     NNNN    NNNN	         NNNN	NNNN
+  NNNN	NNNN		     NNNN    NNNN    FC00  NNNN	NNNN
+  SSAA	NNNN		     SSSS    SSAA	         NNNN	NNNN
+  SSAA	NNNN		     SSSS    SSAA	         NNNN	NNNN
+  SSAA	NNNN		     SSSS    SSAA	         NNNN	NNNN
+  SSAA	NNNN    7FFF     SSSS    SSAA	         NNNN	NNNN
+  AAAA	NNNN	     	     NNNN    NNNN	         NNNN	AAAA
+  AAAA	NNNN	    	     NNNN    NNNN	         NNNN	AAAA
+  AAAA	NNNN    3FFF     NNNN    NNNN	         NNNN	AAAA
+  AAAA	NNNN	 	     NNNN    NNNN	         NNNN	AAAA
+  AAAA	NNNN    1FFF     NNNN    NNNN	         NNNN	AAAA
+  AAAA	NNNN    0000     NNNN    NNNN	         NNNN	AAAA
+
+ NNN address space not available  SSSS shared address space available
+
+Data Ports
+
+Two general purpose data ports are available.  One port is an extern-
+ally memory-mapped, latched I/O port.  The other is a raw (unprocessed)
+interface to processor Port 1.
+
+Latched Data Port (J4)
+
+The twenty pins of J4 contain latched input and output.  These lines
+are an augmented alternative to the keypad inputs on J3.  All eight
+lines of both the read and write latches are available.  The latched
+data port and keypad use the same data latches.  Please see the keypad
+information below for programming details on the latches.
+
+Raw Data Port (J5)
+
+J5 gives the user access to Port 1 of the processor, timers 0 and 1,
+and interrupts 0 and 1.  Caution:  be certain that any load/source
+attached meets the specifications of the 8031 processor.  Port 1 pins
+can source/sink up to four LSTTL loads.  Excessive loads or signals can
+result in processor failure.  8031 data books give timer and interrupt
+programming information.  The CSX signal is a chip select that maps to
+FExx in data space for both read and write.  The user can use this 256
+byte memory block as desired, i.e. for custom memory mapped devices.
+The lower eight address bits are available on the VSC connectors as
+needed.  RST is the master board reset used throughout the board.
+
+Data lines on J5 are very useful for external control.  The interrupts
+can be used to signal when particular services are needed from the pro-
+cessor.  The timer outputs/counter inputs are useful for checking time
+dependent processes.  Also, the direct data inputs are useful for bit
+oriented input/output.  These are a few suggestions for using the di-
+rect input/output connections.  See an 8031/51A data book for details
+on timer, counter, and interrupt programming.
+
+
+
+
+
+					Page 24
+
+Keypad I/F
+
+The NMIY-0031 keypad is designed to be used with a matrix type keypad.
+A matrix keypad works by shorting together the corresponding row and
+column lines when a key is pressed.  To detect a key press, the program
+writes a value to the column data lines with the output latch.  The
+value sent out has a zero bit in the position corresponding to the
+column to be examined.  The row values, are then latched and examined.
+Software must determine which row and which column are activated before
+the operator releases the key. Any column not pressed will return a row
+value of FF.  The column pressed will return a row value with a posi-
+tional zero bit indicating which key is pressed.  Valid returns are FF,
+FE, FD, FB, and F7.  See the "Program Segments" chapter for examples.
+
+The column-data latch address is FFFC.  Writing to this address causes
+the data to be latched.  This latched byte is then available at J4 and
+the lower five bits (D4 - D0) are presented to the column inputs of the
+keypad.  The row data latch address is FFFC.  Reading FFFC latches the
+data of the four keypad row lines (D3 - D0).  Until known data is
+latched onto the columns, returned row data will be meaningless.  See
+"Program Segments" for examples.
+
+LCD I/F
+
+The LCD interface is designed for a 2 or 4 row by 16, 20, or 40 charac-
+ter display.  There are two addresses for the LCD.  One address is used
+for commands only and the second for display data only.  Commands are
+used to set the operating modes, clear the display, and set cursor po-
+sition.  The recommended initialization sequence is 38, 38, 06, 0F, 01.
+The command address for the LCD is FFF8.  Command functions available
+are:
+
+Clear Display is the command 01.  When the value 01 is written to
+address FFF8, any data on the display is removed and the cursor is re-
+turned to the home position.  Data storage is cleared.
+Cursor At Home is the command 02. The cursor is returned to the home
+position.  Also the display string being shifted is returned to the
+original position.  Data storage is unchanged.
+
+Entry Mode Set is a group of related commands.  This group determines
+the cursor move direction and specifies whether to shift the display.
+Each of these commands sets the mode used when writing data to the LCD:
+
+04  Move cursor to left.  Do not shift the display.
+
+06  Move the cursor to the right.  Do not shift the display. (normal)
+
+05  Move the cursor to the left.  Shift the display.
+
+07  Move the cursor to the right.  Shift the display.  (normal)
+
+
+
+
+
+
+
+
+					Page 25
+
+Display On/Off Control turns the display on or off as a whole, turns
+the cursor on or off, and sets the cursor to blink or not.
+
+08  Turn D, C, and B off
+
+0C  Turn D on, C and B off
+
+09  Turn D and C off, B on
+
+0D  Turn D and B on, C off
+
+0A  Turn D and B off, C on
+
+0E  Turn D and C on, B off
+
+0B  Turn D off, B and C on
+
+0F  Turn D, B, and C on (normal)
+where D is display, C is cursor, and B is blinking.
+Note:  The commands are hex numbers and are always upper case.  It is
+recommended that the terminal be set to CAPS LOCK on whenever hex num-
+bers are to be entered.
+
+Cursor/Display Shift moves the cursor and shifts the display without
+changing data.  Cursor move direction is also controlled.
+
+10  Move cursor to the left
+
+18  Shift data to left
+
+14  Move cursor to the right
+
+1C  Shift data to the right
+
+Function Set sets the number of display lines and selects character
+format.
+
+30  Set 1 line display with 5x7 dot format.
+
+38  Set 2 line display with 5x7 dot format.
+
+34  Set 1 line display with 5x10 dot format.
+
+3C  Set 2 line display with 5x10 dot format.
+
+DDRAM Address Set allows the cursor address to be manipulated.
+1xxx xxxx   binary where x is a binary digit
+
+Character position addresses are:
+80 to 8F(16) to 93(20) to A7(40) for the first line
+C0 to CF(16) to D3(20) TO E7(40) for the second line
+(Upper address limits are shown for 16, 20, and 40 character per line
+ LCD's)
+
+
+
+
+
+					Page 26
+
+Today most LCD's use the same controller chip, the Hitachi HD44780, or
+equivalent, regardless of display line length up to 40 characters and
+4 lines.  Data memory (DDRAM) will hold up to 40 characters on each
+line while displaying only a contiguous segment of that line equal to
+the number of display characters.  The position addresses are shown
+above where the 16, 20 and 40 character display line end addresses are
+noted.  Note that these address limits assume that the first character
+displayed is the first character of that line in memory.  Using the
+shift feature, the first character displayed can be moved within the
+memory space in DDRAM.  For example, a 16 character per line display
+could display positions 98 to A7 when shifted fully to the right.  See
+Entry Mode Set for shift instructions.  Addresses on each line wrap to
+the beginning of that line.  That is, A7 is adjacent to 80 and E7 is
+adjacent to C0.  LCD's with fewer than 40 characters per line can still
+store a full 40 characters, but will display only 16 or 20 of them at
+a time.  The display window's position will be the same for all lines
+of the display.
+
+LCD's have a command and a data address.  The LCD data address is FFF9.
+When data is written to this address it will be displayed according to
+the display mode previously selected.  Display characters are from an
+enhanced ASCII character set.  Numerals, upper and lower case roman
+letters, and punctuation marks are among the common characters support-
+ed.
+
+Four line LCD's use two controllers instead of the single one on 1 and
+2 line models.  To access lines three and four, a second control line
+is provided for the second controller.  The second controller addresses
+are FFFA for commands and FFFB for data.
+
+Serial I/O
+
+Serial I/O is available through the 8031 processor's serial port.  For
+most users, the I/O routines built into BASIC, FORTH, and C will sup-
+port use of this port.  See an 8031/51A data book for details on assemb-
+ly language usage.
+
+Serial-interface, electrical format is determined by which chips among
+U11, U12, and U13 are installed and the settings of jumpers H7, H8, and
+H9.  See the section on Jumpers for particulars.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 27
+
+PROGRAM SEGMENTS
+
+The following examples are provided to display the process of communi-
+cating with the LCD and key pad option.  The code is written to be
+first instructive and secondly well written in the usual sense.  We
+assume that the user can produce well-written code after reading and 
+understanding the examples of using board facilities.
+
+Monitor
+
+The following example will clear the LCD, set the display for blinking
+cursor on, and display the message:
+
+"HELLO WORLD!"
+
+The monitor ignores embedded spaces in a command line.  When the last
+numeral expected on each line is entered the monitor will execute the
+command and give a new line at the control terminal.  Note that each
+line starts with an upper case "O" and all subsequent characters are
+valid hexadecimal characters (all upper case) or spaces.  The CAPS LOCK
+key is preferred.  Spaces are not required by the Monitor, but are
+allowed and included for readability.  The comments on each line are
+rejected by the monitor and should not be entered.  
+
+O 38 FFF8			; Set 2 line display and 5x7 dot format
+O 38 FFF8			; Set 2 line display and 5x7 dot format
+O 06 FFF8			; Entry mode: cursor moves to right,
+							 no display shift
+O 0F FFF8			; Set display and blinking cursor on
+O 01 FFF8			; Clear Display
+O 80 FFF8			; Set cursor to left end of line one
+O 22 FFF9			; Display ` " '
+O 48 FFF9			; Display "H"
+O 45 FFF9			; Display "E"
+O 4C FFF9			; Display "L"
+O 4C FFF9			; Display "L"
+O 4F FFF9			; Display "O"
+O 20 FFF9			; Display " "
+O 57 FFF9			; Display "W"
+O 4F FFF9			; Display "O"
+O 52 FFF9			; Display "R"
+O 4C FFF9			; Display "L"
+O 44 FFF9			; Display "D"
+O 21 FFF9			; Display "!"
+O 22 FFF9			; Display ` " `
+
+When the entry process is completed carefully, you will see:  "HELLO
+WORLD!"_  on the LCD.  Keypad access is quite different. Reading is
+accomplished in a two step process.   First,  a column value is written
+to the latch, then the latch is read.  Successive column values are
+written and read until a non-FF value is returned.  This column is the
+one with a key press.  The non-FF value returned identifies the row
+value.  The following example and explanation illustrates this:
+
+
+
+
+
+					Page 28
+
+O FE FFFC				; Check column 1
+D FFFC  FE				; Read row
+O FD FFFC				; Check column 2
+D FFFC  FF				; Read row
+O FB FFFC				; Check column 3
+D FFFC  FF				; Read row
+O F7 FFFC				; Check column 4
+D FFFC  FF				; Read row
+O EF FFFC				; Check column 5
+D FFFC FF				; Read row
+
+Each of the D FFFC commands returns a two digit hex value corresponding
+to the key pressed.  The column value scanned when a non-FF return
+occurs, indicates the column pressed.  Valid return values are FE, FB,
+FD, and F7.  When a key in row 1 is pressed, then the one bit is re-
+turned as zero, FE.  Row 2 returns FB, row 3 returns FD, and row 4 re-
+turns F7.  The value returned by any other column will be FF.
+
+Example
+
+If the key in row 3, column 2 is pressed, then after entering:
+
+O FD FFFC
+D FFFC  FB
+
+the value FB is returned, while all other columns will return FF.  The
+FB hex return value signifies a row 2 key is pressed.  Bit 2 of FB has
+a zero value which identifies the row as 3.  Remember to hold the key-
+pad key down while entering the " D " commands.  If row 1 has a key
+pressed, the return value will be FE, row 2 would return FD, row 3 FB,
+and row 4 F7.  Whenever a D command returns a value other than FF, the
+row pressed is determined by examining the return value.
+
+The examples that follow assume use of a 4 line by 40 character LCD,
+and a 4 row by 5 column keypad.  If other device configurations are
+used, it will be necessary to adjust either some values or interpreta-
+tions of results.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 29
+
+BASIC
+
+The following example clears and resets the LCD, and then displays the
+coordinates of the key press on the matrix keypad. The LCD and key-pad
+interfaces are mapped into external data memory.  BASIC uses the XBY()
+function to access external memory.  Memory mapped facilities such as
+the built-in LCD and keypad interfaces or an NMIL add-on board can be
+accessed using XBY(adr, [data]).  The keypad is addressed at 0FFFCH and
+the LCD (up to 4x20 display) is addressed at 0FFF8/9H as detailed be-
+low.  A 4 line by 40 character LCD will require addresses 0FFFA/BH
+also, for the second control processor on the LCD.  The LCD will dis-
+play  the coordinates of the last key pressed on the keypad when the
+following code is executed.  The code is organized to show the distinct
+functions necessary to initialize and control the LCD and keypad.
+First, the keypad, LCD, and string array are initialized.  Then a key-
+pad scan is executed until a key press is detected.  The specific co-
+ordinates are then determined and written to the next line on the LCD.
+The keypad scan is then resumed until another key is pressed.
+
+NEW
+10   STRING 22,20			:REM Allocate string space
+20   I = 0
+22   ROW  = 0			:REM Initialize row and column indices
+24   COL  = 0
+
+REM  Constants
+30   KEYPAD = 0FFFCH		:REM Keypad latch write/read address
+32   LCDCMD = 0FFF8H		:REM Display command address
+34   LCDDAT = 0FFF9H		:REM Display data address
+35   LCDLINE = 20			:REM Display line length
+36   NUMROWS = 4			:REM Number of display rows
+37   NUMCOLS = 5			:REM Number of display columns
+
+40   DIM B(5)			:REM Declare array
+
+100  GOSUB 1100			:REM Initialize the LCD
+
+REM  Start scan loop
+110  DO
+120   FOR I = 1 TO 5		:REM Scan columns for key press
+130    XBY(KEYPAD) = B(I)	:REM Output column data
+140    KPDAT = XBY(KEYPAD)	:REM Read row data
+ 					 REM Save key-press values and exit
+150    IF KPDAT <> 0FFH THEN COL = I : ROW = KPDAT : I = 5
+160   NEXT I
+170  UNTIL ROW <> 0		:REM Loop until key-press
+
+REM  De-bounce key-press
+200  DO : KPDAT = XBY(KEYPAD) : WHILE (KPDAT = ROW )
+
+
+
+
+
+
+
+
+
+					Page 30
+
+REM Convert row value to coordinate
+210  FOR I = 1 TO NUMROWS
+220   IF B(I) = ROW THEN ROW = I
+230  NEXT I
+
+REM  Assemble display string
+300  ASC($(0), 1) = ROW + 030H
+310  ASC($(0), 2) = 02CH	:REM comma
+320  ASC($(0), 3) = 020H	:REM space
+330  ASC($(0), 4) = COL + 030H
+
+400  GOSUB 1000			:REM Write key position to display
+NMIY-0031	PROGRAM SEGMENTS
+450  GOTO 110			:REM Loop until console CTRL-C
+500  END
+
+REM  Write key position to display
+1000 XBY(LCDCMD) = 01H		:REM Clear display and return home
+1010 FOR I = 1 TO LCDLINE
+1020  XBY(LCDDAT) = ASC($(0), I) : NEXT I
+1030 COL= 0 : ROW = 0
+1040 RETURN
+
+REM INITIALIZATION INSTRUCTIONS
+
+REM  Initialize Array
+1100 B(1) = 0FEH			:REM Initialize column address vector
+1110 B(2) = 0FDH
+1120 B(3) = 0FBH
+1130 B(4) = 0F7H
+1140 B(5) = 0EFH
+
+REM  Initialize Display
+1200 XBY(LCDCMD) = 038H		:REM Get attention
+1210 XBY(LCDCMD) = 038H		:REM Set 2 line display and 5x7 dot format
+1220 XBY(LCDCMD) = 006H		:REM Entry mode:  cursor to right, no shift
+1230 XBY(LCDCMD) = 00FH		:REM Set display and blinking cursor on
+1240 XBY(LCDCMD) = 001H		:REM Clear Display
+
+REM  Clear string array
+1300 FOR I = 1 TO LCDLINE
+1310 ASC($(0), I) = 020H : NEXT I
+1320 RETURN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 31
+
+C
+
+The example segment for C does the same function as the BASIC example
+above.  First the key-pad is read until a key press is detected.  The
+key press coordinates are determined and then output to the LCD.
+
+#include ..\clib\common51.c
+#include ..\clib\syslib51.c
+#include ..\clib\stdio.h
+#include ..\clib\alloc.c
+#include ..\clib\peekpoke.c
+#include ..\clib\getchar.c
+#include ..\clib\fgetc.c
+
+main ()
+{
+
+char	*ch1;
+int	coldata,
+	row, col;
+
+lcdinit();
+lcdbusy();
+
+while (EOF)
+  {
+  coldata  = 1;
+  col = 0;
+  row = 0;
+
+  for (col = 1; col < 6; col++)	/* scan columns */
+    {
+    kpad_put(coldata ^ 0xFF);		/* output column bit */
+    if (row = kpad_get(ch1))		/* check for key press */
+      {
+      while 
+	  (row == kpad_get(ch1));	/* de-bounce key press */
+      lcdhome();
+      dispdata(row, col);		/* display key press */
+      }
+    else
+	coldata = coldata << 1;
+    }	/* end for */
+  }	/* end while */
+
+}	/*  end main */
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 32
+
+dispdata(row, col)				/* output data to lcd */
+int   row, col;
+{
+  if ( row == 0x0004)
+    row = 3;
+  else if ( row == 0x0008)
+    row = 4;
+  lcdput(row+0x0030);
+  lcdput(',');
+  lcdput(col+0x0030);
+  lcdput(' ');
+}
+
+kpad_put(ch)			/* write to keypad latch */
+char  ch;
+{
+  int   *adr;
+
+  adr = 0x0FFFC;
+  lcdbusy();		/* wait */
+  pokeb(adr, ch);		/* send character */
+  return(ch);
+}
+
+kpad_get(ch)			/* read keypad latch */
+char  ch;
+{
+int   *adr;
+
+adr = 0xFFFC;
+ch = (peekb(adr) ^ 0x00FF);
+return(ch);
+}
+
+lcdbusy ()			/* wait for LCD not busy */
+{
+int   *adr;
+
+adr = 0x0FFF8;
+while (peekb(adr) & 0x0080);
+}
+
+lcdput(ch)			/* write display data to LCD */
+char  ch;
+{
+int   *adr;
+
+adr = 0x0FFF9;
+lcdbusy();	/* wait */
+pokeb(adr, ch);	/* send character */
+}
+
+
+
+
+
+
+
+					Page 33
+
+lcdcr()			/* set LCD cursor to other line */
+{
+char z;
+int  i,
+     *adr;
+
+lcdbusy();			/* compute other line address */
+adr = 0xFFF8;
+z = peekb(adr) & 0x0040 ^ 0x00C0;
+
+pokeb(adr, z);		/* set cursor at BOL */
+for (i=0; i++; i<40)	/* clear to LCD EOL */
+  {
+  lcdput(' ');		/* clear next position */
+  lcdbusy();		/* wait */
+  }
+pokeb(adr, z);		/* reposition cursor */
+}
+
+lcdhome()			/* set LCD cursor at home position */
+{
+int   *adr;
+
+adr = 0xFFF8;
+lcdbusy();
+pokeb(adr, 0x0001);
+}
+
+lcdinit()			/* reset LCD display */
+{
+int   *adr;
+
+adr = 0xFFF8;
+lcdbusy();			/* wait */
+pokeb(adr, 0x0038);     /* get attention */
+lcdbusy();
+pokeb(adr, 0x0038);     /* 8 bit data, 2 lines, 5x7 dots */
+lcdbusy();
+pokeb(adr, 0x0006);     /* cursor inc, no display shift */
+lcdbusy();
+pokeb(adr, 0x000F);     /* display on, blinking cursor on */
+lcdbusy();
+pokeb(adr, 0x0001);     /* clear display, set cursor to home */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 34
+
+FORTH
+
+( GENERIC KEYPAD INPUT AND LCD OUTPUT ROUTINES
+( -----
+
+HEX
+
+( LCD DISPLAY ROUTINES
+( -----
+
+0FFF8 CONSTANT DSP-CMD
+0FFF9 CONSTANT DSP-DATA
+0FFFC CONSTANT KPAD
+
+5 CONSTANT TOT-COL
+4 CONSTANT TOT-ROW
+
+VARIABLE COL
+VARIABLE ROW
+
+: WAIT-NOT-BUSY    BEGIN DSP-CMD C@ 080 AND 0= UNTIL ;
+
+: DSP-CLEAR   WAIT-NOT-BUSY 01 DSP-CMD C! ;
+
+: DSP-HOME   WAIT-NOT-BUSY 02 DSP-CMD C! ;
+
+028 CONSTANT DC/L
+
+( position cursor on top 00-27 or bottom 28-4F line -- 2x40 DISPLAY
+: DSP-AT ( n -- )
+   DUP DC/L MOD  080 OR  SWAP DC/L 1- > IF  040 OR  THEN
+   WAIT-NOT-BUSY DSP-CMD C! ;
+
+( return cursor position
+: C-URSOR? ( -- n )
+   WAIT-NOT-BUSY DSP-CMD C@ 07F AND ;
+
+( print a character, move cursor to left
+: DSP-EMIT ( char -- )   WAIT-NOT-BUSY DSP-DATA C! ;
+
+( print a string on the LCD, writes past end of line.......
+: DSP-TYPE ( addr n -- )
+   ?DUP IF  0 DO  COUNT DSP-EMIT  LOOP  THEN DROP ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 35
+
+( init the display
+: DSP-ON
+   WAIT-NOT-BUSY
+   038 DSP-CMD C!   ( get attention )
+   038 DSP-CMD C!   ( set 2 line display, 2x40 )
+   06 DSP-CMD C!   ( character entry right )
+   0F DSP-CMD C!   ( display & cursor on, blinking )
+   01 DSP-CMD C!   ( clear display, set cursor home )
+;
+
+( COMPILE NON-PRINTING STRINGS
+( -----
+
+: (")
+   R@ COUNT  DUP 1+ R> + >R ;
+
+: "
+   COMPILE (") 022 WORD C@ 1+ ALLOT ; IMMEDIATE
+
+: DSP-SPACES ( n -- )
+   ?DUP IF 0 DO BL DSP-EMIT LOOP THEN ;
+
+NMIY-0031	PROGRAM SEGMENTS
+: (D.) ( d -- addr # )
+   SWAP OVER DABS  <# #S SIGN #> ;
+
+: DSP-D. ( d -- )
+   (D.) DSP-TYPE BL DSP-EMIT ;
+
+: DSP-D.R ( d n -- )
+   >R (D.)  R> OVER - 0 MAX DSP-SPACES  DSP-TYPE ;
+
+: DSP-.  ( n -- )    S->D DSP-D. ;
+
+: TEST
+   DSP-ON
+   DSP-CLEAR " THIS IS A TEST " DSP-TYPE ;
+
+
+: 2** ( input X 0-F --- OUT 2**X
+  1
+  BEGIN
+    OVER ( 0= NOT
+  WHILE
+    SWAP
+    1-
+    SWAP
+    2*
+  REPEAT
+  SWAP DROP
+;
+
+
+
+
+
+
+
+					Page 36
+
+    ( read keypad latch
+: KPAD?  ( -- n )  KPAD C@ FF XOR ;
+
+    ( write to keypad latch
+: KPAD!  ( n-- )  KPAD C! ;
+
+    ( detect keypress
+: ?KPAD  ( -- row# )  0 KPAD! BEGIN KPAD? UNTIL KPAD? ;
+
+    ( determine which row and column are pressed
+    ( values are saved in variables ROW and COL
+: SCAN
+  0FFFF ROW !
+  0FFFF COL !
+  TOT-COL 0
+  DO
+    I 2** 0FF XOR
+    KPAD!
+    TOT-ROW 0
+    DO
+      KPAD? I 2** AND IF I ROW ! J COL ! THEN
+    LOOP
+  LOOP
+;
+
+: CONVERT-KPAD  ( ROW COL -- n )
+	(map key coordinates to single ASCII character
+  ROW @ TOT-COL * COL @ +
+  DUP 04  = IF DROP 017 ELSE  ( convert unlabeled keys
+  DUP 09  = IF DROP 018 ELSE
+  DUP 0E  = IF DROP 019 ELSE
+  DUP 013 = 
+  IF DROP 01A THEN THEN THEN THEN ( bias #s and letters
+  DUP 017 < 
+  IF DUP 03 > IF 1- DUP 07 > IF 1- DUP 0B > IF 1- THEN THEN THEN THEN
+  DUP 09 > OVER 017 < AND 
+  IF 07 + THEN
+  030 +
+;
+
+( detect key press
+: KPAD-PRESS?
+  BEGIN SCAN COL @ ROW @ AND 0FFFF = NOT UNTIL
+;
+
+( de-bounce key pad
+: KPAD-RELEASE?
+  COL @ 2** 0FF XOR KPAD! BEGIN KPAD? ROW @ 2** AND 0= UNTIL
+;
+
+
+
+
+
+
+
+
+
+					Page 37
+
+( get and de-bounce key press
+: GET-KPAD
+  KPAD-PRESS?
+  CONVERT-KPAD
+  KPAD-RELEASE?
+;
+
+( get key press and display on LCD
+: KPAD>DSP
+  DSP-ON
+  BEGIN
+   GET-KPAD
+   DSP-EMIT
+   ?TERMINAL
+  UNTIL
+;
+
+DECIMAL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 38
+
+PART IV
+
+PARTS LIST
+
+Component			Location	Component			Location
+Capacitor, 0.1 uF		C1, 5-9,	IC, 74HC573			U8 
+                        C12, 17-18 
+Capacitor, 22 pF		C2-4		IC, SN75176			U12-13
+Capacitor, 10 uF		C10, 13-16	80C51A			U1
+    16V electrolytic			Jumper pin double
+Capacitor, 100 uF		C19-20	Jumper pin single
+    16V electrolytic			PCB, NMIY-0031		BOARD
+Connector 34 pin		VSC, J1	Resistor, 1K, 5%, 1/4W	R8
+    dual row header			Resistor, 4.7K, 5%,1/4W	R2-3
+Spacer 34 pin		VSC		Resistor, 10K, 5%, 1/4W	R5-7,9
+Diode, 1N4148		D1-3		Resistor, 10K, 10P9E	RN1
+Bridge rectifier, DB101	CR1		Resistor, 10K, pot.	R4
+Regulator, 7805		VR1		Resistor, 10M, 5%, 1/4W	R1
+IC, GAL16V8			U9-10		Socket, 8 pin		U12-13
+IC, MAX232			U11		Socket, 16 pin		U11
+IC, 8K BASIC EPROM	U2		Socket, 20 pin		U5, 6, 8,
+                                                            U9, 10
+IC, 8K MONITOR		U2		Socket, 28 pin wide	U2-4
+IC, HY6264ALP-12		U3		Socket, 44 pin PLCC	U1
+IC, 74HC245			U5		Shunt				various
+IC, 74HC273			U6		Terminal, 2 pin,		J2, 12
+                                            screw-down
+						XTAL, 11.053		Y1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 39
+
+APPENDICES
+
+The appendices included contain example code using various NMIL series
+cards.  These cards provide extended functionality for the NMIY-0031.
+NMIL cards attach to the NMIY-0031 processor card through the vertical
+stacking connectors (VSC).  The NMIY-0031 has three VSC connectors for
+adding up to three cards in low profile.  The VSC connection system can
+accept many more than three cards, however, since each NMIL card also
+has a VSC.  Cards using the VSC system may be added to a stack as need-
+ed until bus loading becomes an issue.  Sample code is included in
+BASIC, C, and FORTH for:
+
+  LCD and Keypad interfaces on NMIY-0031
+  NMIL-1055		24-BIT I/O board
+  NMIL-3003		64 Input HC compatible board
+  NMIL-3004		64 Output HC compatible board
+  NMIL-4000		8-Channel, 8-Bit, Digital-to-Analog board
+  NMIL-4004		1-Channel, 12-Bit, Analog-to-Digital board
+  NMIL-5000		ACIA 1-Channel Serial Communications board
+  NMIL-7001		16-Channel OPTO Isolator Output board
+  NMIL-7003		8-Channel Input, 8-Channel Output OPTO Isolator board
+  NMIL-7022		8-Channel, Mechanical Relay (SPST) board
+  NMIL-7040		4-Channel Stepper Motor Controller board
+  NMIL-7056		Servo Motor Driver board
+  NMIL-9003		Real Time Clock board
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					Page 40
+
+
+
+
+
+
+

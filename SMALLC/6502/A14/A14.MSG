@@ -1,0 +1,53 @@
+Title:			User Friendly Print Controller
+Author:			Ian Grimstead
+Version:		1.0
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Program source
+Supplier:		Ian Grimstead
+Date:			
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a14
+Date mounted/updated:	20/08/91
+File names:		a14prnt.bas          BASIC source
+			a14prnt.doc          Documentation
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+
+Description:
+
+As  we  all  know,  printer  control codes are rather confusing and rather
+cumbersome  to  sure;  some word processors (eg. View) go some way to help you
+by using a  printer driver, but it is usually not a very user-friendly method
+(eg. 2 highlights for bold or suchlike). What  is required is a simple  to use
+yet powerfull program; this should  let you  control  your printer by  using
+plain English commands, & should be  adjustable by you to use any printer
+codes or command names. 
+
+The program lets you change fonts and styles by getting you to send to the
+printer the font or style required,  eg.  by placing the command [BOLD ON]
+before a heading in Wordwise, and (of course)  [BOLD  OFF] after  it.  To
+enter the command, all you have to do is quite literally type "[BOLD ON]" into
+your document;  when the document is printed, the command [BOLD ON] will
+appear on the  screen,  but instead of coming out on the printer, the control
+codes (to turn on the  bold  style)  are sent  instead.
+
+
+In the Document: normal type [BOLD ON]bold type[BOLD OFF] normal type
+On the screen  : normal type [BOLD ON]bold type[BOLD OFF] normal type
+On the printer : normal type [EMPHAS ON]bold type[EMPHAS OFF] normal type
+
+

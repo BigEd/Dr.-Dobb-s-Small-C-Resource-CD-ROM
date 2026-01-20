@@ -1,0 +1,3967 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.
+-->
+<CENTER>
+<B><H1>THE SMALL-C COMPILER</H1> <p>
+
+ by J. E. Hendrix<p>
+</CENTER>
+</B>
+
+ 
+<i>This article originally appeared in Dr. Dobb's Journal #74 and 
+#75 (December 1982 and 
+January 1983). Small-C version 2 has since been adapted to CP/M 
+and 
+designated version 2.1 (see &quot;A New Library for Small-C&quot; 
+on this CD-ROM). The 
+listings printed here are of the new version. The text of this 
+article has been 
+altered to accommodate this change. Most notably, the section on 
+the standard 
+I/O library has been eliminated, since it would have been 
+redundant.</i> <p>
+ 
+Ron Cain stirred up considerable interest when he demonstrated 
+(&quot;A 
+Small-C Compiler for the 8080s,&quot; see <i>DDJ</i> #45 or 
+excerpt on this CD-ROM) how 
+effective even a small compiler can be. Many people were inspired 
+to adapt his 
+compiler to their systems. My own implementation resulted in 
+Small-VM (&quot;Small 
+VM, Nucleus of a Portable Software Development System,&quot; <i>
+DDJ</i> #61), which 
+interfaces the compiler, and programs compiled by it, to North 
+Star DOS. The 
+Small-Shell command processor (&quot;Small-Shell: Part 2 of a 
+North Star VOS,&quot; <i>DDJ</i>
+#63) further enhanced this environment, giving it even more of a 
+Unix flavor. <p>
+
+I immediately used the compiler to create a set of utility 
+programs based on 
+the ones presented in the book <i>Software Tools</i> by B. W. 
+Kernighan and P. J. 
+Plauger. The original compiler was more than adequate for the 
+task and clearly 
+superior to the RATFOR language used in the book. But it was a 
+bare-bones 
+compiler, literally begging for improvement. It seemed too that a 
+little effort 
+devoted to code optimizing might yield valuable benefits. So, 
+with 
+encouragement from Ron Cain and the Doctor, I set out to produce 
+a second version. 
+<a href="#list5-1">Listing 5-1</a> contains the results. <p>
+
+I am indebted to Ron Cain, who presented the original compiler 
+for all to 
+do with as they pleased and who provided much invaluable guidance 
+for this 
+project. Neal Block of Fountain Valley, California, was also very 
+helpful in 
+providing many specific suggestions relating to performance, 
+generalizing the 
+compiler for use on machines of various word lengths, and 
+suggesting approaches to 
+implement the new control structures. I hope before long to see 
+him come forth 
+with an assembler and linking loader written especially for 
+Small-C. Finally, Dr. 
+James Van Zandt of Nashua, New Hampshire, suggested replacing the 
+serial 
+table searches with hash searches, resulting in greatly improved 
+speed. <p>
+<B> 
+Differences <p>
+</B> 
+This version of the compiler differs from the original one in the 
+following 
+respects: <p>
+<OL> 
+<LI> Code optimization has been added. Programs are now typically 
+15 to 30 percent 
+        smaller than before.  
+<LI> Data initialization is supported for global variables, 
+arrays, and pointers. 
+        Uninitialized objects default to binary zero. 
+<LI> Constant expressions are now evaluated at compile time. They 
+may also be used 
+        as array dimensions, data initializers, and in 
+&quot;case&quot; statements.  
+<LI> The <i>#ifdef</i>, <i>#ifndef</i>, <i>#else</i>, and <i>
+#endif</i> statements are supported with nesting. 
+<LI> The &quot;extern&quot; storage class is supported for global 
+variable, array, pointer, and 
+        function declarations. The effect is to declare them as 
+external references to the 
+        assembler.  
+<LI> It has a mechanism for passing an argument count to called 
+functions.  
+<LI> It supports the following new statements: 
+  <UL> 
+     <LI> for 
+     <LI> do/while 
+     <LI> switch/case/default 
+     <LI> goto
+  </UL> 
+<LI> It permits lists of expressions.  
+<LI> It supports the following assignment operators: 
+        |=, ^=, &amp;=, +=, -=, *=, /=, %=, &gt;&gt;=, and 
+&lt;&lt;=  
+<LI> It supports the logical operators || and &amp;,&amp;. 
+Testing proceeds left to right and 
+        ceases when the outcome is known. 
+<LI> The logical operators ~ and ! are supported.  
+<LI> Local variables are now local to the block rather than the 
+whole function. 
+<LI> The backslash escape sequences for character and string 
+constants have been 
+        added (per my letter in <i>DDJ</i> #56, p. 6). 
+<LI>  I made several changes to accommodate my assembler. 
+  <UL>
+      <LI> Lowercase names are converted to uppercase before 
+being placed into the 
+             symbol table. Lowercase and uppercase symbols are 
+thus synonymous. This 
+             feature is optional. 
+       <LI> Header and trailer code is automatically added to the 
+output, enabling 
+             multifile programs to be compiled and assembled 
+separately (see <i>DDJ</i> #61 for 
+             details). 
+        <LI> Tabs are no longer generated in the output file.  
+  </UL>
+<LI> The original compiler would generate a cascade of spurious 
+error messages, 
+        following a proper error message. I have eliminated these 
+by snuffing all but 
+        the first one in a simple statement; in practice this 
+works well since one 
+        diagnostic is usually enough to make you evaluate an 
+entire simple 
+        statement. 
+<LI>  The following fixes have been applied: 
+  <UL>
+       <LI> The left- and right-shift routines of the arithmetic 
+and logical library have 
+             been modified so that a shift of zero bits properly 
+returns the original value 
+             (letter from James L. Colvin, Jr., in <i>DDJ</i> 
+#52, pp. 7, 37). 
+       <LI>  Arguments no longer have to be typed in the same 
+order as they appear in 
+             the function header (P.L. Woods, &quot;Small-C: An 
+Implementer's Notes and a 
+             Bug Corrected,&quot; <i>DDJ</i> #52, p. 20). A flaw 
+in this patch has been corrected 
+             (my letter in <i>DDJ</i> #56, p. 6). 
+       <LI> In its original form Small-C did not always properly 
+scale values involved in 
+             address arithmetic. I described this problem and 
+gave the solution in 
+             &quot;Small-C Expression Analyzer&quot; (<i>DDJ</i> 
+#62). 
+        <LI> The function symname no longer accepts symbols 
+longer than 8 characters. 
+        <LI> The global integer lastst is now zeroed at the 
+beginning of each function so 
+             null functions always generate a return. 
+        <LI> Comments terminated by */ at the beginning of a line 
+are now handled 
+             correctly (my letter in <i>DDJ</i> #56, p. 6). 
+   </UL>
+<LI> Literals are now dumped at the end of each function, 
+permitting a smaller literal 
+        queue. Globals are defined at the point of their 
+declaration, eliminating the 
+        function <i>dumpglb</i>. 
+<LI>  A hash search is used on the macro table and the global 
+part of the symbol table. 
+        The improvement in speed is considerable. 
+</OL>
+<B>
+New Features Explained <p>
+</B> 
+The following comments describe some of the new features in 
+greater detail: <p>
+<B> 
+Code Optimizing <p>
+</B> 
+Machine-independent optimizing is done by changing the expression 
+analyzer, 
+and machine-dependent optimizing is done by including an optional 
+output 
+(peephole) optimizer. <p>
+ 
+Machine-independent optimizing uses the following techniques: <p>
+<OL> 
+<LI>  Expressions, or partial expressions, that result in a 
+constant value generate only a 
+        single immediate load instruction. 
+<LI>  After code has been generated for the right side of a 
+binary operator, if the 
+        secondary register was not used, the precautionary 
+push/pop of the left-side value is 
+        changed to a swap. But if the left-side value is a 
+constant, it is loaded directly into 
+        the secondary register instead. 
+<LI>  Constants being added to or subtracted from integer 
+pointers or array names are 
+        doubled at compile time rather than execution time. 
+<LI>  No testing code is generated for <i>if(const)</i>, <i>
+while(const)</i>, and <i>for(...; const; ...)</i> 
+        statements. The compiler does not bother to delete code 
+controlled by these 
+        statements when const is zero since that situation is 
+most likely a program error; the 
+        <i>#ifdef</i> and <i>#ifndef</i> should be used to 
+eliminate conditional code at compile 
+        time. 
+<LI>  Tests against zero (for example, &quot;while(i &gt; = 
+0),&quot; &quot;if(abc() = = 0),&quot; and so on) 
+        result in special inline code that is smaller and faster 
+than the standard procedure 
+        of loading zero, performing a library call, then testing 
+the returned value for 1 or 
+        0. 
+<LI> Zero subscripts generate no code for adding to the array 
+address or pointer 
+        value. 
+<LI>  Local variables are allocated all at one time when the 
+first executable statement in 
+        a block is encountered. Declarations are not allowed 
+after that point except 
+        within inner blocks.
+<LI>  Unnecessary jumps around statements controlled by an <i>
+else</i> are avoided. This is 
+        the case when a <i>return</i> or <i>goto</i> precedes the 
+else. 
+<LI>  The function <i>modstk</i> now generates two swaps to 
+preserve the primary register 
+        only on a return with an expression.<p> 
+</OL> 
+Machine-dependent optimizing is done by two functions, <i>putstk
+</i> and 
+<i>peephole</i>. <i>Putstk</i> now generates <i>MOV A,L/STAX D</i>
+ rather than<i> CALL 
+CCP-CHAR</i>. <i>Peephole</i> is the output optimizer mentioned 
+earlier. A staging buffer is 
+used to hold the code generated by an expression. When the buffer 
+is flushed, 
+peephole scrutinizes the output, making changes as it sees fit. 
+The output 
+optimizer is a compile time option, since some may view this as 
+something better 
+suited to a separate utility program. I found it irresistible, 
+however, to piggyback 
+this simple function onto the compiler; it makes for faster and 
+easier optimized 
+compiles. <p>
+
+<i>Peephole</i> employs two techniques. First, integers being 
+retrieved from 
+the top of the stack are obtained with a POP H/PUSH H sequence 
+rather 
+than the usual LXI H,O/DAD SP/CALL CCGINT sequence. Integers next 
+to 
+the top of the stack are retrieved with a POP B/POP H/PUSH H/PUSH 
+B 
+sequence. If an XCHG follows the retrieve sequence, then the 
+desired 
+operand is popped directly into the DE register pair. These 
+techniques result in 
+smaller, faster code; they are always effective if the compiler 
+contains 
+peephole. <p>
+
+The second technique involves replacing commonly occurring 
+sequences of 
+commands with calls to new entry points in the runtime library. 
+This technique reduces program size at the expense of speed; it 
+must be 
+quested at run time to be effective. <p>
+<B>
+Passing Argument Counts <p>
+</B> 
+When a function is called, a count of the number of arguments 
+being passed is 
+placed in the accumulator. This takes only 2 bytes. To retrieve 
+the count, the 
+called function simply assigns to a variable the value returned 
+by the function 
+CCARGC (uppercase). This must be done first in the function, 
+since other 
+operations may call certain runtime library routines that destroy 
+the accumulator. 
+CCARGC is a new entry point in the runtime library; it simply 
+redefines 
+CCSXT, which moves A to HL sign extended. That allows 127 
+arguments before 
+going berserk. For obvious reasons, the compiler does not 
+generate code to load 
+an argument count for calls to CCARGC. Since many programs do not 
+use the 
+argument count feature, the compiler skips it in programs 
+containing the 
+statement &quot;#define NOCCARGC&quot; (uppercase). This reduces 
+program size and run 
+time. <p>
+<B>
+Data Initialization <p>
+</B> 
+You can initialize global variables, array elements, and pointers 
+just as in full C, 
+except that symbols may not be used as initializers. When not 
+initialized, globals 
+default to zero. An equal sign must introduce initializers. <p>
+
+You may use constant expressions to initialize variables or array 
+elements 
+only. If the size of an array is not given, it is determined by 
+the number of 
+initializers present. Character constants with backslash escape 
+sequences are 
+permitted. When multiple initializers are present, they must be 
+enclosed in 
+braces and separated by commas. If too few initializers are 
+given, trailing 
+elements are set to zero. If too many initializers are given, an 
+error message is 
+issued. <p>
+
+You may use a quoted character string to initialize only 
+character arrays 
+and pointers. In this case a terminating zero byte is 
+automatically generated. 
+An array name references the first byte and a pointer contains 
+the address of 
+the first byte. If no array size is given, it is set to the 
+length of the string plus 
+one. If the string is longer than the stated size, the size is 
+increased to match 
+the string. <p>
+
+One negative side effect of the zero default is that very large 
+arrays generate 
+many &quot;DB 0,0,0,...&quot; or &quot;DW 0,0,0,...&quot; 
+statements in the output. If this proves to 
+be a problem in practice, you could set up a runtime option to 
+sidestep the zero 
+default. <p>
+<B> 
+Local Declarations<p> 
+</B> 
+The original compiler would accept local declarations anywhere 
+within a 
+function, and duplicate declarations produced errors. This 
+version requires local 
+declarations to appear first within a block and permits multiple 
+declarations of the 
+same symbol. The local part of the symbol table is now searched 
+in reverse order 
+so as to see the latest occurrence of a variable first. Upon 
+leaving a block, the 
+nonlabel declarations occurring within it are stripped from the 
+symbol table. 
+Local declarations may not contain initializers. <p>
+<B>
+Goto Statement <p>
+</B> 
+I included this statement with some reluctance. I see no 
+compelling need for it, 
+and I shudder to think of how easily its abuse camouflages the 
+logic of a 
+program. Occasionally, however, there are situations where it can 
+prevent code 
+redundancy without obscuring the logic. I included the goto 
+largely because it is 
+expected and also because it can prove invaluable when converting 
+existing 
+programs to Small-C. <p>
+
+There is one restriction on the use of the goto statement. Since 
+local 
+variables may be declared within any block, the compiler cannot 
+know the level of 
+the stack pointer at target labels that have not yet been 
+defined, so it cannot 
+adjust the stack pointer before the branch. I could not find an 
+efficient method 
+of solving this dilemma, so I chose to make block-locals (other 
+than at the start 
+of a function) and goto statements mutually exclusive within a 
+given function.<p> 
+<B> 
+<i>Extern</i> Storage Class <p>
+</B> 
+The <i>extern</i> storage class may be specified with global 
+declarations only. If the 
+LINK option (see Installation below) is effective, such objects 
+are defined as 
+external references to the assembler and other globals are 
+defined as entry 
+points. If LINK is not effective, <i>extern</i> globals are not 
+defined to the assembler 
+and other globals are defined but not as entry points. If <i>int
+</i> or <i>char</i> is not 
+specified following extern, then <i>int</i> is assumed. <p>
+<B> 
+Invoking the Compiler <p>
+</B> 
+Three types of runtime parameters may be given-filenames, 
+redirection 
+specifications, and switches. The operating environment handles 
+redirection 
+specifications without passing them to the program. <p>
+
+By default, Small-C obtains its input from the standard input 
+file (<i>stdin</i>). If 
+a list of filenames is given on the command line, then instead of 
+reading <i>stdin</i>, 
+Small-C reads the named files in the order listed. Any nonswitch 
+parameter is 
+taken for a filename. Output always goes to the standard output 
+file (<i>stdout</i>). 
+
+Switches are preceded by a hyphen. The -M switch allows you to 
+MONITOR progress by having the compiler write each function 
+header line to the 
+console. This switch is useful for isolating errors to the 
+functions containing 
+them. <p>
+
+The -A switch causes the ALARM (control-G to the console) to 
+sound 
+when an error is reported. <p>
+
+The -P switch causes the compiler to PAUSE after reporting each 
+error. A 
+carriage-return from the keyboard continues processing. <p>
+
+The -L# switch (# is a file descriptor in the range 1-9) 
+instructs Small-C to 
+LIST the source code on the file indicated. If file descriptor 1 
+(<i>stdout</i>) is 
+specified, the listing is mixed with the normal output. In this 
+case a semicolon 
+precedes each line of source code. No listing is produced if the 
+switch is not given. <p>
+
+Machine-independent and pop/push optimizing (described earlier) 
+are 
+always performed. The -O switch causes the output OPTIMIZER to 
+further reduce 
+program size at the expense of execution speed. <p>
+
+The -B# switch exists only if the compiler will not be used with 
+a linking 
+loader (see Installation below); that is, program parts will be 
+combined at 
+assembly time rather than load time. It causes label numbering to 
+BEGIN following 
+the value #. If # is zero (default) a complete program is being 
+compiled. In this 
+case, header and trailer code, designed to link the program with 
+its 
+environment, is appended to the program. A value of 1 means the 
+first of a multipart 
+program is being compiled; header code only will be appended. A 
+value between 
+1 and 9000 identifies an intermediate part; in this case no code 
+is appended to 
+the output. A value of 9000 means the last part is being 
+compiled; trailer code 
+only will be appended. Values for # must be chosen to prevent 
+clashes with 
+labels generated in other parts of the program. <p>
+
+The null switch &quot;-&quot; or any undefined switch causes the 
+compiler to exit 
+after displaying the help line: <p>
+<PRE> 
+     usage: CC [file]... [-M] [-A] [-P] [-L#] [-O] [-B#] <p>
+</PRE>
+<B> 
+Installation<p> 
+</B> 
+You may compile this version of Small-C using the original 
+compiler. First, 
+however, you need to make the following changes to your present 
+compiler (if not 
+already done). <p>
+<OL> 
+<LI> Apply the fixes mentioned earlier (item 16 under 
+Differences). You may omit 
+        fixes c, d, and e.  
+<LI> Install the change that allows the compiler to properly 
+handle backslash escape 
+        sequences (<i>DDJ</i> #56, p. 6).<p> 
+<LI>  Make whatever changes are required by your runtime 
+environment. Be sure your 
+        system supports the Standard I/O Library functions <i>
+fgets</i>, <i>fputs</i>, and <i>fputc</i>. 
+        All input and output is through these functions.<p>
+ 
+Note: The original compiler, in several instances, performed a 
+&quot;logical and&quot; of 
+127 with a source byte. I have removed these operations, 
+preferring to let the 
+input routine do it (if required at all). <p>
+
+<LI> Prepare a temporary copy of the new compiler as input to the 
+first (using your 
+        present updated compiler) of two compiles. This is done 
+by deleting lines from 
+        the new compiler that cannot be handled by the present 
+one or that are not 
+        desirable for your installation. <p>
+</OL> 
+Conditional compilation statements (<i>#ifdef</i>, <i>#ifndef</i>
+, <i>#else</i>, and <i>#endif</i>) are 
+present in the source files to document which lines should be 
+deleted and 
+which ones should be retained. For the first compile, they must 
+be deleted along 
+with all inappropriate lines. Once a usable compiler has been 
+generated, the 
+temporary source files should be discarded and the newly 
+generated compiler 
+must be used to produce a second version from the full source 
+files. This second 
+compile (phase 2) is required because it will include statements 
+that could not 
+be compiled by the original compiler (phase 1). <p>
+
+Several symbols are defined in the cc.def file for the purpose of 
+controlling 
+compiler options. If the action taken by the compiler is 
+inappropriate when any 
+of these symbols is defined, that symbol should be deleted or 
+commented out. 
+These symbols are described below. <p>
+
+DYNAMIC compiles statements that dynamically allocate memory for 
+various tables and arrays within the compiler. If DYNAMIC is not 
+defined, the 
+tables and arrays are compiled directly into the compiler. This 
+symbol also 
+controls statements that call CCAVAIL, whose primary purpose is 
+to return the 
+amount of free memory remaining, but is used here to verify that 
+the machine 
+stack and allocated memory do not overlap; the run aborts in that 
+case. If serial 
+table searching is used with dynamic memory allocation, then each 
+new entry 
+to the global symbol table is allocated separately. The table may 
+grow until it 
+overlaps the machine stack, producing an allocation error. <p>
+
+LINK implies that compiler output will be used with a relocatable 
+
+assembler and linking loader. It compiles statements for 
+declaring &quot;extern&quot; globals as 
+external references and all other globals as entry points. In 
+this case, multipart 
+programs cannot be combined at assembly time and the beginning 
+label option 
+(-B# switch) is not available. <p>
+
+COL causes labels in the output to be terminated by a colon. <p>
+
+UPPER compiles statements that cause symbols placed into the 
+symbol 
+table to be converted to uppercase. If your assembler does not 
+require this, then 
+disable the definition of UPPER. <p>
+
+SEPARATE implies that the compiler is to be compiled in parts 
+rather than 
+all at once. In this case, separate compile runs should be 
+directed to each of the 
+files ccl.c, cc2.c, cc3.c, and cc4.c. These, in turn, include 
+subordinate files; for 
+example, cc11.c, cc12.c, and cc13.c (for part 1). If this symbol 
+is missing, then 
+cc1.c includes all the subordinate files, and the files cc2.c, 
+cc3.c, and cc4.c are 
+not used. <p>
+
+NOCCARGC is a runtime option that tells the compiler not to 
+generate 
+code for passing argument counts to called functions. This 
+results in smaller, 
+faster programs when it is known that there will be no calls to 
+the runtime 
+routine CCARGC. <p>
+
+Four symbols permit you to determine which, if any, of the new 
+language 
+statements are to be supported by the compiler. You may have to 
+leave them out 
+to make the compiler small enough to compile itself in one gulp 
+on a 48K 
+machine. <p>
+
+STDO controls the do statement. STFOR controls the for statement. 
+
+ST-SWITCH controls the switch, case, and default statements. 
+STGOTO controls 
+the goto statement. These defines also associate a numeric value 
+with each 
+statement; the compiler uses this to determine if the last 
+statement in a function is a 
+return. <p>
+
+OPTIMIZE causes the peephole optimizer to be included. <p>
+
+
+ 
+<b><a name="list5-1">LISTING 5-1</a><p> </b>
+<PRE> 
+--------------------------------------------------------FILE:STDIO.H 
+  /* 
+  ** STDIO.H -- Standard Small-C Definitions 
+  ** 
+  ** Copyright 1984 L. E. Payne and J. E. Hendrix 
+  */ 
+  #define stdin    0 
+  #define stdout   1 
+  #define stderr   2 
+  #define ERR   (-2) 
+  #define EOF   (-1) 
+  #define YES      1 
+  #define NO       0 
+  #define NULL     0 
+  #define CR      13 
+  #define LF      10 
+  #define BELL     7 
+  #define SPACE  ' ' 
+  #define NEWLINE LF     /*23*/ /*45*/ 
+ 
+-------------------------------------------------------FILE:CC.DEF 
+  /* 
+  ** Small-C Compiler Version 2.1 
+  ** 
+  ** Copyright 1982, 1983 J. E. Hendrix 
+  ** 
+  ** Version 2.0 -&gt; 2.1 Change Record 
+  **     (primed numbers keyed to text) 
+  ** 01' fix bogus label generated by &quot;continue&quot; within &quot;switch&quot; 
+  **     (A. Macpherson) 
+  ** 02' fix problem of &quot;peephole&quot; missing end of staging buffer 
+  **     (E. Payne &amp; A. Macpherson) 
+  ** 03' permit (*func)() syntax for functions as arguments 
+  **     (E. Payne) 
+  ** 04  change spelling of &quot;heir&quot; to &quot;hier&quot; 
+  ** 05  change spelling of &quot;plunge&quot; to &quot;plnge&quot; 
+  ** 06  always compile function &quot;upper&quot; 
+  ** 07' allow smaller NAMEMAX/NAMESIZE w/o truncating keywords 
+  **     (E. Payne) 
+  ** 08' disallow local declarations inside &quot;switch&quot; statements 
+  ** 09' make &quot;outdec&quot; handle the constant 32768 properly 
+  ** 10  change CCALLOC() to calloc() 
+  ** 11  change CCAVAIL() to avail() 
+  ** 12  change CCPOLL() to poll() 
+  ** 13' install (*func)() syntax 
+  ** 14' correct extraneous operand fetch in expressions 
+  **     like (i+5)(); 
+  ** 15' make expressions like (&amp;ia[...] - &amp;ia[...]) scale 
+  **     properly to give the number of objects lying between 
+  ** 16' eliminate &quot;DW O&quot; generated by &quot;int (*func)();&quot; 
+  ** 17' &quot;fclose&quot; should return NULL or ERR like UNIX 
+  ** 18' &quot;fflush&quot; should return NULL or EOF like UNIX 
+  ** 19' &quot;fgets&quot; should return the newline like UNIX 
+  ** 20' remove redundant loop from &quot;inline&quot; (E. Payne) 
+  ** 21  rename functions (e.g., or(), and(), 
+  **     ret(), call(), etc.) to avoid M80 reserved words 
+  ** 22  shorten CCDDPDPI and CCDDPDPC to 6 characters 
+  **     to satisfy L80 and LIB 
+  ** 23' use NEWLINE symbol for newline value 
+  ** 24' fix pstr() end-of-line problem 
+  **     (A. Macpherson &amp; M. Grundy) 
+  ** 25' allocate space for local pointer declared as ptr[] 
+  **     (A. Macpherson) 
+  ** 26' make primary() recognize expression strings 
+  **     (A. Macpherson) 
+  ** 27  alter code generation for M80, L80 
+  ** 28' use double colon to declare entry points 
+  ** 29  employ standard functions isalpha(), isdigit(), 
+  **     and toupper() 
+  ** 30' drop bad optimizing case from peephole(), 
+  **     per Paul West (DDJ #81) 
+  ** 31' supply argument for avail() to abort on stack 
+  **     overflow 
+  ** 32' prevent preprocess() from taking newline as 
+  **     white space 
+  ** 33' always declare &quot;_link&quot; external in LINK mode 
+  **     to force loading of required library functions 
+  ** 34' restrict doubling of constants operating on 
+  **     integer addresses to add and subtract operators 
+  ** 35' use XRA A to pass an argument count of zero 
+  **     per Paul West (DDJ #81) 
+  ** 36' improve indirect function calls per Paul West (DDJ #81) 
+  ** 37' automatically declare undeclared functions to be 
+  **     external 
+  ** 38  drop support of sequential macro and global table 
+  **     searching 
+  ** 39' provide a default extension of .C to input file 
+  **     names, and assume an output .MAC file if stdout 
+  **     has not been redirected to a disk file 
+  ** 40  drop support of parameter prompting and drop 
+  **     CMD_LINE 
+  ** 41  drop external function declarations from 
+  **     cc1.c, cc2.c, cc3.c, and cc4.c 
+  ** 42' begin execution at main() rather than first function 
+  ** 43  drop tabs from the output 
+  ** 44  always compile calls to poll() in the compiler 
+  ** 45' use LF as newline character instead of CR 
+  ** 47' accept #include &quot;....&quot; or &lt; .... &gt; constructs 
+  ** 48' show even #asm input in the listing and prevent an 
+  **     extra &quot;;&quot; at the end of the output from commenting 
+  **     out the first EXT 
+  ** 49' correct double spacing in the output during 
+  **     #asm ... #endasm intervals 
+  ** 50' correct lingering problem with correctly performing 
+  **     operand fetches for indirect function calls 
+  ** 51' correct bad syntax in trailer() if LINK not defined 
+  ** 52' init locptr before first function so something like 
+  **     &quot;int ia[x];&quot; where x is not #defined won't hang 
+  ** 53' generate error on attempt to declare pointer arrays 
+  ** 54' generate &quot;EXT _link&quot; only if &quot;main()&quot; is defined 
+  ** 55' eliminate redundant code generated at the end of a 
+  **     compound statement 
+  ** 56  change system global names from leading _ to U to 
+  **     accommodate users with pre 3.44 MACRO-80 packages 
+  ** 57  modify fflush() so that it will not attempt to flush 
+  **     the auxiliary buffer unless fd is opened for output 
+  ** 58' properly initialize auxiliary buffering controls so 
+  **     that i/o will work properly after an fd has been 
+  **     closed and reopened 
+  ** 59' don't ignore ! while optimizing if(!(i==0)) ..., etc. 
+  ** 60  fix lexcmp() so it doesn't return 0 for &quot;Happy&quot; and &quot;hello&quot; 
+  ** 61' enlarge MACNBR &amp; MACQSIZE 
+  ** 62' correct FREAD.C and FWRITE.C so that fread() and fwrite() will 
+  **     return the number of &quot;items&quot; written rather than &quot;bytes&quot; 
+  **     and make write() more efficient 
+  ** 63' make _putsec(), in CSYSLIB, realize that it is not necessarily at 
+  **     end of file, preventing it from padding an old sector with 1A bytes 
+  ** 64' fix the expression analyzer so the operators += and -= in 
+  **     expressions like i += p (where p is a pointer) will not erroneously 
+  **     assign to p 
+  ** 65' fix Uparse(),in CSYSLIB, so i/o redirection will work properly 
+  **     under CP/M-Plus (from Frank Hayes) 
+  /* 
+ 
+  /* 
+  ** compile options 
+  */ 
+  #define NOCCARGC /* no argument counts */ 
+  #define SEPARATE /* compile separately */ 
+  #define OPTIMIZE /* compile output optimizer */ 
+  #define DYNAMIC  /* allocate memory dynamically */ 
+  #define COL      /* terminate labels with a colon */ 
+  /* #define UPPER    /* force symbols to upper case */ 
+  #define LINK     /* will use with linking loader/* 
+ 
+  /* 
+  ** machine dependent parameters 
+  */ 
+  #define BPW      2    /* bytes per word */ 
+  #define LBPW     1    /* log2(BPW) */ 
+  #define SBPC     1    /* stack bytes per character */ 
+  #define ERRCODE  7    /* op sys return code */ 
+ 
+  /* 
+  ** symbol table format 
+  */ 
+  #define IDENT    0 
+  #define TYPE     1 
+  #define CLASS    2 
+  #define OFFSET   3 
+  #define NAME     5 
+  #define OFFSIZE (NAME-OFFSET) 
+  #define SYMAVG  10 
+  #define SYMMAX  14 
+ 
+  /* 
+  ** symbol table parameters 
+  */ 
+  #define NUMLOCS  25 
+  #define STARTLOC symtab 
+  #define ENDLOC  (symtab+(NUMLOCS*SYMAVG)) 
+  #define NUMGLBS  200 
+  #define STARTGLB ENDLOC 
+  #define ENDGLB  (ENDLOC+((NUMGLBS-1)*SYMMAX)) 
+  #define SYMTBSZ  3050 /* NUMLOCS*SYMAVG + NUMGLBS*SYMMAX */ 
+ 
+  /* 
+  ** System wide name size (for symbols) 
+  */ 
+  #define NAMESIZE 9 
+  #define NAMEMAX  8 
+ 
+  /* 
+  ** possible entries for &quot;IDENT&quot; 
+  */ 
+  #define LABEL    0 
+  #define VARIABLE 1 
+  #define ARRAY    2 
+  #define POINTER  3 
+  #define FUNCTION 4 
+ 
+  /* 
+  ** possible entries for &quot;TYPE&quot; 
+  **    low order 2 bits make type unique within length 
+  **    high order bits give length of object 
+  */ 
+  /*      LABEL  0 */ 
+  #define CCHAR  (1&lt;&lt;2) 
+  #define CINT   (BPW&lt;&lt;2) 
+ 
+  /* 
+  ** possible entries for &quot;CLASS&quot; 
+  */ 
+  /*      LABEL     0 */ 
+  #define STATIC    1 
+  #define AUTOMATIC 2 
+  #define EXTERNAL  3 
+  #define AUTOEXT   4       /*37*/ 
+ 
+  /* 
+  ** &quot;switch&quot; table 
+  */ 
+ 
+  #define SWSIZ   (2*BPW) 
+  #define SWTABSZ (60*SWSIZ) 
+ 
+  /* 
+  ** &quot;while&quot; statement queue 
+  */ 
+  #define WQTABSZ 30 
+  #define WQSIZ    3 
+  #define WQMAX  (wq+WQTABSZ-WQSIZ) 
+ 
+  /* 
+  ** entry offsets in while queue 
+  */ 
+  #define WQSP    0 
+  #define WQLOOP  1 
+  #define WQEXIT  2 
+ 
+  /* 
+  ** literal pool 
+  */ 
+  #define LITABSZ 800 
+  #define LITMAX (LITABSZ-1) 
+ 
+  /* 
+  ** input line 
+  */ 
+  #define LINEMAX  127 
+  #define LINESIZE 128 
+ 
+  /* 
+  ** output staging buffer size 
+  */ 
+  #define STAGESIZE 800 
+  #define STAGELIMIT (STAGESIZE-1) 
+ 
+  /* 
+  ** macro (define) pool 
+  */ 
+  #define MACNBR    130             /*61*/ 
+  #define MACNSIZE (MACNBR*(NAMESIZE+2)) 
+  #define MACNEND  (macn+MACNSIZE) 
+  #define MACQSIZE (MACNBR*7)       /*61*/ 
+  #define MACMAX  (MACQSIZE-1) 
+ 
+  /* 
+  ** statement types 
+  */ 
+  #define STIF      1 
+  #define STWHILE   2 
+  #define STRETURN  3 
+  #define STBREAK   4 
+  #define STCONT    5 
+  #define STASM     6 
+  #define STEXPR    7 
+  #define STDO      8 /* compile &quot;do&quot; logic */ 
+  #define STFOR     9 /* compile &quot;for&quot; logic */ 
+  #define STSWITCH 10 /* compile &quot;switch/case/default&quot; logic */ 
+  #define STCASE   11 
+  #define STDEF    12 
+  #define STGOTO   13 /* compile &quot;goto&quot; logic */ 
+  #define STLABEL  14 /*55*/ 
+ 
+-------------------------------------------------------FILE:CC1.C 
+
+  /* 
+  ** Small-C Compiler Version 2.1 
+  ** 
+  ** Copyright 1982, 1983 J. E. Hendrix 
+  ** 
+  ** Part 1 
+  */ 
+  #include stdio.h 
+  #include cc.def 
+ 
+  /* 
+  ** miscellaneous storage 
+  */ 
+  char 
+  #ifdef OPTIMIZE 
+    optimize, /* optimize output of staging buffer */ 
+  #endif 
+    alarm,    /* audible alarm on errors? */ 
+    monitor,  /* monitor function headers? */ 
+    pause,    /* pause for operator on errors? */ 
+  #ifdef DYNAMIC 
+   *stage,    /* output staging buffer */ 
+   *symtab,   /* symbol table */ 
+   *litq,     /* literal pool */ 
+   *macn,     /* macro name buffer */ 
+   *macq,     /* macro string buffer */ 
+   *pline,    /* parsing buffer */ 
+   *mline,    /* macro buffer */ 
+  #else 
+    stage[STAGESIZE], 
+    symtab[SYMTBSZ], 
+    litq[LITABSZ], 
+    macn[MACNSIZE], 
+    macq[MACQSIZE], 
+    pline[LINESIZE], 
+    mline[LINESIZE], 
+    swq[SWTABSZ], 
+  #endif 
+   *line,     /* points to pline or mline */ 
+   *lptr,     /* ptr to either */ 
+   *glbptr,   /* ptrs to next entries */ 
+   *locptr,   /* ptr to next local symbol */ 
+   *stagenext,/* next addr in stage */ 
+   *stagelast,/* last addr in stage */ 
+    quote[2], /* literal string for '&quot;' */ 
+   *cptr,     /* work ptrs to any char buffer */ 
+   *cptr2, 
+   *cptr3, 
+    msname[NAMESIZE], /* macro symbol name array */ 
+    ssname[NAMESIZE]; /* static symbol name array */ 
+  int 
+  #ifdef STGOTO 
+    nogo,     /* &gt; 0 disables goto statements */ 
+    noloc,    /* &gt; 0 disables block locals */ 
+  #endif 
+    op[16],   /* function addresses of binary operators */ 
+    op2[16],  /* same for unsigned operators */ 
+    opindex,  /* index to matched operator */ 
+    opsize,   /* size of operator in bytes */ 
+    swactive, /* true inside a switch */ 
+    swdefault,/* default label #, else 0 */ 
+   *swnext,   /* address of next entry */ 
+   *swend,    /* address of last table entry */ 
+  #ifdef DYNAMIC 
+   *wq,       /* while queue */ 
+  #else 
+    wq[WQTABSZ], 
+  #endif 
+    argcs,    /* static argc */ 
+   *argvs,    /* static argv */ 
+   *wqptr,    /* ptr to next entry */ 
+    litptr,   /* ptr to next entry */ 
+    macptr,   /* macro buffer index */ 
+    pptr,     /* ptr to parsing buffer */ 
+    oper,     /* address of binary operator function */ 
+    ch,       /* current character of line being scanned */ 
+    nch,      /* next character of line being scanned */ 
+    declared, /* # of local bytes declared, else -1 when done */ 
+    iflevel,  /* #if... nest level */ 
+    skiplevel,/* level at which #if... skipping started */ 
+    funcl,    /* true for first function */ 
+    nxtlab,   /* next avail label # */ 
+    litlab,   /* label # assigned to literal pool */ 
+    beglab,   /* beginning label -- first function */ 
+    csp,      /* compiler relative stk ptr */ 
+    argstk,   /* function arg sp */ 
+    argtop, 
+    ncmp,     /* # open compound statements */ 
+    errflag,  /* non-zero after 1st error in statement */ 
+    eof,      /* set non-zero on final input eof */ 
+    input,    /* fd # for input file */ 
+    input2,   /* fd # for &quot;include&quot; file */ 
+    output,   /* fd # for output file */ 
+    files,    /* non-zero if file list specified on cmd line */ 
+    filearg,  /* cur file arg index */ 
+    glbflag,  /* non-zero if internal globals */ 
+    ctext,    /* non-zero to intermix c-source */ 
+    ccode,    /* non-zero while parsing c-code */ 
+              /* zero when passing assembly code */ 
+    listfp,   /* file pointer to list device */ 
+    lastst,   /* last executed statement type */ 
+   *iptr;     /* work ptr to any int buffer */ 
+ 
+  #include cc11.c 
+  #include cc12.c 
+  #include cc13.c 
+ 
+  #ifndef SEPARATE 
+  #include cc21.c 
+  #include cc22.c 
+  #include cc31.c 
+  #include cc32.c 
+  #include cc33.c 
+ 
+  #include cc41.c 
+  #include cc42.c 
+  #endif 
+ 
+------------------------------------------FILE:CC11.C 
+  /* 
+  ** execution begins here 
+  */ 
+  main(argc, argv) intargc, *argv; { 
+    argcs=argc; 
+    argvs=argv; 
+  #ifdef DYNAMIC 
+    swnext=calloc(SWTABSZ, 1); 
+    swend=swnext+((SWTABSZ-SWSIZ)&gt;&gt;1); 
+    stage=calloc(STAGESIZE, 1); 
+    stagelast=stage+STAGELIMIT; 
+    wq=calloc(WQTABSZ, BPW); 
+    litq=calloc(LITABSZ, 1); 
+    macn=calloc(MACNSIZE, 1); 
+                             /*10*/ 
+    macq=calloc(MACQSIZE, 1); 
+    pline=calloc(LINESIZE, 1); 
+    mline=calloc(LINESIZE, 1); 
+  #else 
+    swend=(swnext=swq)+SWTABSZ-SWSIZ; 
+    stagelast=stage+STAGELIMIT; 
+  #endif 
+    swactive=       /* not in switch */ 
+    stagenext=      /* direct output mode */ 
+    iflevel=        /* #if... nesting level = 0 */ 
+    skiplevel=      /* #if... not encountered */ 
+    macptr=         /* clear the macro pool */ 
+    csp =           /* stack ptr (relative) */ 
+    errflag=        /* not skipping errors till &quot;;&quot; */ 
+    eof=            /* not eof yet */ 
+    ncmp=           /* not in compound statement */ 
+    files= 
+    filearg= 
+    quote[1]=0; 
+    func1=          /* first function */ 
+    ccode=1;        /* enable preprocessing */ 
+    wqptr=wq;       /* clear while queue */ 
+    quote[0]='&quot;';   /* fake a quote literal */ 
+    input=input2=EOF; 
+    ask();          /* get user options */ 
+    openfile();     /* and initial input file */ 
+    preprocess();   /* fetch first line */ 
+  #ifdef DYNAMIC 
+    symtab=calloc((NUMLOCS*SYMAVG + NUMGLBS*SYMMAX), 1); 
+  #endif 
+                        /*10*/ 
+    locptr=STARTLOC;    /*52*/ 
+    glbptr=STARTGLB; 
+    glbflag=1; 
+    ctext=0; 
+    header();       /* intro code */ 
+    setops();       /* set values in op arrays */ 
+    parse();        /* process ALL input */ 
+    outside();      /* verify outside any function */ 
+    trailer();      /* follow-up code */ 
+    fclose(output); 
+    } 
+ 
+  /* 
+  ** process all input text 
+  ** 
+  ** At this level, only static declarations, 
+  **      defines, includes and function 
+  **      definitions are legal... 
+  */ 
+  parse() { 
+    while (eof==0) { 
+      if(amatch(&quot;extern&quot;, 6)) dodeclare(EXTERNAL); 
+      else if(dodeclare(STATIC)); 
+      else if(match(&quot;#asm&quot;)) doasm(); 
+      else if(match(&quot;#include&quot;))doinclude(); 
+      else if(match(&quot;#define&quot;)) addmac(); 
+      else                      newfunc(); 
+      blanks();       /* force eof if pending */ 
+      } 
+    } 
+ 
+  /* 
+  ** dump the literal pool 
+  */ 
+  dumplits(size) int size; { 
+    int j, k; 
+    k=0; 
+    while (k&lt;litptr) { 
+      poll(1); /* allow program interruption */ 
+      defstorage(size); 
+      j=10; 
+      while(j--) { 
+        outdec(getint(litq+k, size)); 
+        k=k+size; 
+        if ((j==0)|(k&gt;=litptr)) { 
+          nl(); 
+          break; 
+          } 
+        outbyte(','); 
+        } 
+      } 
+    } 
+ 
+  /* 
+  ** dump zeroes for default initial values 
+  */ 
+  dumpzero(size, count) int size, count; { 
+    int j; 
+    while (count &gt; 0) { 
+      poll(1); /* allow program interruption */ 
+      defstorage(size); 
+      j=30; 
+      while(j--) { 
+        outdec(0); 
+        if ((--count &lt;= 0)|(j==0)) { 
+          nl(); 
+          break; 
+          } 
+        outbyte( ',' ); 
+        } 
+      } 
+    } 
+ 
+  /* 
+  ** verify compile ends outside any function 
+  */ 
+  outside() { 
+    if (ncmp) error(&quot;no closing bracket&quot;); 
+    } 
+ 
+  /* 
+  ** get run options 
+  */ 
+  ask() { 
+    int i; 
+    i=listfp=nxtlab=0; 
+    output=stdout; 
+  #ifdef OPTIMIZE 
+    optimize= 
+  #endif 
+    alarm=monitor=pause=NO; 
+    line=mline; 
+    while(getarg(++i, line, LINESIZE, argcs, argvs)!=EOF) { 
+      if(line[0]!='-') continue; 
+      
+if((toupper(line[1])=='L')&amp;(isdigit(line[2]))&amp;(line[3]&lt;=' ')) { 
+        listfp=line[2]-'0'; 
+ 
+        continue; 
+        } 
+      if(line[2]&lt;=' ') { 
+        if(toupper(line[1])=='A') { 
+          alarm=YES; 
+          continue; 
+          } 
+        if(toupper(line[1])=='M') { 
+          monitor=YES; 
+          continue; 
+          } 
+  #ifdef OPTIMIZE 
+        if(toupper(line[1])=='0') { 
+          optimize=YES; 
+          continue; 
+          } 
+  #endif 
+        if(toupper(line[1])=='P') { 
+          pause=YES; 
+          continue; 
+          } 
+        } 
+  #ifndef LINK 
+      if(toupper(line[1])=='B') { 
+        bump(0); bump(2); 
+        if(number(&amp;nxtlab)) continue; 
+        } 
+  #endif 
+      sout(&quot;usage: cc [file]... [-m] [-a] [-p] [-l#]&quot;, 
+stderr); 
+  #ifdef OPTIMIZE 
+      sout(&quot; [-o]&quot;, stderr); 
+  #endif 
+  #ifndef LINK 
+      sout(&quot; [-b#]&quot;, stderr); 
+  #endif 
+      sout(NEWLINE, stderr);                             /*23*/ 
+      abort(ERRCODE); 
+      } 
+    } 
+ 
+  /* 
+  ** input and output file opens 
+  */ 
+  openfile() {        /* entire function revised *//*39*/ 
+    char outfn[15]; 
+    int i, j, ext; 
+    input=EOF; 
+    while(getarg(++filearg, pline, LINESIZE, argcs, argvs)!=EOF) 
+{ 
+      if(pline[0]=='-') continue; 
+      ext = NO; 
+      i = -1; 
+      j = 0; 
+      while(pline[++i]) { 
+        if(pline[i] == '.') { 
+          ext = YES; 
+          break; 
+          } 
+        if(j &lt; 10) outfn[j++] = pline[i]; 
+        } 
+      if(!ext) { 
+        strcpy(pline + i, &quot;.C&quot;); 
+        } 
+      input = mustopen(pline, &quot;r&quot;); 
+      if(!files &amp;&amp; isatty(stdout)) { 
+        strcpy(outfn + j, &quot;.MAC&quot;); 
+        output = mustopen(outfn, &quot;w&quot;); 
+        } 
+      files=YES; 
+      kill(); 
+      return; 
+      } 
+    if(files++) eof=YES; 
+    else input=stdin; 
+    kill(); 
+    } 
+ 
+  /* 
+  ** open a file with error checking 
+  */ 
+  mustopen(fn, mode) char *fn, *mode; {       /*39*/ 
+    int fd; 
+    if(fd = fopen(fn, mode)) return fd; 
+    sout(&quot;open error on &quot;, stderr); 
+    lout(fn, stderr); 
+    abort(ERRCODE); 
+    } 
+ 
+  setops() { 
+    op2[00]=     op[00]=  ffor;  /* heir5 */ 
+    op2[01]=     op[01]= ffxor;  /* heir6*/ 
+    op2[02]=     op[02]= ffand;  /* heir7*/ 
+    op2[03]=     op[03]=  ffeq;  /* heir8 */ 
+    op2[04]=     op[04]=  ffne; 
+    op2[05]=ule; op[05]=  ffle;  /* heir9 */ 
+    op2[06]=uge; op[06]=  ffge; 
+    op2[07]=ult; op[07]=  fflt; 
+    op2[08]=ugt; op[08]=  ffgt; 
+    op2[09]=     op[09]= ffasr;  /* heir10 */ 
+ 
+    op2[10]=     op[10]= ffasl; 
+    op2[11]=     op[11]= ffadd;  /* heir11 */ 
+    op2[12]=     op[12]= ffsub; 
+    op2[13]=     op[13]=ffmult;  /* heir12 */ 
+    op2[14]=     op[14]= ffdiv; 
+    op2[15]=     op[15]= ffmod; 
+    } 
+ 
+-------------------------------------------------------------FILE:CC12.C 
+  /* 
+  ** open an include file 
+  */ 
+  doinclude() { 
+    char *cp;                                       /*47*/ 
+    blanks();            /* skip over to name */ 
+    switch (*lptr) {                                /*47*/ 
+      case '&quot;': case '&lt;': cp = ++lptr;              /*47*/ 
+      while(*cp) {                                  /*47*/ 
+        switch(*cp) {case '&quot;': case '&gt;': *cp=NULL;}  /*47*/ 
+        ++cp;                                       /*47*/ 
+        }                                           /*47*/ 
+      }                                             /*47*/ 
+    if((input2=fopen(lptr,&quot;r&quot;))==NULL) { 
+      input2=EOF; 
+      error(&quot;open failure on include file&quot;); 
+      } 
+    kill();         /* clear rest of line */ 
+        /* so next read will come from */ 
+        /* new file (if open) */ 
+    } 
+ 
+  /* 
+  ** test for global declarations 
+  */ 
+  dodeclare(class) int class; { 
+    if(amatch(&quot;char&quot;,4)) { 
+      declglb(CCHAR, class); 
+      ns(); 
+      return 1; 
+      } 
+    else if((amatch(&quot;int&quot;,3))|(class==EXTERNAL)) { 
+      declglb(CINT, class); 
+      ns(); 
+      return 1; 
+      } 
+    return 0; 
+    } 
+ 
+  /* 
+  ** declare a static variable 
+  */ 
+  declglb(type, class) int type, class; { 
+    int k, j; 
+    while(1) { 
+      if(endst()) return;    /* do line */ 
+      if(match(&quot;(*&quot;)|match(&quot;*&quot;)) {            
+        /*03*/ 
+        j=POINTER; 
+        k=0; 
+        } 
+      else { 
+        j=VARIABLE; 
+        k=1; 
+        } 
+      if (symname(ssname, YES)==0) illname(); 
+      if(findglb(ssname)) multidef(ssname); 
+      if(match(&quot;)&quot;));              /*03*/ 
+      if(match(&quot;()&quot;)) j=FUNCTION; 
+      else if (match(&quot;[&quot;)) { 
+        paerror(j);               /*53*/ 
+        k=needsub();   /* get size */ 
+        j=ARRAY;  /* !0=array */ 
+        } 
+      if(class==EXTERNAL) external(ssname); 
+      else if(j!=FUNCTION) j=initials(type&gt;&gt;2, j, k);    /*16*/ 
+      addsym(ssname, j, type, k, &amp;glbptr, class); 
+      if (match(&quot;,&quot;):=0) return; /* more? */ 
+      } 
+    } 
+ 
+  /* 
+  ** declare local variables 
+  */ 
+  declloc(typ) int typ; { 
+    int k,j; 
+    if(swactive) error(&quot;not allowed in switch&quot;);        
+   /*08*/ 
+  #ifdef STGOTO 
+    if(noloc) error(&quot;not allowed with goto&quot;); 
+  #endif 
+    if(declared &lt; 0) error(&quot;must declare first in block&quot;); 
+    while(1) { 
+      while(1) { 
+        if(endst()) return; 
+        if(match(&quot;*&quot;)) j=POINTER; 
+        else           j=VARIABLE; 
+        if (symname(ssname, YES)==0) illname(); 
+        /* no multidef check, block-locals are together */ 
+        k=BPW; 
+        if (match(&quot;[&quot;)) { 
+           paerror(j);               /*53*/ 
+           if(k=needsub()) {         /*25*/ 
+             j=ARRAY; 
+            if(typ==CINT)k=k&lt;&lt;LBPW; 
+            } 
+          else {j=POINTER; k=BPW;}   /*25*/ 
+          } 
+                                     /*14*/ 
+        else if((typ==CCHAR)&amp;(j==VARIABLE)) k=SBPC; 
+        declared = declared + k; 
+        addsym(ssname, j, typ, csp - declared, &amp;locptr, AUTOMATIC); 
+        break; 
+        } 
+      if (match(&quot;,&quot;)==0) return; 
+      } 
+    } 
+ 
+  /* 
+  ** test for pointer array (unsupported) 
+  */ 
+  paerror(j) int j; { 
+    if(j==POINTER) error(&quot;no pointer arrays&quot;);    /*53*/ 
+    } 
+ 
+  /* 
+  ** initialize global objects 
+  / 
+  initials(size, ident, dim) int size, ident, dim; { 
+    int savedim; 
+    litptr=0; 
+    if(dim==0) dim = -1; 
+    savedim=dim; 
+    entry(); 
+    if(match(&quot;=&quot;)) { 
+      if(match(&quot;{&quot;)) { 
+        while(dim) { 
+          init(size, ident, &amp;dim); 
+          if(match(&quot;,&quot;)==0) break; 
+          } 
+        needtoken(&quot;}&quot;); 
+        } 
+      else init(size, ident, &amp;dim); 
+      } 
+    if((dim == -1)&amp;(dim==savedim)) { 
+      stowlit(0, size=BPW); 
+      ident=POINTER; 
+      } 
+    dumplits(size); 
+    dumpzero(size, dim); 
+    return ident; 
+    } 
+  /* 
+  ** evaluate one initializer 
+  */ 
+  init(size, ident, dim) int size, ident, *dim; { 
+    int value; 
+    if(qstr(&amp;value)) { 
+      if((ident==VARIABLE)|(size!:1)) 
+        error(&quot;must assign to char pointer or array&quot;); 
+      *dim = *dim - (litptr - value); 
+      if(ident==POINTER) point(); 
+      } 
+    else if(constexpr(&amp;value)) { 
+      if(ident==POINTER) error(&quot;cannot assign to pointer&quot;); 
+      stowlit(value, size); 
+      *dim = *dim - 1; 
+      } 
+    } 
+ 
+  /* 
+  ** get required array size 
+  */ 
+  needsub() { 
+    int val; 
+    if(match(&quot;]&quot;)) return 0; /* null size */ 
+    if (constexpr(&amp;val)==0) val=1; 
+    if (val&lt;0) { 
+      error(&quot;negative size illegal&quot;); 
+      val = -val; 
+      } 
+    needtoken(&quot;]&quot;);      /* force single dimension */ 
+    return val;          /* and return size */ 
+    } 
+ 
+  /* 
+  ** begin a function 
+  ** 
+  ** called from &quot;parse&quot; and tries to make a function 
+  ** out of the following text 
+  ** 
+  ** Patched per P.L. Woods (DDJ #52) 
+  */ 
+  newfunc() { 
+    char *ptr; 
+  #ifdef STGOTO 
+    nogo =               /* enable goto statements */ 
+  noloc = 0;             /* enable block-local declarations */ 
+  #endif 
+    lastst=              /* no statement yet */ 
+    litptr=0;            /* clear lit pool */ 
+    litlab=getlabel();   /* label next lit pool */ 
+    locptr=STARTLOC;     /* clear local variables */ 
+    if(monitor) lout(line, stderr); 
+    if (symname(ssname, YES)==0) { 
+      error(&quot;illegal function or declaration&quot;); 
+      kill(); /* invalidate line */ 
+      return; 
+      } 
+    if(func1) { 
+      postlabel(beglab); 
+      func1=0; 
+      } 
+    if(ptr=findglb(ssname)) {      /* already in symbol table ? */ 
+      if(ptr[IDENT]==FUNCTION)       multidef(ssname); 
+      else if(ptr[OFFSET]==FUNCTION) multidef(ssname); 
+      else {                    /*37*/ 
+        /* earlier assumed to be a function */ 
+        ptr[OFFSET]=FUNCTION; 
+        ptr[CLASS]=STATIC;     /*37*/ 
+        }                      /*37*/ 
+    } 
+  else 
+    addsym(ssname, FUNCTION, CINT, FUNCTION, &amp;glbptr, STATIC); 
+  if(match(&quot;(&quot;)==0) error(&quot;no open paren&quot;); 
+  entry(); 
+  locptr=STARTLOC; 
+  argstk=0;               /* init arg count */ 
+  while(match(&quot;)&quot;)==0) {  /* then count args */ 
+    /* any legal name bumps arg count */ 
+    if(symname(ssname, YES)) { 
+      if(findloc(ssname)) multidef(ssname); 
+      else { 
+        addsym(ssname, 0, 0, argstk, &amp;locptr, AUTOMATIC); 
+        argstk=argstk+BPW; 
+        } 
+      } 
+    else {error(&quot;illegal argument name&quot;);junk();} 
+    blanks(); 
+    /* if not closing paren, should be comma */ 
+    if(streq(lptr,&quot;)&quot;)==0) { 
+      if(match(&quot;,&quot;)==0) error(&quot;no comma&quot;); 
+      } 
+    if(endst()) break; 
+    } 
+  csp=0;        /* preset stack ptr */ 
+    argtop=argstk; 
+    while(argstk) { 
+      /* now let user declare what types of things */ 
+      /*     those arguments were */ 
+      if(amatch(&quot;char&quot;,4))     {doargs(CCHAR);ns();} 
+      else if(amatch(&quot;int&quot;,3)) {doargs(CINT);ns();} 
+      else {error(&quot;wrong number of arguments&quot;);break;} 
+      } 
+  /*55*/ 
+    statement(); 
+  #ifdef STGOTO 
+    if(lastst != STRETURN &amp;&amp; lastst != STGOTO) ffret(); 
+  #else 
+    if(lastst != STRETURN) ffret(); 
+  #endif 
+  /*55*/ 
+    if(litptr) { 
+      printlabel(litlab); 
+      col(); 
+      dumplits(1); /* dump literals */ 
+      } 
+    } 
+ 
+  /* 
+  ** declare argument types 
+  ** 
+  ** called from &quot;newfunc&quot; this routine adds an entry 
+in the 
+  ** local symbol table for each named argument 
+  ** 
+  ** rewritten per P.L. Woods (DDJ #52) 
+  */ 
+  doargs(t) int t; { 
+    int j, legalname; 
+    char c, *argptr; 
+    while(1) { 
+      if(argstk==0) return; /* no arguments */ 
+      if(match(&quot;(*&quot;)!match(&quot;*&quot;)) j=POINTER; 
+else j=VARIABLE; /*03*/ 
+      if((legalname=symname(ssname, YES))==0) illname(); 
+      if(match(&quot;)&quot;)) ;              /*03*/ 
+      if(match(&quot;()&quot;)) ;             /*03*/ 
+      if(match(&quot;[&quot;)) { 
+        paerror(j);                 /*53*/ 
+        while(inbyte()!=']') if(endst()) break;/* skip &quot;[...]&quot; */ 
+        j=POINTER; /* add entry as pointer */ 
+        } 
+      if(legalname) { 
+        if(argptr=findloc(ssname)) { 
+          /* add details of type and address */ 
+         argptr[IDENT]=j; 
+         argptr[TYPE]=t; 
+         putint(argtop-getint(argptr+OFFSET, OFFSIZE), argptr+OFFSET, OFFSIZE); 
+         } 
+      else error(&quot;not an argument&quot;); 
+      } 
+    argstk=argstk-BPW;               /* cnt down */ 
+    if(endst())return; 
+    if(match(&quot;,&quot;)==0) error(&quot;no comma&quot;); 
+    } 
+  } 
+ 
+--------------------------------------------------------------FILE:CC13.C 
+  /* 
+  **  statement parser 
+  ** 
+  ** called whenever syntax requires a statement 
+  ** this routine performs that statement 
+  ** and returns a number telling which one 
+  */ 
+  statement() { 
+    if ((ch==0) &amp; (eof)) return; 
+    else if(amatch(&quot;char&quot;,4)) {declloc(CCHAR);ns();} 
+    else if(amatch(&quot;int&quot;,3))  {declloc(CINT);ns();} 
+    else { 
+       if(declared &gt;= 0) { 
+  #ifdef STGOTO 
+         if(ncmp &gt; 1) nogo #=declared; /* disable goto # if any */ 
+  #endif 
+         csp=modstk(csp - declared, NO); 
+         declared = -1; 
+         } 
+      if(match(&quot;{&quot;))                compound(); 
+      else if(amatch(&quot;if&quot;,2))       {doif();lastst=STIF;} 
+      else if(amatch(&quot;while&quot;,5)) {dowhile();lastst=STWHILE;} 
+  #ifdef STDO 
+      else if(amatch(&quot;do&quot;,2))     {dodo();lastst=STDO;} 
+  #endif 
+  #ifdef STFOR 
+      else if(amatch(&quot;for&quot;,3))     {dofor();lastst=STFOR;} 
+  #endif 
+  #ifdef STSWITCH 
+      else if(amatch(&quot;switch&quot;,6)) {doswitch();lastst=STSWITCH;} 
+      else if(amatch(&quot;case&quot;,4))   {docase();lastst=STCASE;} 
+      else if(amatch(&quot;default&quot;,7)) {dodefault();lastst=STDEF;} 
+  #endif 
+  #ifdef STGOTO 
+      else if(amatch(&quot;goto&quot;, 4))    {dogoto(); lastst=STGOTO;} 
+      else if(dolabel())            lastst=STLABEL;     /*55*/ 
+  #endif 
+      else if(amatch(&quot;return&quot;,6))   {doreturn();ns();lastst=STRETURN;} 
+      else if(amatch(&quot;break&quot;,5))   {dobreak();ns();lastst=STBREAK;} 
+      else if(amatch(&quot;continue&quot;,8)) {docont();ns();lastst=STCONT;} 
+      else if(match(&quot;;&quot;))           errflag=0; 
+      else if(match(&quot;#asm&quot;))        {doasm();lastst=STASM;} 
+      else                          {doexpr();ns();lastst=STEXPR;} 
+      } 
+  return lastst; 
+  } 
+ 
+  /* 
+  ** semicolon enforcer 
+  ** 
+  ** called whenever syntax requires a semicolon 
+  */ 
+  ns() { 
+    if(match(&quot;;&quot;)==0) error(&quot;no semicolon&quot;); 
+    else errflag=0; 
+    } 
+ 
+  compound() { 
+    int savcsp; 
+    char *savloc; 
+    savcsp=csp; 
+    savloc=locptr; 
+    declared=0;    /* may now declare local variables */ 
+    ++ncmp;        /* new level open */ 
+    while (match(&quot;}&quot;)==0) 
+      if(eof) { 
+   !    error(&quot;no final }&quot;); 
+        break; 
+        } 
+      else statement();    /* do one */ 
+    --ncmp;                /* close current level */ 
+  /*55*/ 
+  #ifdef STGOTO 
+    if(lastst != STRETURN &amp;&amp; lastst != STGOTO) 
+  #else 
+    if(lastst != STRETURN) 
+  #endif 
+       modstk(savcsp, NO); /* delete local variable space */ 
+    csp=savcsp; 
+  /*55*/ 
+  #ifdef STGOTO 
+    cptr=savloc;             /* retain labels */ 
+    while(cptr &lt; locptr) { 
+       cptr2=nextsym(cptr); 
+       if(cptr[IDENT] == LABEL) { 
+         while(cptr &lt; cptr2) *savloc++ = *cptr++; 
+        } 
+      else cptr=cptr2; 
+      } 
+  #endif 
+    locptr=savloc;          /* delete local symbols */ 
+    declared = -1;          /* may not declare variables */ 
+    } 
+ 
+  doif() { 
+    int flab1,flab2; 
+    flab1=getlabel(); /* get label for false branch */ 
+    test(flab1, YES); /* get expression, and branch false */ 
+    statement();     /* if true, do a statement */ 
+    if (amatch(&quot;else&quot;,4)==0) {     /* if...else ? */ 
+      /* simple &quot;if&quot;...print false label */ 
+      postlabel(flab1); 
+      return;         /* and exit */ 
+      } 
+    flab2=getlabel(); 
+  #ifdef STGOTO 
+    if((lastst != STRETURN)&amp;(lastst != STGOTO)) jump(flab2); 
+  #else 
+    if(lastst != STRETURN) jump(flab2); 
+  #endif 
+    postlabel(flab1); /* print false label */ 
+    statement();     /* and do &quot;else&quot; clause */ 
+    postlabel(flab2); /* print true label */ 
+    } 
+ 
+  doexpr() { 
+    int const, val; 
+    char *before, *start; 
+    while(1) { 
+      setstage(&amp;before, &amp;start); 
+      expression(&amp;const, &amp;val); 
+      clearstage(before, start); 
+      if(ch != ',') break; 
+      bump(1); 
+      } 
+    } 
+ 
+  dowhile() { 
+    int wq[4];             /* allocate local queue */ 
+    addwhile(wq);          /* add entry to queue for &quot;break&quot; */ 
+    postlabel(wq[WQLOOP]); /* loop label */ 
+    test(wq[WQEXIT], YES); /* see if true */ 
+    statement();           /* if so, do a statement */ 
+    jump(wq[WQLOOP]);      /* loop to label */ 
+    postlabel(wq[WQEXIT]); /* exit label */ 
+    delwhile();            /* delete queue entry */ 
+    } 
+ 
+  #ifdef STDO 
+  dodo() { 
+    int wq[4], top; 
+    addwhile(wq); 
+    postlabel(top=getlabel()); 
+    statement(); 
+    needtoken(&quot;while&quot;); 
+    postlabel(wq[WQLOOP]); 
+    test(wq[WQEXIT], YES); 
+    jump(top); 
+    postlabel(wq[WQEXIT]); 
+    delwhile(); 
+    ns(); 
+    } 
+  #endif 
+ 
+  #ifdef STFOR 
+  dofor() { 
+    int wq[4], lab1, lab2; 
+    addwhile(wq); 
+    lab1=getlabel(); 
+    lab2=getlabel(); 
+    needtoken(&quot;(&quot;); 
+    if(match(&quot;;&quot;)==0) { 
+      doexpr();              /* expr 1 */ 
+      ns(); 
+      } 
+    postlabel(lab1); 
+    if(match(&quot;;&quot;)==0) { 
+      test(wq[WQEXIT], NO); /* expr 2 */ 
+      ns(); 
+      } 
+    jump(lab2); 
+    postlabel(wq[WQLOOP]); 
+    if(match(&quot;)&quot;)==0) { 
+      doexpr();            /* expr 3 */ 
+      needtoken(&quot;)&quot;); 
+      } 
+    jump(lab1); 
+    postlabel(lab2); 
+    statement(); 
+    jump(wq[WQLOOP]); 
+    postlabel(wq[WQEXIT]); 
+    delwhile(); 
+    } 
+  #endif 
+  #ifdef STSWITCH 
+  doswitch() { 
+    int wq[4], endlab, swact, swdef, *swnex, *swptr; 
+    swact=swactive; 
+    swdef=swdefault; 
+    swnex=swptr=swnext; 
+    addwhile(wq); 
+    *(wqptr + WQLOOP - WQSIZ) = 0;                    /*01*/ 
+    needtoken(&quot;(&quot;); 
+    doexpr();     /* evaluate switch expression */ 
+    needtoken(&quot;)&quot;); 
+    swdefault=0; 
+    swactive=1; 
+    jump(endlab=getlabel()); 
+    statement(); /* cases, etc. */ 
+    jump(wq[WQEXIT]); 
+    postlabel(endlab); 
+    sw();          /* match cases */ 
+    while(swptr &lt; swnext) { 
+      defstorage(CINT&gt;&gt;2); 
+      printlabel(*swptr++); /* case label */ 
+      outbyte(','); 
+      outdec(*swptr++);     /* case value */ 
+      nl(); 
+      } 
+    defstorage(CINT&gt;&gt;2); 
+    outdec(0); 
+    nl(); 
+    if(swdefault) jump(swdefault); 
+    postlabel(wq[WQEXIT]); 
+    delwhile(); 
+    swnext=swnex; 
+    swdefault=swdef; 
+    swactive=swact; 
+    } 
+ 
+  docase() { 
+    if(swactive==0) error(&quot;not in switch&quot;); 
+    if(swnext &gt; swend) { 
+      error(&quot;too many cases&quot;); 
+      return; 
+      } 
+    postlabel(*swnext++ = getlabel()); 
+    constexpr(swnext++); 
+    needtoken(&quot;:&quot;); 
+    } 
+ 
+  dodefault() { 
+    if(swactive) { 
+      if(swdefault) error(&quot;multiple defaults&quot;); 
+      } 
+   else error(&quot;not in switch&quot;); 
+   needtoken(&quot;:&quot;); 
+   postlabel(swdefault=getlabel()); 
+   } 
+  #endif 
+ 
+  #ifdef STGOTO 
+  dogoto() { 
+    if(nogo &gt; 0) error(&quot;not allowed with block-locals&quot;); 
+    else noloc = 1; 
+    if(symname(ssname, YES)) jump(addlabel()); 
+    else error(&quot;bad label&quot;); 
+    ns(); 
+    } 
+ 
+  dolabel() { 
+    char *savelptr; 
+    blanks(); 
+    savelptr=lptr; 
+    if(symname(ssname, YES)) { 
+      if(gch()==':') { 
+        postlabel(addlabel()); 
+        return 1; 
+        } 
+      else bump(savelptr-lptr); 
+      } 
+    return 0; 
+    } 
+ 
+  addlabel() { 
+    if(cptr=findloc(ssname)) { 
+      if(cptr[IDENT]!=LABEL) error(&quot;not a label&quot;); 
+      } 
+    else cptr=addsym(ssname, LABEL, LABEL, getlabel(), &amp;locptr, LABEL); 
+    return (getint(cptr+OFFSET, OFFSIZE)); 
+    } 
+  #endif 
+ 
+  doreturn() { 
+    if(endst()==0) { 
+      doexpr(); 
+      modstk(0, YES); 
+      } 
+    else modstk(0, NO); 
+    ffret(); 
+    } 
+ 
+  dobreak() { 
+    int *ptr; 
+    if ((ptr=readwhile(wqptr))==0) return;              /*01*/ 
+    modstk((ptr[WQSP]), NO); 
+    jump(ptr[WQEXIT]); 
+    } 
+ 
+  docont() { 
+    int *ptr; 
+    ptr = wqptr;                                        /*01*/ 
+    while (1) {                                         /*01*/ 
+      if ((ptr:readwhile(ptr))==0) return;              /*01*/ 
+      if (ptr[WQLOOP]) break;                           /*01*/ 
+      }                                                 /*01*/ 
+    modstk((ptr[WQSP]), NO); 
+    jump(ptr[WQLOOP]); 
+    } 
+ 
+  doasm() { 
+    ccode=0;              /* mark mode as &quot;asm&quot; */ 
+    while (1) { 
+      inline(); 
+      if (match(&quot;#endasm&quot;)) break; 
+      if(eof)break; 
+      sout(line, output);          /*49*/ 
+      } 
+    kill(); 
+    ccode=1; 
+    } 
+ 
+------------------------------------------------------------------FILE:CC2.C 
+  /* 
+  ** Small-C Compiler Version 2.1 
+  ** 
+  ** Copyright 1982, 1983 J. E. Hendrix 
+  ** 
+  ** Part 2 
+  */ 
+  #include stdio.h 
+  #include cc.def 
+ 
+  extern char 
+  #ifdef DYNAMIC 
+    *symtab, 
+    *stage, 
+    *macn, 
+    *macq, 
+    *pline, 
+    *mline, 
+  #else 
+    symtab[SYMTBSZ], 
+    stage[STAGESIZE], 
+    macn[MACNSIZE], 
+    macq[MACQSIZE], 
+    pline[LINESIZE], 
+    mline[LINESIZE], 
+  #endif 
+  #ifdef OPTIMIZE 
+    optimize, 
+  #endif 
+    alarm, *glbptr, *line, *lptr, *cptr, *cptr2, *cptr3, 
+   *locptr, msname[NAMESIZE], pause, quote[2], 
+   *stagelast, *stagenext; 
+  extern int 
+  #ifdef DYNAMIC 
+    *wq, 
+  #else 
+    wq[WQTABSZ], 
+  #endif 
+    ccode, ch, csp, eof, errflag, iflevel, 
+    input, input2, listfp, macptr, nch, 
+    nxtlab, op[16], opindex, opsize, output, pptr, 
+    skiplevel, *wqptr; 
+ 
+  #include cc21.c 
+  #include cc22.c 
+ 
+-------------------------------------------------------------FILE:CC21.C 
+  junk() { 
+    if(an(inbyte())) while(an(ch)) gch(); 
+    else while(an(ch)==0) { 
+      if(ch==0) break; 
+      gch(); 
+      } 
+    blanks(); 
+    } 
+ 
+  endst() { 
+    blanks(); 
+    return ((streq(lptr,&quot;;&quot;)|(ch==0))); 
+    } 
+ 
+  illname() { 
+    error(&quot;illegal symbol&quot;); 
+    junk(); 
+    } 
+  multidef(sname) char *sname; { 
+    error(&quot;already defined&quot;); 
+    } 
+ 
+  needtoken(str) char *str; { 
+    if (match(str)==0) error(&quot;missing token&quot;); 
+    } 
+ 
+  needlval() { 
+    error(&quot;must be lvalue&quot;); 
+    } 
+ 
+  findglb(sname) char *sname; { 
+    if(search(sname, STARTGLB, SYMMAX, ENDGLB, NUMGLBS, NAME)) 
+       return cptr; 
+    return 0; 
+    } 
+ 
+  findloc(sname) char *sname; { 
+    cptr = locptr - 1; /* search backward for block locals */ 
+    while(cptr &gt; STARTLOC) { 
+       cptr = cptr - *cptr; 
+       if(astreq(sname, cptr, NAMEMAX)) return (cptr - NAME); 
+       cptr = cptr - NAME - 1; 
+       } 
+    return 0; 
+    } 
+ 
+  addsym(sname, id, typ, value, lgptrptr, class) 
+     char *sname, id, typ; int value, *lgptrptr, class; { 
+     if(lgptrptr == &amp;glbptr) { 
+       if(cptr2=findglb(sname)) return cptr2; 
+       if(cptr==0) { 
+         error(&quot;global symbol table overflow&quot;); 
+         return 0; 
+         } 
+       } 
+     else { 
+       if(locptr &gt; (ENDLOC-SYMMAX)) { 
+          error(&quot;local symbol table overflow&quot;); 
+          abort(ERRCODE); 
+          } 
+       cptr = *lgptrptr; 
+       } 
+     cptr[IDENT]=id; 
+     cptr[TYPE]=typ; 
+     cptr[CLASS]=class; 
+     putint(value, cptr+OFFSET, OFFSIZE); 
+     cptr3 = cptr2 = cptr + NAME; 
+     while(an(*sname)) *cptr2++ = *sname++; 
+     if(lgptrptr == &amp;locptr) { 
+       *cptr2 = cptr2 - cptr3;                /* set length */ 
+       *lgptrptr = ++cptr2; 
+       } 
+     return cptr; 
+     } 
+ 
+   nextsym(entry) char *entry; { 
+     entry = entry + NAME; 
+     while(*entry++ &gt;= ' '); /* find length byte */ 
+     return entry; 
+     } 
+ 
+  /* 
+  ** get integer of length len from address addr 
+  ** (byte sequence set by &quot;putint&quot;) 
+  */ 
+  getint(addr, len) char *addr; int len; { 
+     int i; 
+     i = *(addr + --len); /* high order byte sign extended */ 
+     while(len--) i = (i &lt;&lt; 8) | *(addr+len)&amp;255; 
+     return i; 
+     } 
+ 
+  /* 
+  ** put integer i of length len into address addr 
+  ** (low byte first) 
+  */ 
+  putint(i, addr, len) char *addr; int i, len; { 
+    while(len--) { 
+       *addr++ = i; 
+       i = i&gt;&gt;8; 
+       } 
+     } 
+ 
+  /* 
+  ** test if next input string is legal symbol name 
+  */ 
+  symname(sname, ucase) char *sname; int ucase; { 
+    int k;char c; 
+    blanks(); 
+    if(alpha(ch)==0) return (*sname=0); /*19*/ 
+    k=0; 
+    while(an(ch)) { 
+  #ifdef UPPER 
+      if(ucase) 
+        sname[k]=toupper(gch()); 
+      else 
+  #endif 
+        sname[k]=gch(); 
+      if(k&lt;NAMEMAX) ++k; 
+      } 
+    sname[k]=0; 
+    return 1; 
+    } 
+ 
+  /* 
+  ** return next avail internal label number 
+  */ 
+  getlabel() { 
+    return(++nxtlab); 
+    } 
+ 
+  /* 
+  ** post a label in the program 
+  */ 
+  postlabel(label) int label; { 
+    printlabel(label); 
+    col(); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** print specified number as a label 
+  */ 
+  printlabel(label) int label; { 
+    outstr(&quot;CC&quot;); 
+    outdec(label); 
+    } 
+ 
+  /* 
+  ** test if c is alphabetic 
+  */ 
+  alpha(c) char c; { 
+    return (isalpha(c) || c=='_'); 
+    } 
+ 
+  /* 
+  ** test if given character is alphanumeric 
+  */ 
+  an(c) char c; { 
+    return (alpha(c) || isdigit(c)); 
+    } 
+ 
+  addwhile(ptr) int ptr[]; { 
+    int k; 
+    ptr[WQSP]=csp;           /* and stk ptr */ 
+    ptr[WQLOOP]=getlabel();  /* and looping label */ 
+    ptr[WQEXIT]=getlabel();   /* and exit label */ 
+    if (wqptr==WQMAX) { 
+      error(&quot;too many active loops&quot;); 
+      abort(ERRCODE); 
+      } 
+    k=0; 
+    while (k&lt;WQSIZ) *wqptr++ = ptr[k++]; 
+    } 
+ 
+  delwhile() { 
+    if (wqptr &gt; wq) wqptr=wqptr-WQSIZ;                   /*01*/ 
+    } 
+ 
+  readwhile(ptr) int *ptr; {                                   /*01*/ 
+    if (ptr &lt;= wq) {                                          /*01*/ 
+      error(&quot;out of context&quot;);               /*01*/ 
+      return 0; 
+      } 
+    else return (ptr-WQSIZ);                                  /*01*/ 
+   } 
+ 
+  white() { 
+  #ifdef DYNAMIC 
+    /* test for stack/prog overlap at deepest nesting */ 
+    /* primary -&gt; symname -&gt; blanks -&gt; white */ 
+    avail(YES); /* abort on stack overflow */    /*31*/ 
+  #endif 
+    return (*lptr&lt;= ' ' &amp;&amp; *lptr!=NULL);         /*19*/ 
+    } 
+ 
+  gch() { 
+    int c; 
+    if(c=ch) bump(1); 
+    return c; 
+    } 
+ 
+  bump(n) int n; { 
+    if(n) lptr=lptr+n; 
+    else lptr=line; 
+    if(ch=nch = *lptr) nch = *(lptr+1); 
+    } 
+ 
+  kill() { 
+    *line=0; 
+    bump(0); 
+    } 
+ 
+  inbyte() { 
+    while(ch==0) { 
+      if (eof) return 0; 
+      preprocess(); 
+      } 
+    return gch(); 
+    } 
+ 
+  inline() {          /* numerous revisions */     /*20*/ 
+    int k,unit; 
+    poll(1); /* allow operator interruption */ 
+    if (input==EOF) openfile(); 
+    if(eof) return; 
+    if((unit=input2)==EOF) unit=input; 
+    if(fgets(line, LINEMAX, unit)==NULL) { 
+      fclose(unit); 
+      if(input2!=EOF) input2=EOF; 
+      else input=EOF; 
+      *line=NULL; 
+      } 
+    else if(listfp) {                       /*48*/ 
+      if(listfp==output) cout(';', output); /*48*/ 
+      sout(line, listfp);            /*19*/ /*48*/ 
+      }                                     /*48*/ 
+    bump(0); 
+    } 
+ 
+---------------------------------------------------------------FILE:CC22.C 
+  ifline() { 
+    while(1) { 
+      inline(); 
+      if(eof) return; 
+      if(match(&quot;#ifdef&quot;)) { 
+        ++iflevel; 
+        if(skiplevel) continue; 
+        symname(msname, NO);        /*19*/ 
+        if(search(msname, macn, NAMESIZE+2, MACNEND, MACNBR, 0)==0) 
+                                        /*19*/ 
+          skiplevel=iflevel; 
+        continue; 
+        } 
+    if(match(&quot;#ifndef&quot;)) { 
+      ++iflevel; 
+      if(skiplevel) continue; 
+      symname(msname, NO);     /*19*/ 
+      if(search(msname, macn, NAMESIZE+2, MACNEND, MACNBR, 0)) 
+                                      /*19*/ 
+        skiplevel=iflevel; 
+      continue; 
+      } 
+    if(match(&quot;#else&quot;)) { 
+      if(iflevel) { 
+          if(skiplevel==iflevel) skiplevel=0; 
+          else if(skiplevel==0)  skiplevel=iflevel; 
+          } 
+        else noiferr(); 
+        continue; 
+        } 
+      if(match(&quot;#endif&quot;)) { 
+        if(iflevel) { 
+          if(skiplevel==iflevel) skiplevel=0; 
+          --iflevel; 
+          } 
+        else noiferr(); 
+        continue; 
+        } 
+      if(skiplevel) continue; 
+                                     /*48*/ 
+      if(ch==0) continue; 
+      break; 
+      } 
+    } 
+ 
+  keepch(c) char c; { 
+    if(pptr&lt;LINEMAX) pline[++pptr]:c; 
+    } 
+ 
+  preprocess() { 
+    int k; 
+    char c; 
+    if(ccode) { 
+      line=mline; 
+      ifline(); 
+      if(eof) return; 
+      } 
+    else { 
+      line=pline; 
+      inline(); 
+      return; 
+      } 
+    pptr= -1; 
+    while(ch != NEWLINE &amp;&amp; ch) {                         /*23,32*/ 
+      if(white()) { 
+        keepch(' '); 
+        while(white()) gch(); 
+        } 
+      else if(ch=='&quot;') { 
+        keepch(ch); 
+        gch(); 
+ 
+    while((ch)='&quot;')|((*(lptr-1)==92)&amp;(*(lptr-2)!=92))) { 
+
+      if(ch==0) { 
+        error( &quot;no quote&quot;); 
+        break; 
+        } 
+      keepch(gch()); 
+      } 
+    gch(); 
+    keepch( '&quot;' ); 
+    } 
+  else if(ch==39) { 
+    keepch(39); 
+    gch(); 
+    while((ch!=39)|((*(lptr-1)==92)&amp;(*(lptr-2)!=92))) { 
+      if(ch==0) { 
+        error(&quot;no apostrophe&quot;); 
+        break; 
+        } 
+      keepch(gch()); 
+      } 
+    gch(); 
+    keepch(39); 
+    } 
+  else if((ch=='/')&amp;(nch=='*')) { 
+    bump(2); 
+    while(((ch=='*')&amp;(nch=='/'))==0) { 
+      if(ch) bump(1); 
+      else { 
+        ifline(); 
+        if(eof) break; 
+        } 
+      } 
+    bump(2); 
+    } 
+  else if(an(ch)) { 
+    k=0; 
+    while((an(ch)) &amp; (k&lt;NAMEMAX)) {   /*07*/ 
+      msname[k++]=ch;                                /*07*/ 
+      gch(); 
+      } 
+    msname[k]=0; 
+    if(search(msname, macn, NAMESIZE+2, MACNEND, MACNBR, 0)) { 
+      k=getint(cptr+NAMESIZE, 2); 
+      while(c=macq[k++]) keepch(c); 
+      while(an(ch)) gch();                           /*07*/ 
+      } 
+    else { 
+      k=0; 
+      while(c=msname[k++]) keepch(c); 
+          } 
+        } 
+      else keepch(gch()); 
+      } 
+    if(pptr&gt;=LINEMAX) error(&quot;line too long&quot;); 
+    keepch(0); 
+    line=pline; 
+    bump(0); 
+    } 
+ 
+  noiferr() { 
+    error(&quot;no matching #if...&quot;); 
+    errflag=0; 
+    } 
+ 
+  addmac() { 
+    int k; 
+    if(symname(msname, NO)==0) { 
+      illname(); 
+      kill(); 
+      return; 
+      } 
+    k=0; 
+    if(search(msname, macn, NAMESIZE+2, MACNEND, MACNBR, 0)==0) { 
+
+      if(cptr2=cptr) while(*cptr2++ = msname[k++]); 
+      else { 
+        error(&quot;macro name table full&quot;); 
+        return; 
+        } 
+      } 
+    putint(macptr, cptr+NAMESIZE, 2); 
+    while(white()) gch(); 
+    while(putmac(gch())); 
+    if(macptr&gt;=MACMAX) { 
+      error(&quot;macro string queue full&quot;); abort(ERRCODE); 
+
+      } 
+    } 
+ 
+  putmac(c) char c; { 
+    macq[macptr]=c; 
+    if(macptr&lt;MACMAX) ++macptr; 
+    return c; 
+    } 
+ 
+  /* 
+  ** search for symbol match 
+  ** on return cptr points to slot found or empty slot 
+  */ 
+  search(sname, buf, len, end, max, off) 
+    char *sname, *buf, *end; int len, max, off; { 
+    cptr=cptr2=buf+((hash(sname)%(max-1))*len); 
+    while(*cptr != 0) { 
+      if(astreq(sname, cptr+off, NAMEMAX)) return 1; 
+      if((cptr=cptr+len) &gt;= end) cptr=buf; 
+      if(cptr == cptr2) return (cptr=0); 
+      } 
+    return 0; 
+    } 
+ 
+  hash(sname) char *sname; { 
+    int i, c; 
+    i=0; 
+    while(c = *sname++) i=(i&lt;&lt;1)+c; 
+    return i; 
+    } 
+ 
+  setstage(before, start) int *before, *start; { 
+    if((*before=stagenext)==0) stagenext=stage; 
+    *start=stagenext; 
+    } 
+ 
+  clearstage(before, start) char *before, *start; { 
+    *stagenext=0; 
+    if(stagenext=before) return; 
+    if(start) { 
+  #ifdef OPTIMIZE 
+      peephole(start); 
+  #else 
+      sout(start, output); 
+  #endif 
+      } 
+    } 
+ 
+  outdec(number) int number; { 
+    int k,zs; 
+    char c, *q, *r;                            /*09*/ 
+    zs = 0; 
+    k=10000; 
+    if (number&lt;0) { 
+      number=(-number); 
+      outbyte('-'); 
+      } 
+    while (k&gt;=1) { 
+      q=0; r=number;                           /*09*/ 
+      while(r &gt;= k) {++q; r -= k;}             /*09*/ 
+      c = q + '0';                             /*09*/ 
+      if ((c!='0')|(k==1)|(zs)) { 
+        zs=1; 
+        outbyte(c); 
+        } 
+      number=r;                             /*09*/ 
+      k=k/10; 
+      } 
+    } 
+ 
+  ol(ptr) char ptr[]; { 
+  ot(ptr); 
+  nl(); 
+  } 
+ 
+  ot(ptr) char ptr[]; { 
+    outstr(ptr); 
+    } 
+ 
+  outstr(ptr) char ptr[]; { 
+    poll(1); /* allow program interruption */ 
+    /* must work with symbol table names terminated by length */ 
+    while(*ptr &gt;= ' ') outbyte(*ptr++); 
+    } 
+ 
+  outbyte(c) char c; { 
+    if(stagenext) { 
+      if(stagenext==stagelast) { 
+         error(&quot;staging buffer overflow&quot;); 
+         return 0; 
+         } 
+      else *stagenext++ = c; 
+      } 
+    else cout(c,output); 
+    return c; 
+    } 
+ 
+  cout(c, fd) char c; int fd; { 
+    if(fputc(c, fd)==EOF) xout(); 
+    } 
+ 
+  sout(string, fd) char *string; int fd; { 
+    if(fputs(string, fd)==EOF) xout(); 
+    } 
+ 
+  lout(line, fd) char *line; int fd; { 
+    sout(line, fd); 
+    cout(NEWLINE, fd);                           /*23*/ 
+    } 
+ 
+  xout() { 
+    fputs(&quot;output error&quot;, stderr);               /*23*/ 
+
+    abort(ERRCODE); 
+    } 
+ 
+  nl() { 
+    outbyte(NEWLINE);                            /*23*/ 
+    } 
+ 
+  col() { 
+  #ifdef COL 
+    outbyte(':'); 
+  #endif 
+    } 
+ 
+  error(msg) char msg[]; { 
+    if(errflag) return; else errflag=1; 
+    lout(line, stderr); 
+    errout(msg, stderr); 
+    if(alarm) fputc(7, stderr); 
+    if(pause) while(fgetc(stderr)!=NEWLINE);    /*23*/ 
+    if(listfp&gt;0) errout(msg, listfp); 
+    } 
+ 
+  errout(msg, fp) char msg[]; int fp; { 
+    int k; k=line+2; 
+    while(k++ &lt;= lptr) cout(' ', fp); 
+    lout(&quot;/\\&quot;, fp); 
+    sout(&quot;**** &quot;, fp); lout(msg, fp); 
+    } 
+ 
+  streq(str1,str2) char str1[],str2[]; { 
+    int k; 
+    k=0; 
+    while (str2[k]) { 
+      if ((str1[k])!=(str2[k])) return 0; 
+      ++k; 
+      } 
+    return k; 
+    } 
+ 
+  astreq(str1,str2, len) char str1[],str2[];int len; { 
+    int k; 
+    k=0; 
+    while (k&lt;len) { 
+      if ((str1[k])!=(str2[k]))break; 
+      /* 
+      ** must detect end of symbol table names terminated by 
+      ** symbol length in binary 
+      */ 
+      if(str1[k] &lt; ' ') break; 
+      if(str2[k] &lt; ' ') break; 
+      ++k; 
+      } 
+    if (an(str1[k]))return 0; 
+    if (an(str2[k]))return 0; 
+    return k; 
+   } 
+ 
+  match(lit) char *lit; { 
+    int k; 
+    blanks(); 
+    if (k=streq(lptr, lit)){ 
+      bump(k); 
+      return 1; 
+      } 
+    return 0; 
+    } 
+ 
+  amatch(lit, len) char *lit;int len; { 
+    int k; 
+    blanks(); 
+    if (k=astreq(lptr,lit, len)) { 
+      bump(k); 
+      while(an(ch)) inbyte(); 
+      return 1; 
+      } 
+    return 0; 
+  } 
+ 
+  nextop(list) char *list; { 
+    char op[4]; 
+    opindex=0; 
+    blanks(); 
+    while(1) { 
+      opsize=0; 
+      while(*list &gt; ' ') op[opsize++] = *list++; 
+      op[opsize]=0; 
+      if(opsize=streq(lptr, op)) 
+        if((*(lptr+opsize) != '=')&amp; 
+           (*(lptr+opsize) != *(lptr+opsize-1))) 
+           return 1; 
+      if(*list) { 
+        ++list; 
+        ++opindex; 
+        } 
+      else return 0; 
+      } 
+    } 
+  blanks() { 
+    while(1) { 
+      while(ch) { 
+        if(white()) gch(); 
+        else return; 
+        } 
+      if(line==mline) return; 
+      preprocess(); 
+      if(eof)break; 
+      } 
+    } 
+ 
+-----------------------------------------------------------------FILE:CC3.C 
+  /* 
+  ** Small-C Compiler Version 2.1 
+  ** 
+  ** Copyright 1982, 1983 J. E. Hendrix 
+  ** 
+  ** Part 3 
+  */ 
+  #include stdio.h 
+  #include cc.def 
+ 
+  extern char 
+  #ifdef DYNAMIC 
+   *stage, 
+   *litq, 
+  #else 
+    stage[STAGESIZE], 
+    litq[LITABSZ], 
+  #endif 
+   *glbptr, *lptr, ssname[NAMESIZE], quote[2], *stagenext; 
+  extern int 
+    ch, csp, litlab, litptr, nch, op[16], op2[16], 
+    oper, opindex, opsize; 
+ 
+  #include cc31.c 
+  #include cc32.c 
+  #include cc33.c 
+ 
+-----------------------------------------------------------------FILE:CC31.C 
+  /* 
+  ** lval[0] - symbol table address, else 0 for constant 
+  ** lval[1] - type of indirect obj to fetch, else 0 for static 
+  ** lval[2] - type of pointer or array, else 0 for all other 
+  ** lval[3] - true if constant expression 
+  ** lval[4] - value of constant expression (+ auxiliary uses) 
+  ** lval[5] - true if secondary register altered 
+  ** lval[6] - function address of highest/last binary operator 
+  ** lval[7] - stage address of &quot;oper 0&quot; code, else 0 
+  */ 
+ 
+  /* 
+  ** skim over terms adjoining || and &amp;&amp; operators 
+  */ 
+  skim(opstr, testfunc, dropval, endval, hier, lval) 
+    char *opstr; 
+    int (*testfunc)(), dropval, endval, (*hier)(), lval[]; { /*13*/ 
+    int k, hits, droplab, endlab; 
+    hits=0; 
+    while(1) { 
+      k=plnge1(hier, lval); 
+      if(nextop(opstr)) { 
+         bump(opsize); 
+         if(hits==0) { 
+           hits=l; 
+           droplab=getlabel(); 
+           } 
+         dropout(k, testfunc, droplab, lval); 
+         } 
+       else if(hits) { 
+         dropout(k, testfunc, droplab, lval); 
+         const(endval); 
+         jump(endlab=getlabel()); 
+         postlabel(droplab); 
+         const(dropval); 
+         postlabel(endlab); 
+         lval[1]=lval[2]=lval[3]=lval[4]=lval[7]=0; /*50*/ 
+         return 0; 
+         } 
+       else return k; 
+       } 
+    } 
+ 
+  /* 
+  ** test for early dropout from || or &amp;&amp; evaluations 
+  */ 
+  dropout(k, testfunc, exit1, lval) 
+    int k, (*testfunc)(), exit1, lval[]; {                /*13*/ 
+    if(k) rvalue(lval); 
+    else if(lval[3]) const(lval[4]); 
+    (*testfunc)(exit1); /* jumps on false */             /*13*/ 
+    } 
+ 
+  /* 
+  ** plunge to a lower level 
+  */ 
+  plnge(opstr, opoff, hier, lval) 
+    char *opstr; 
+    int opoff, (*hier)(), lval[]; {                      /*13*/ 
+    int k, lval2[8]; 
+    k=plnge1(hier, lval); 
+    if(nextop(opstr)==0) return k; 
+    if(k) rvalue(Lval); 
+    while(1) { 
+      if(nextop(opstr)) { 
+      bump(opsize); 
+      opindex=opindex+opoff; 
+      plnge2(op[opindex], op2[opindex], hier, lval, lval2); 
+      } 
+    else return 0; 
+    } 
+  } 
+ 
+  /* 
+  ** unary plunge to lower level 
+  */ 
+  plnge1(hier, lval) int (*hier)(), lval[]; {            /*13*/ 
+    char *before, *start; 
+    int k; 
+    setstage(&amp;before, &amp;start); 
+    k=(*hier)(lval);                                     /*13*/ 
+    if(lval[3]) clearstage(before,0); /* load constant later */ 
+    return k; 
+    } 
+ 
+  /* 
+  ** binary plunge to lower level 
+  */ 
+  plnge2(oper, oper2, hier, lval, lval2) 
+    int (*oper)(),(*oper2)(),(*hier)(),lval[],lval2[]; { /*13*/ 
+    char *before, *start; 
+    setstage(&amp;before, &amp;start); 
+    lval[5]=1;               /* flag secondary register used */ 
+    lval[7]=0;               /* flag as not &quot;... oper 0&quot; syntax */ 
+    if(lval[3]) {            /* constant on left side not yet loaded */ 
+      if(plnge1(hier, lval2)) rvalue(lval2); 
+      if(lval[4]==0) lval[7]=stagenext; 
+      const2(lval[4]&lt;&lt;dbltest(oper, lval2, lval)); /*34*/ 
+      } 
+    else {                  /* non-constant on left side */ 
+      push(); 
+      if(plnge1(hier, lval2)) rvalue(lval2); 
+      if(lval2[3]) { /* constant on right side */ 
+      if(lval2[4]==0) lval[7]=start; 
+        if(oper==ffadd) { /* may test other commutative operators */ 
+        csp=csp+2; 
+        clearstage(before, 0); 
+        const2(lval2[4]&lt;&lt;dbltest(oper, lval, lval2)); /*34*/ 
+                                    /* load secondary */ 
+        } 
+      else { 
+        const(lval2[4]&lt;&lt;dbltest(oper, lval, lval2)); /*34*/ 
+
+                                    /* load primary */ 
+        smartpop(lval2, start); 
+        } 
+      } 
+    else {          /* non-constants on both sides */ 
+      smartpop(lval2, start); 
+                                                 /*34*/ 
+      if(dbltest(oper, lval,lval2)) doublereg(); /*34*/ 
+      if(dbltest(oper, lval2, lval)) {           /*34*/ 
+        swap(); 
+        doublereg(); 
+        if(oper==ffsub) swap(); 
+        } 
+                                                 /*34*/ 
+      } 
+    } 
+  if(oper) { 
+    if(lval[3]=lval[3]&amp;lval2[3]) { 
+      lval[4]=calc(lval[4], oper, lval2[4]); 
+      clearstage(before, 0); 
+      lval[5]=0; 
+      } 
+    else { 
+      if((lval[2]==0)&amp;(lval2[2]==0)) { 
+        (*oper)();                                              /*13*/ 
+        lval[6]=oper;           /* identify the operator */ 
+        } 
+      else { 
+        (*oper2)();                                            /*13*/ 
+        lval[6]=oper2;          /* identify the operator */ 
+        } 
+      } 
+    if(oper==ffsub) { 
+      if((lval[2]==CINT)&amp;(lval2[2]==CINT)) { 
+         swap(); 
+         const(1); 
+         ffasr(); /** div by 2 **/ 
+         } 
+      } 
+    if((oper==ffsub)|(oper==ffadd)) result(lval, lval2); 
+    } 
+  } 
+ 
+  calc(left, oper, right)  int left, (*oper)(), right; { /*13*/ 
+         if(oper == ffor)   return (left |  right); 
+    else if(oper == ffxor)  return (left ^  right); 
+    else if(oper == ffand)  return (left &amp;  right); 
+    else if(oper == ffeq)   return (left == right); 
+    else if(oper == ffne)   return (left != right); 
+    else if(oper == ffle)   return (left &lt;= right); 
+    else if(oper == ffge)   return (left &gt;= right); 
+    else if(oper == fflt)   return (left &lt;  right); 
+    else if(oper == ffgt)   return (left &gt;  right); 
+    else if(oper == ffasr)  return (left &gt;&gt; right); 
+    else if(oper == ffasl)  return (left &lt;&lt; right); 
+    else if(oper == ffadd)  return (left +  right); 
+    else if(oper == ffsub)  return (left -  right); 
+    else if(oper == ffmult) return (left *  right); 
+    else if(oper == ffdiv)  return (left /  right); 
+    else if(oper == ffmod)  return (left %  right); 
+    else return 0; 
+    } 
+ 
+  expression(const, val) int *const, *val; { 
+    int lval[8]; 
+    if(hier1(lval)) rvalue(lval); 
+    if(lval[3]) { 
+      *const=1; 
+      *val=lval[4]; 
+      } 
+    else *const=0; 
+    } 
+ 
+  hier1(lval) int lval[]; { 
+    int k,lval2[8], lval3[2], oper;                      /*64*/ 
+    k=plnge1(hier3. lval); 
+    if(lval[3]) const(lval[4]); 
+         if(match(&quot;|=&quot;))  oper=ffor; 
+    else if(match(&quot;^=&quot;))  oper=ffxor; 
+    else if(match(&quot;&amp;=&quot;))  oper=ffand; 
+    else if(match(&quot;+=&quot;))  oper=ffadd; 
+    else if(match(&quot;-=&quot;))  oper=ffsub; 
+    else if(match(&quot;*=&quot;))  oper=ffmult; 
+    else if(match(&quot;/=&quot;))  oper=ffdiv; 
+    else if(match(&quot;%=&quot;))  oper=ffmod; 
+    else if(match(&quot;&gt;&gt;=&quot;)) oper=ffasr; 
+    else if(match(&quot;&lt;&lt;=&quot;)) oper=ffasl; 
+    else if(match(&quot;=&quot;))   oper=0; 
+    else return k; 
+    if(k==0) { 
+      needlval(); 
+      return 0; 
+      } 
+    lval3[0] = lval[0];                    /*64*/ 
+    lval3[1] = lval[1]; 
+    if(lval[1]) { 
+      if(oper) { 
+        push(); 
+        rvalue(lval); 
+        } 
+      plnge2(oper, oper, hier1, lval, lval2); 
+      if(oper) pop(); 
+      } 
+    else { 
+      if(oper) { 
+         rvalue(lval); 
+         plnge2(oper, oper, hier1, lval, lval2); 
+         } 
+      else { 
+         if(hier1(lval2)) rvalue(lval2); 
+         lval[5]=lval2[5]; 
+         } 
+      } 
+    store(lval3);                             /*64*/ 
+    return 0; 
+    } 
+ 
+  hier3(lval) int lval[]; { 
+    return skim(&quot;||&quot;, eq0, 1, 0, hier4, lval); 
+    } 
+ 
+  hier4(lval) int lval[]; { 
+    return skim(&quot;&amp;&amp;&quot;, ne0, 0, 1, hier5, lval); 
+    } 
+ 
+  hier5(lval) int lval[]; { 
+    return plnge(&quot;|&quot;, 0, hier6, lval); 
+    } 
+ 
+  hier6(lval) int lval[]; { 
+    return plnge( &quot;^&quot;, 1, hier7, lval); 
+    } 
+ 
+  hier7(lval) int lval[]; { 
+    return plnge(&quot;&amp;&quot;, 2, hier8, lval); 
+    } 
+ 
+  hier8(lval) int lval[]; { 
+    return plnge(&quot;== !=&quot;, 3, hier9, lval); 
+    } 
+ 
+  hier9(lval) int lval[]; { 
+    return plnge(&quot;&lt;= &gt;= &lt; &gt;&quot;, 5, hier10, lval); 
+    } 
+ 
+  hier10(lval) int lval[]; } 
+    return plnge(&quot;&gt;&gt; &lt;&lt;&quot;, 9, hier11, lval); 
+
+    } 
+ 
+  hier11(lval) int lval[]; { 
+    return plnge(&quot;+ -&quot;, 11, hier12, lval); 
+    } 
+ 
+  hier12(lval) int lval[]; { 
+    return plnge(&quot;* / %&quot;, 13, hier13, lval); 
+    } 
+ 
+------------------------------------------------------------FILE:CC32.C 
+  hier13(lval) int lval[]; { 
+    int k; 
+    char *ptr; 
+    if(match(&quot;++&quot;)) {                  /* ++lval */ 
+      if(hier13(lval)==0) { 
+         needlval(); 
+         return 0; 
+         } 
+      step(inc, lval); 
+      return 0; 
+      } 
+    else if(match( &quot;--&quot; )) {           /* --lval */ 
+      if(hier13(lval)==0) { 
+         needlval(); 
+         return 0; 
+         } 
+      step(dec, lval); 
+      return 0; 
+      } 
+    else if (match( &quot;~&quot; )) {           /* ~ */ 
+      if(hier13(lval)) rvalue(lval); 
+      com(); 
+      lval[4]: ~lval[4]; 
+      return (lval[7]=0);      /*59*/ 
+      } 
+    else if (match(&quot;!&quot;)) {             /* ! */ 
+      if(hier13(lval)) rvalue(lval); 
+      lneg(); 
+      lval[4] = !lval[4]; 
+      return (lval[7]=0);      /*59*/ 
+      } 
+    else if (match(&quot;-&quot;)) {             /* unary - */ 
+      if(hier13(lval)) rvalue(lval); 
+      neg(); 
+      lval[4] = -lval[4]; 
+      return (lval[7]=0);      /*59*/ 
+      } 
+    else if(match(&quot;*&quot;)) {              /* unary * */ 
+      if(hier13(lval)) rvalue(lval); 
+      if(ptr=lval[0])lval[1]=ptr[TYPE]; 
+      else lval[1]=CINT; 
+      lval[2]=0; /* flag as not pointer or array*/ 
+      lval[3]=0; /* flag as not constant */ 
+      lval[4]=1; /* omit rvalue() on func call */ /*50*/ 
+      lval[7]=0;               /*59*/ 
+      return 1; 
+      } 
+    else if(match(&quot;&amp;&quot;)) {              /* unary &amp; */ 
+      if(hier13(lval)==0) { 
+        error(&quot;illegal address&quot;); 
+        return 0; 
+        } 
+      ptr=lval[0]; 
+      lval[2]=ptr[TYPE]; 
+      if(lval[1]) return 0; 
+      /* global &amp; non-array */ 
+      address(ptr); 
+      lval[1]=ptr[TYPE]; 
+      return 0; 
+      } 
+    else { 
+      k=hier14(lval); 
+      if(match(&quot;++&quot;)) {                /* lval++ */ 
+        if(k==0) { 
+          needlval(); 
+        return 0; 
+        } 
+      step(inc, lval); 
+      dec(lval[2]&gt;&gt;2); 
+      return 0; 
+      } 
+    else if(match(&quot;--&quot;)) {             /* lval-- */ 
+      if(k==0) { 
+        needlval(); 
+        return 0; 
+        } 
+      step(dec, lval); 
+      inc(lval[2]&gt;&gt;2); 
+      return 0; 
+      } 
+    else return k; 
+      } 
+    } 
+ 
+  hier14(lval) int *lval; { 
+    int k, const, val, lval2[8]; 
+    char *ptr, *before, *start; 
+    k=primary(lval); 
+    ptr=lval[0]; 
+    blanks(); 
+    if((ch=='[')|(ch=='(')) { 
+      lval[5]=l;    /* secondary register will be used */ 
+      while(1) { 
+        if(match(&quot;[&quot;)) {                /* [subscript] */ 
+          if(ptr==0) { 
+            error(&quot;can't subscript&quot;); 
+            junk(); 
+            needtoken(&quot;]&quot;); 
+            return 0; 
+            } 
+         else if(ptr[IDENT]==POINTER)rvalue(lval); 
+         else if(ptr[IDENT]J=ARRAY) { 
+           error(&quot;can't subscript&quot;); 
+           k=0; 
+           } 
+         setstage(&amp;before, &amp;start); 
+         lval2[3]=0; 
+         plnge2(0, 0, hier1, lval2, lval2); /* lval2 deadend */ 
+         needtoken(&quot;]&quot;); 
+         if(lval2[3]) { 
+           clearstage(before, 0); 
+           if(lval2[4]) { 
+             if(ptr[TYPE]==CINT) const2(lval2[4]&lt;&lt;LBPW); 
+             else                const2(lval2[4]); 
+             ffadd(); 
+             } 
+           } 
+         else { 
+           if(ptr[TYPE]==CINT) doublereg(); 
+           ffadd(); 
+           } 
+         lval[2]=0;                                /*15*/ 
+         lval[1]=ptr[TYPE]; 
+         k=1; 
+         } 
+       else if(match(&quot;(&quot;)) {          /* function(...) */ 
+         if(ptr==0) callfunction(0); 
+         else if(ptr[IDENT]!=FUNCTION) { 
+           if(k &amp;&amp; !lval[4]) rvalue(lval); /*13*//*14*//*50*/ 
+           callfunction(0); 
+            } 
+          else callfunction(ptr); 
+          k=lval[0]=lval[3]=lval[4]=0;                  /*50*/ 
+          } 
+        else return k; 
+        } 
+      } 
+    if(ptr==0) return k; 
+    if(ptr[IDENT]==FUNCTION) { 
+      address(ptr); 
+      lval[0]=0;                                           /*14*/ 
+
+      return 0; 
+      } 
+    return k; 
+    } 
+ 
+  primary(lval) int *lval; { 
+    char *ptr, sname[NAMESIZE];            /*19*/ 
+    int k; 
+    if(match(&quot;(&quot;)) {           /* (expression,...) */ 
+      do k=hier1(lval); while(match(&quot;,&quot;));     /*26*/ 
+      needtoken(&quot;)&quot;); 
+      return k; 
+      } 
+    putint(0, lval, 8&lt;&lt;LBPW); /* clear lval array */ 
+    if(symname(sname, YES)) {             /*19*/ 
+      if(ptr=findloc(sname)) {            /*19*/ 
+  #ifdef STGOTO 
+        if(ptr[IDENT]==LABEL) { 
+          experr(); 
+          return 0; 
+          } 
+  #endif 
+        getloc(ptr); 
+        lval[0]=ptr; 
+        lval[1]=ptr[TYPE]; 
+        if(ptr[IDENT]==POINTER) { 
+          lval[1]=CINT; 
+          lval[2]=ptr[TYPE]; 
+          } 
+        if(ptr[IDENT]==ARRAY) { 
+          lval[2]=ptr[TYPE]; 
+          return 0; 
+          } 
+        else return 1; 
+        } 
+      if(ptr=findglb(sname))              /*19*/ 
+        if(ptr[IDENT]!=FUNCTION) { 
+          lval[0]=ptr; 
+          lval[1]=0; 
+            if(ptr[IDENT]!=ARRAY) { 
+            if(ptr[IDENT]==POINTER) lval[2]=ptr[TYPE]; 
+            return 1; 
+            } 
+          address(ptr); 
+          lval[1]=lval[2]=ptr[TYPE]; 
+          return 0; 
+          } 
+      ptr=addsym(sname,FUNCTION,CINT,0,&amp;glbptr,AUTOEXT); 
+                                             /*19*//*37*/ 
+      lval[0]=ptr; 
+      lval[1]=0; 
+      return 0; 
+      } 
+    if(constant(lval)==0) experr(); 
+    return 0; 
+    } 
+ 
+  experv() { 
+    error(&quot;invalid expression&quot;); 
+    const(0); 
+    junk(); 
+    } 
+ 
+  callfunction(ptr) char *ptr; { /* symbol table entry or 0 */ 
+    int nargs, const, val; 
+    nargs=0; 
+    blanks();               /* already saw open paren  */ 
+                                        /*36*/ 
+    while(streq(lptr,&quot;)&quot;)==0) { 
+      if(endst()) break; 
+      if(ptr) {                         /*36*/ 
+        expression(&amp;const, &amp;val);       /*36*/ 
+        push();                         /*36*/ 
+        }                               /*36*/ 
+      else {                            /*36*/ 
+        push();                         /*36*/ 
+        expression(&amp;const, &amp;val);       /*36*/ 
+        swapstk();                      /*36*/ 
+        }                               /*36*/ 
+      nargs=nargs+BPW;      /* count args*BPW */ 
+      if (match(&quot;,&quot;)==0) break; 
+      } 
+    needtoken(&quot;)&quot;); 
+    if(streq(ptr+NAME, &quot;CCARGC&quot;)==0) loadargc(nargs&gt;&gt;LBPW); 
+    if(ptr) ffcall(ptr+NAME); 
+    else callstk(); 
+    csp=modstk(csp+nargs, YES); 
+    } 
+ 
+-------------------------------------------------------------FILE:CC33.C 
+  /* 
+  ** true if val1 -&gt; int pointer or int array and val2 not ptr or array 
+  */ 
+  dbltest(oper, val1, val2) int (*oper)(), val1[], val2[]; { /*34*/ 
+    if((oper!=ffadd) &amp;&amp; (oper!=ffsub)) return 0;  /*34*/ 
+    if(val1[2]!=CINT) return 0; 
+    if(val2[2]) return 0; 
+    return 1; 
+    } 
+ 
+  /* 
+  ** determine type of binary operation 
+  */ 
+  result(lval, lval2) int lval[], lval2[]; { 
+    if((lval[2]!=0)&amp;(lval2[2]!=0)) { 
+      lval[2]=0; 
+      } 
+    else if(lval2[2]) { 
+      lval[0]=lval2[0]; 
+      lval[1]=lval2[1]; 
+      lval[2]=lval2[2]; 
+      } 
+    } 
+ 
+  step(oper, lval) int (*oper)(), lval[]; {                 /*13*/ 
+    if(lval[1]) { 
+      if(lval[5]) { 
+        push(); 
+        rvalue(lval); 
+        (*oper)(lval[2]&gt;&gt;2);                          /*13*/ 
+        pop(); 
+        store(lval); 
+        return; 
+        } 
+      else { 
+        move(); 
+        lval[5]=1; 
+        } 
+      } 
+    rvalue(lval); 
+    (*oper)(lval[2]&gt;&gt;2);                                     /*13*/ 
+    store(lval); 
+    } 
+ 
+  store(lval) int lval[]; ( 
+    if(lval[1]) putstk(lval); 
+    else        putmem(lval); 
+    } 
+ 
+  rvalue(lval) int lval[]; { 
+    if ((lval[0]!=0)&amp;(lvaL[1]==0)) getmem(lval); 
+    else                         indirect(lval); 
+    } 
+ 
+  test(label, parens) int label, parens; { 
+    int lval[8]; 
+    char *before, *start; 
+    if(parens) needtoken(&quot;(&quot;); 
+    while(1) { 
+      setstage(&amp;before, &amp;start); 
+      if(hier1(lval)) rvalue(lval); 
+      if(match(&quot;,&quot;)) clearstage(before, start); 
+      else break; 
+      } 
+    if(parens) needtoken(&quot;)&quot;); 
+    if(lval[3]) { /* constant expression */ 
+      clearstage(before, 0); 
+      if(lval[4]) return; 
+      jump(label); 
+      return; 
+      } 
+    if(lval[7]) { /* stage address of &quot;oper 0&quot; code */ 
+      oper=lval[6];/* operator function address */ 
+           if((oper==ffeq)| 
+             (oper==ule))  zerojump(eq0, label, lval); 
+      else if((oper==ffne)| 
+             (oper==ugt))  zerojump(ne0, label, lval); 
+      else if (oper==ffgt) zerojump(gt0, label, lval); 
+      else if (oper==ffge) zerojump(ge0, label, lval); 
+      else if (oper==uge)  clearstage(lval[7],0); 
+      else if (oper==fflt) zerojump(lt0, label, lval); 
+      else if (oper==ult)  zerojump(ult0, label, lval); 
+      else if (oper==ffle) zerojump(le0, label, lval); 
+      else                 testjump(label); 
+      } 
+    else testjump(label); 
+    clearstage(before, start); 
+    } 
+ 
+  constexpr(val) int *val; { 
+    int const; 
+    char *before, *start; 
+    setstage(&amp;before, &amp;start); 
+    expression(&amp;const, val); 
+    clearstage(before, 0); /* scratch generated code */ 
+    if(const==0) error(&quot;must be constant expression&quot;); 
+    return const; 
+    } 
+ 
+  const(val) int val; { 
+    immed(); 
+    outdec(val); 
+    nl(); 
+    } 
+ 
+  const2(val) int val; { 
+    immed2(); 
+    outdec(val); 
+    nl(); 
+    } 
+ 
+  constant(lval) int lval[]; { 
+    lval=lval+3; 
+    *lval=1;       /* assume it will be a constant */ 
+    if (number(++lval)) immed(); 
+    else if (pstr(lval)) immed(); 
+    else if (qstr(lval)) { 
+      *(lval-1)=0; /* nope, it's a string address */ 
+      immed(); 
+      printlabel(litlab); 
+      outbyte('+'); 
+      } 
+    else return 0; 
+    outdec(*lval); 
+    nl(); 
+    return 1; 
+    } 
+ 
+  number(val) int val[]; { 
+    int k, minus; 
+    k=minus=0; 
+    while(1) { 
+      if(match(&quot;+&quot;)) ; 
+      else if(match(&quot;-&quot;)) minus=1; 
+      else break; 
+      } 
+    if(isdigit(ch)==0)return 0; 
+    while (isdigit(ch)) k=k*10+(inbyte()-'0'); 
+    if (minus) k=(-k); 
+    val[0]=k; 
+    return 1; 
+    } 
+ 
+  address(ptr) char *ptr; { 
+    immed(); 
+    outstr(ptr+NAME); 
+    nl(); 
+    } 
+ 
+  pstr(val) int val[]; { 
+    int k; 
+    k=0; 
+    if (match(&quot;'&quot;)==0) return 0; 
+    while(ch!=39)  k=(k&amp;255)*256 + (litchar()&amp;255); 
+    gch();                                          /*24*/ 
+    val[0]=k; 
+    return 1; 
+    } 
+ 
+  qstr(val) int val[]; { 
+    char c; 
+    if (match(quote)==0) return 0; 
+    val[0]=litptr; 
+    while (ch!='&quot;') { 
+      if(ch==0) break; 
+      stowlit(litchar(), 1); 
+      } 
+    gch(); 
+    litq[litptr++]=0; 
+    return 1; 
+    } 
+ 
+  stowlit(value, size) int value, size; { 
+    if((litptr+size) &gt;= LITMAX) { 
+      error(&quot;literal queue overflow&quot;); abort(ERRCODE); 
+      } 
+    putint(vaLue, Litq+Litptr, size); 
+    litptr=litptr+size; 
+    } 
+ 
+  /* 
+  ** return current literal char &amp; bump lptr 
+  */ 
+  litchar() { 
+    int i, oct; 
+    if((ch)!=92)|(nch==0)) return gch(); 
+    gch(); 
+    if(ch=='n') {gch(); return NEWLINE;}         /*23*/ 
+    if(ch=='t') {gch(); return  9;} /* HT */ 
+    if(ch=='b') {gch(); return  8;) /* BS */ 
+    if(ch=='f') {gch(); return 12;} /* FF */ 
+    i=3; oct=0; 
+    while(((i--)&gt;0)&amp;(ch&gt;='0')&amp;(ch&lt;='7')) oct=(oct&lt;&lt;3)+gch()-'0'; 
+    if(i==2) return gch(); else return oct; 
+    } 
+ 
+-------------------------------------------------------------FILE:CC4.C 
+  /* 
+  ** Small-C Compiler Version 2.1 
+  ** 
+  ** Copyright 1982, 1983 J. E. Hendrix 
+  ** 
+  ** Part 4 
+  */ 
+  #include stdio.h 
+  #include cc.def 
+ 
+  extern char 
+   *macn, 
+   *cptr, *symtab,             /*37*/ 
+  #ifdef OPTIMIZE 
+   optimize, 
+  #endif 
+   *stagenext, ssname[NAMESIZE]; 
+  extern int 
+   beglab, csp, output; 
+ 
+  #include cc41.c 
+  #include cc42.c 
+ 
+-------------------------------------------------------------FILE:CC41.C 
+  /* 
+  ** print all assembler info before any code is generated 
+  */ 
+  header() { 
+    beglab=getlabel(); 
+                               /*42*/ 
+    } 
+ 
+  /* 
+  ** print any assembler stuff needed at the end 
+  */ 
+  trailer() { 
+  #ifndef LINK 
+    if((beglab == 1)|(beglab &gt; 9000)) (                  /*51*/ 
+      /* implementation dependent trailer code goes here */ 
+      } 
+  #else 
+    char *ptr;            /*54*/ 
+    cptr=STARTGLB;                                       /*37*/ 
+    while(cptr&lt;ENDGLB) {                                 /*37*/ 
+      if(cptr[IDENT]==FUNCTION &amp;&amp; cptr[CLASS]==AUTOEXT)  /*37*/ 
+        external(cptr+NAME);                             /*37*/ 
+      cptr+=SYMMAX;                                      /*37*/ 
+      }                                                  /*37*/ 
+  #ifdef UPPER 
+    if((ptr=findglb(&quot;MAIN&quot;)) &amp;&amp; (ptr[OFFSET]==FUNCTION)) /*54*/ 
+  #else 
+    if((ptr=findglb(&quot;main&quot;)) &amp;&amp; (ptr[OFFSET]==FUNCTION)) /*54*/ 
+  #endif 
+    external(&quot;Ulink&quot;); /* link to library functions    *//*33*/ 
+  #endif 
+    ol(&quot;END&quot;); 
+    } 
+ 
+  /* 
+  ** load # args before function call 
+  */ 
+  loadargc(val) int val; { 
+    if(search(&quot;NOCCARGC&quot;, macn, NAMESIZE+2, MACNEND, MACNBR, 0)==0) { 
+      if(val) {                  /*35*/ 
+        ot(&quot;MVI A,&quot;); 
+        outdec(val); 
+        nl(); 
+        }                        /*35*/ 
+      else ol(&quot;XRA A&quot;);          /*35*/ 
+      } 
+    } 
+ 
+  /* 
+  ** declare entry point 
+  */ 
+  entry() { 
+    outstr(ssname); 
+    col(); 
+  #ifdef LINK 
+    col();                       /*28*/ 
+  #endif 
+    nl(); 
+    } 
+ 
+  /* 
+  ** declare external reference 
+  */ 
+  external(name) char *name; { 
+  #ifdef LINK 
+    ot(&quot;EXT &quot;); 
+    ol(name); 
+  #endif 
+    } 
+ 
+  /* 
+  ** fetch object indirect to primary register 
+  */ 
+  indirect(lval) int lval[]; { 
+    if(lval[1]==CCHAR) ffcall(&quot;CCGCHAR##&quot;); 
+    else               ffcall(&quot;CCGINT##&quot;); 
+    } 
+ 
+  /* 
+  ** fetch a static memory cell into primary register 
+  */ 
+  getmem(lval) int lval[]; { 
+    char *sym; 
+    sym=lval[0]; 
+    if((sym[IDENT]!=POINTER)&amp;(sym[TYPE]==CCHAR)) { 
+      ot(&quot;LDA &quot;); 
+      outstr(sym+NAME); 
+      nl(); 
+      ffcall(&quot;CCSXT##&quot;); 
+      } 
+    else { 
+      ot(&quot;LHLD &quot;); 
+      outstr(sym+NAME); 
+      nl(); 
+      } 
+    } 
+ 
+  /* 
+  ** fetch addr of the specified symbol into primary register 
+  */ 
+  getloc(sym) char *sym; { 
+    const(getint(sym+OFFSET, OFFSIZE)-csp); 
+    ol(&quot;DAD SP&quot;); 
+    } 
+ 
+  /* 
+  ** store primary register into static cell 
+  */ 
+  putmem(lval) int lval[]; { 
+    char *sym; 
+    sym=lval[0]; 
+    if((sym[IDENT]!=POINTER)&amp;(sym[TYPE]==CCHAR)) { 
+      ol(&quot;MOV A,L&quot;); 
+      ot(&quot;STA &quot;); 
+      } 
+    else ot(&quot;SHLD &quot;); 
+    outstr(sym+NAME); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** put on the stack the type object in primary register 
+  */ 
+  putstk(lval) int lval[]; { 
+    if(lval[1]==CCHAR) { 
+      ol(&quot;MOV A,L&quot;); 
+      ol(&quot;STAX D&quot;); 
+      } 
+    else ffcall (&quot;CCPINT##&quot;); 
+    } 
+ 
+  /* 
+  ** move primary register to secondary 
+  */ 
+  move( ) { 
+    ol(&quot;MOV D,H&quot;); 
+    ol(&quot;MOV E,L&quot;); 
+    } 
+ 
+  /* 
+  ** swap primary and secondary registers 
+  */ 
+  swap() { 
+    ol(&quot;XCHG;;&quot;); /* peephole() uses trailing &quot;;;&quot; */ 
+    } 
+ 
+  /* 
+  ** partial instruction to get immediate value 
+  ** into the primary register 
+  */ 
+  immed() { 
+    ot(&quot;LXI H,&quot;); 
+    } 
+ 
+  /* 
+  ** partial instruction to get immediate operand 
+  ** into secondary register 
+  */ 
+  immed2() { 
+    ot(&quot;LXI D,&quot;); 
+    } 
+ 
+  /* 
+  ** push primary register onto stack 
+  */ 
+  push() { 
+    ol(&quot;PUSH H&quot;); 
+    csp=csp-BPW; 
+    } 
+ 
+  /* 
+  ** unpush or pop as required 
+  */ 
+  smartpop(lval, start) int lval[]; char *start; { 
+    if(lval[5]) pop(); /* secondary was used */ 
+    else unpush(start); 
+    } 
+ 
+  /* 
+  ** replace a push with a swap 
+  */ 
+  unpush(dest) char *dest; { 
+    int i; 
+    char *sour; 
+    sour=&quot;XCHG;;&quot;; /* peephole() uses trailing &quot;;;&quot; */ 
+    while(*sour) *dest++ = *sour++; 
+    sour=stagenext; 
+    while(--sour &gt; dest) { /* adjust stack references */ 
+      if(streq(sour,&quot;DAD SP&quot;)) { 
+        --sour; 
+        i=BPW; 
+        while(isdigit(*(--sour))) { 
+          if((*sour = *sour-i) &lt; '0') { 
+            *sour = *sour+10; 
+            i=1; 
+            } 
+          else i=0; 
+          } 
+        } 
+      } 
+    csp=csp+BPW; 
+    } 
+ 
+  /* 
+  ** pop stack to the secondary register 
+  */ 
+  pop() { 
+    ol(&quot;POP D&quot;); 
+    csp=csp+BPW; 
+    } 
+ 
+  /* 
+  ** swap primary register and stack 
+  */ 
+  swapstk() { 
+    ol(&quot;XTHL&quot;); 
+    } 
+ 
+  /* 
+  ** process switch statement 
+  */ 
+  sw( ) { 
+    ffcall(&quot;CCSWITCH##&quot;); 
+    } 
+ 
+  /* 
+  ** call specified subroutine name 
+  */ 
+  ffcall(sname) char *sname;{ 
+    ot(&quot;CALL &quot;); 
+    outstr(sname); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** return from subroutine 
+  */ 
+  ffret() { 
+    ol(&quot;RET&quot;); 
+    } 
+ 
+  /* 
+  ** perform subroutine call to value on stack 
+  */ 
+  callstk() { 
+    ffcall(&quot;CCDCAL##&quot;);                     /*36*/ 
+    } 
+ 
+  /* 
+  ** jump to internal label number 
+  */ 
+  jump(label) int label; { 
+    ot(&quot;JMP &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test primary register and jump if false 
+  */ 
+  testjump(label) int label; { 
+    ol(&quot;MOV A,H&quot;); 
+    ol(&quot;ORA L&quot;); 
+    ot(&quot;JZ &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test primary register against zero and jump if false 
+  */ 
+  zerojump(oper, label, lval) int (*oper)(), label, lval[]; { /*13*/ 
+    clearstage(lval[7], 0); /* purge conventional code */ 
+    (*oper)(label);               /*13*/ 
+    } 
+ 
+  /* 
+  ** define storage according to size 
+  */ 
+  defstorage(size) int size; { 
+    if(size==1) ot(&quot;DB &quot;); 
+    else        ot(&quot;DW &quot;); 
+    } 
+ 
+  /* 
+  ** point to following object(s) 
+  */ 
+  point() { 
+    ol(&quot;DW $+2&quot;); 
+    } 
+ 
+  /* 
+  ** modify stack pointer to value given 
+  */ 
+  modstk(newsp, save) int newsp, save; { 
+    int k; 
+    k=newsp-csp; 
+    if(k==0)return newsp; 
+    if(k&gt;=0) { 
+      if(k&lt;7) { 
+        if(k&amp;1) { 
+          ol(&quot;INX SP&quot;); 
+          k--; 
+          } 
+        while(k) { 
+          ol(&quot;POP B&quot;); 
+          k=k-BPW; 
+          } 
+        return newsp; 
+        } 
+      } 
+    if(k&lt;0) { 
+      if(k&gt;-7) { 
+        if(k&amp;1) { 
+          ol(&quot;DCX SP&quot;); 
+          k++; 
+          } 
+        while(k) { 
+          ol(&quot;PUSH B&quot;); 
+          k=k+BPW; 
+          } 
+        return newsp; 
+        } 
+      } 
+    if(save) swap(); 
+    const(k); 
+    ol(&quot;DAD SP&quot;); 
+    ol(&quot;SPHL&quot;); 
+    if(save) swap(); 
+    return newsp; 
+    } 
+ 
+  /* 
+  ** double primary register 
+  */ 
+  doublereg() {ol(&quot;DAD H&quot;);} 
+ 
+---------------------------------------------------------------FILE:CC42.C 
+  /* 
+  ** add primary and secondary registers (result in primary) 
+  */ 
+  ffadd() {ol(&quot;DAD D&quot;);} 
+ 
+  /* 
+  ** subtract primary from secondary register (result in primary) 
+  */ 
+  ffsub() {ffcall(&quot;CCSUB##&quot;);} 
+ 
+  /* 
+  ** multiply primary and secondary registers (result in primary) 
+  */ 
+  ffmult() {ffcall(&quot;CCMULT##&quot;);} 
+ 
+  /* 
+  ** divide secondary by primary register 
+  ** (quotient in primary, remainder in secondary) 
+  */ 
+  ffdiv() {ffcall(&quot;CCDIV##&quot;);} 
+ 
+  /* 
+  ** remainder of secondary/primary 
+  ** (remainder in primary, quotient in secondary) 
+  */ 
+  ffmod() {ffdiv();swap();} 
+ 
+  /* 
+  ** inclusive &quot;or&quot; primary and secondary registers 
+  ** (result in primary) 
+  */ 
+  ffor() {ffcall(&quot;CCOR##&quot;);} 
+ 
+  /* 
+  ** exclusive &quot;or&quot; the primary and secondary registers 
+  ** (result in primary) 
+  */ 
+  ffxor() {ffcall(&quot;CCXOR##&quot;);} 
+ 
+  /* 
+  ** &quot;and&quot; primary and secondary registers 
+  ** (result in primary) 
+  */ 
+  ffand() {ffcall(&quot;CCAND##&quot;);} 
+ 
+  /* 
+  ** logical negation of primary register 
+  */ 
+  lneg() {ffcall(&quot;CCLNEG##&quot;);} 
+ 
+  /* 
+  ** arithmetic shift right secondary register 
+  ** number of bits given in primary register 
+  ** (result in primary) 
+  */ 
+  ffasr() {ffcall(&quot;CCASR##&quot;);} 
+ 
+  /* 
+  ** arithmetic shift left secondary register 
+  ** number of bits given in primary register 
+  ** (result in primary) 
+  */ 
+  ffasl() {ffcall(&quot;CCASL##&quot;);} 
+ 
+  /* 
+  ** two's complement primary register 
+  */ 
+  neg() {ffcall(&quot;CCNEG##&quot;);} 
+ 
+  /* 
+  ** one's complement primary register 
+  */ 
+  com() {ffcall(&quot;CCCOM##&quot;);} 
+ 
+  /* 
+  ** increment primary register by one object of whatever size 
+  */ 
+  inc(n) int n; { 
+    while(1) { 
+      ol(&quot;INX H&quot;); 
+      if(--n &lt; 1) break; 
+      } 
+    } 
+ 
+  /* 
+  ** decrement primary register by one object of whatever size 
+  */ 
+  dec(n) int n; { 
+    while(1) { 
+      ol(&quot;DCX H&quot;); 
+      if(--n &lt; 1) break; 
+      } 
+    } 
+ 
+  /* 
+  ** test for equal to 
+  */ 
+  ffeq() {ffcall(&quot;CCEQ##&quot;);} 
+ 
+  /* 
+  ** test for equal to zero 
+  */ 
+  eq0(label) int label; { 
+    ol(&quot;MOV A,H&quot;); 
+    ol(&quot;ORA L&quot;); 
+    ot(&quot;JNZ &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for not equal to 
+  */ 
+  ffne() {ffcall(&quot;CCNE##&quot;);} 
+ 
+  /* 
+  ** test for not equal to zero 
+  */ 
+  ne0(label) int label; { 
+    ol(&quot;MOV A,H&quot;); 
+    ol(&quot;ORA L&quot;); 
+    ot(&quot;JZ &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for less than (signed) 
+  */ 
+  fflt() {ffcall(&quot;CCLT##&quot;);} 
+ 
+  /* 
+  ** test for less than to zero 
+  */ 
+  lt0(label) int label; { 
+    ol(&quot;XRA A&quot;); 
+    ol(&quot;ORA H&quot;); 
+    ot(&quot;JP &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for less than or equal to (signed) 
+  */ 
+  ffle() {ffcall(&quot;CCLE##&quot;);} 
+ 
+  /* 
+  ** test for less than or equal to zero 
+  */ 
+  le0(label) int label; { 
+    ol(&quot;MOV A,H&quot;); 
+    ol(&quot;ORA L&quot;); 
+    ol(&quot;JZ $+8&quot;); 
+    ol(&quot;XRA A&quot;); 
+    ol(&quot;ORA H&quot;); 
+    ot(&quot;JP &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for greater than (signed) 
+  */ 
+  ffgt() {ffcall(&quot;CCGT##&quot;);} 
+ 
+  /* 
+  ** test for greater than to zero 
+  */ 
+  gt0(label) int label; { 
+    ol(&quot;XRA A&quot;); 
+    ol(&quot;ORA H&quot;); 
+    ot(&quot;JM &quot;); 
+    printlabel( label); 
+    nl(); 
+    ol(&quot;ORA L&quot;); 
+    ot(&quot;JZ &quot;); 
+    printlabel( label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for greater than or equal to (signed) 
+  */ 
+  ffge() {ffcall(&quot;CCGE##&quot;);} 
+ 
+  /* 
+  ** test for greater than or equal to zero 
+  */ 
+  ge0(label) int label; { 
+    ol(&quot;XRA A&quot;); 
+    ol(&quot;ORA H&quot;); 
+    ot(&quot;JM &quot;); 
+    printlabel(label); 
+    nl(); 
+    } 
+ 
+  /* 
+  ** test for less than (unsigned) 
+  */ 
+  ult() {ffcall(&quot;CCULT##&quot;);} 
+ 
+  /* 
+  ** test for less than to zero (unsigned) 
+  */ 
+  ult0(label) int label; { 
+     ot(&quot;JMP &quot;); 
+     printlabel( label); 
+     nl(); 
+     } 
+ 
+  /* 
+  ** test for less than or equal to (unsigned) 
+  */ 
+  ule() {ffcall(&quot;CCULE##&quot;);} 
+ 
+  /* 
+  ** test for greater than (unsigned) 
+  */ 
+  ugt() {ffcall(&quot;CCUGT##&quot;);} 
+ 
+  /* 
+  ** test for greater than or equal to (unsigned) 
+  */ 
+  uge() {ffcall(&quot;CCUGE##&quot;);} 
+ 
+  #ifdef OPTIMIZE 
+  peephole(ptr) char *Ptr; { 
+    while(*ptr) { 
+      if(streq(ptr,&quot;LXI H,0\nDAD SP\nCALL CCGINT##&quot;)) { 
+
+        if(streq(ptr+29, &quot;XCHG;;&quot;)) {pp2();ptr=ptr+36;} 
+
+        else                        {pp1();ptr=ptr+29;} 
+        } 
+      else if(streq(ptr,&quot;LXI H,2\nDAD SP\nCALL CCGINT##&quot;)) { 
+        if(streq(ptr+29, &quot;XCHG;;&quot;)) {pp3(pp2);ptr=ptr+36;} 
+        else                        {pp3(pp1);ptr=ptr+29;} 
+        } 
+      else if(optimize) { 
+        if(streq(ptr, &quot;DAD SP\nCALL CCGINT##&quot;)) { 
+          ol(&quot;CALL CCDSGI##&quot;); 
+          ptr=ptr+21; 
+          } 
+        else if(streq(ptr, &quot;DAD D\nCALL CCGINT##&quot;)) { 
+          ol(&quot;CALL CCDDGI##&quot;); 
+          ptr=ptr+20; 
+          } 
+        else if(streq(ptr, &quot;DAD SP\nCALL CCGCHAR##&quot;)) { 
+
+          ol(&quot;CALL CCDSGC##&quot;); 
+          ptr=ptr+22; 
+          } 
+        else if(streq(ptr, &quot;DAD D\nCALL CCGCHAR##&quot;)) { 
+          ol(&quot;CALL CCDDGC##&quot;); 
+          ptr=ptr+21; 
+          } 
+        else if(streq(ptr,   &quot;DAD SP\nMOV D,H\nMOV E,L\nCALL CCGINT##\nINX H\nCALL CCPINT##&quot;)) { 
+          ol(&quot;CALL CCINCI##&quot;); 
+          ptr=ptr+57; 
+          } 
+        else if(streq(ptr, 
+  &quot;DAD SP\nMOV D,H\nMOV E,L\nCALL CCGINT##\nDCX H\nCALL CCPINT##&quot;)) { 
+          ol(&quot;CALL CCDECI##&quot;); 
+          ptr=ptr+57; 
+          } 
+        else if(streq(ptr, 
+  &quot;DAD SP\nMOV D,H\nMOV E,L\nCALL CCGCHAR##\nINX H\nMOV A,L\nSTAX D&quot;)) { 
+          ol(&quot;CALL CCINCC##&quot;); 
+          ptr=ptr+59; 
+          } 
+        else if(streq(ptr,   &quot;DAD SP\nMOV D,H\nMOV E,L\nCALL CCGCHAR##\nDCX \nMOV A,L\nSTAX D&quot;)) { 
+          ol(&quot;CALL CCDECC##&quot;); 
+          ptr=ptr+59; 
+          } 
+        else if(streq(ptr, &quot;DAD D\nPOP D\nCALL CCPINT##&quot;)) { 
+          ol(&quot;CALL CDPDPI##&quot;); 
+          ptr=ptr+26; 
+          } 
+        else if(streq(ptr, &quot;DAD D\nPOP D\nMOV A,L\nSTAX D&quot;)) { 
+          ol(&quot;CALL CDPDPC##&quot;); 
+          ptr=ptr+27; 
+          } 
+        else if(streq(ptr, &quot;POP D\nCALL CCPINT##&quot;)) { 
+          ol(&quot;CALL CCPDPI##&quot;); 
+          ptr=ptr+20; 
+          }                                        /*30*/ 
+        /* additional optimizing logic goes here */ 
+        else cout(*ptr++, output); 
+        } 
+      else cout(*ptr++, output); 
+      } 
+    } 
+ 
+  pp1() { 
+    ol(&quot;POP H&quot;); 
+    ol(&quot;PUSH H&quot;); 
+    } 
+ 
+  pp2() { 
+    ol(&quot;POP D&quot;); 
+    ol(&quot;PUSH D&quot;); 
+    } 
+ 
+  pp3(pp) int (*pp)(); {                       /*13*/ 
+    ol(&quot;POP B&quot;);                               /*13*/ 
+    (*pp)(); 
+    ol(&quot;PUSH B&quot;); 
+    } 
+  #endif 
+</PRE> 
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 
+

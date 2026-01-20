@@ -1,0 +1,1921 @@
+
+
+
+
+
+
+                             SMALL C COMPILER FOR 68HC11
+
+
+
+          I. INTRODUCTION
+
+          The 68HC11 Small C compiler (CC.EXE) is a  command  line  compiler
+          that generates 68HC11 assembly language from a C source code.  The
+          generated  assembly code can be assembled with the provided 68HC11
+          assembler (AS11.EXE) to generate a 68HC11 machine code in S-record
+          format.  A batch file (SC.BAT) is provided which eases the process
+          of compiling and assembling, adding the library functions automati-
+          cally.  The Small C compiler,  assembler,  libraries and some sup-
+          port files are shareware (actually freeware,  as best we can tell)
+          and provided on disk by New Micros, Inc.   Some additional support
+          material  was written and added by New Micros,  Inc.   This manual
+          and the added support material is Copyright 1993  by  New  Micros,
+          Inc.  All rights reserved.
+
+          This  documentation explains the process of developing programs in
+          Small C,  then running the program on a 68HC11  controller  board.
+          The target 68HC11-based,  controller boards from New Micros, Inc.,
+          include the following:
+
+          NMIX-0020
+
+          NMIT-0020
+
+          NMIX-0021
+
+          NMIX-0022
+
+          NMIT-0021
+
+          NMIT-0022
+
+          NMIS-0021
+
+          NMIS-0021B
+
+          NMIL-0021B
+
+
+
+
+
+
+
+
+
+
+
+
+                                          1
+
+
+
+
+
+
+
+
+          II. CONTENTS
+
+          The Small C disk contains the following files:
+
+          Libraries            Sample Programs
+
+          6811_LIB.C           ATOD.C         /* FORTH Version */
+          68HC11.H             ATOD_BUF.C     /* BUFFALO Version */
+          AS11.EXE             ATOD2.C        /* FORTH Version */
+          ATOI.C               CLOCK1.C       /* BUFFALO Version */
+          CC.EXE               CLOCK2.C       /* ROM Version */
+          DELAY.C              CLOCK4TH.C     /* FORTH Version */
+          EVB_OUT.C            ECHO.C         /* ROM Version */
+          FOPEN.C              ECHO4TH.C      /* FORTH Version */
+          FORTH.K              ECHO2.C        /* ROM Version */
+          FOR_IN.C             LCD.C          /* FORTH Version */
+          FOR_OUT.C            LCD_BUF.C      /* BUFFALO Version */
+          FPRINTF.C            ATOD3.C        /* FORTH Version */
+          FPUTC.C
+          FPUTS.C
+          INIT.K
+          IS.C
+          ITOA.C
+          ITOAB.C
+          MAXTALK.EXE
+          README.TXT
+          REVERSE.C
+          SC.BAT
+          SERIAL.K
+          SER_IN.C
+          SER_OUT.C
+          SMALLC.TXT
+          SREC.4TH
+          STDIO.H
+          STRCPY.C
+          STRLEN.C
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          2
+
+
+
+
+
+
+
+          III. BACKGROUND AND REFERENCES
+
+          The C programming language was developed at AT&T Bell Labs by Den-
+          nis Ritchie in the early 1970's.   It was  originally  used  as  a
+          development  system for the PDP-7,  and then the PDP-11.   Ritchie
+          found traditional assembly language too tedious.   He also saw the
+          handwriting  on the wall.   The steady progression of hardware ad-
+          vances makes the assembly language program written today would  be
+          obsolete  tomorrow.   It was a common battle cry in those days: he
+          wanted a higher level language  which  would  be  portable  across
+          various  platforms,  including those available in the unforseeable
+          future.
+
+          The origin of the language has much to do with its structure.   It
+          is considered ideal for many applications, precisely because it is
+          not  "too-high" a High Level Language.   At times it has even been
+          called a High Level Assembly.   This means the programmer  remains
+          closely  tied to the machine.   Some high level languages were in-
+          tended to isolate the user from the machine.   They  offered  only
+          the  lowest  common denominator accross various platforms.   The C
+          language was not intended to be a language for beginners.   It al-
+          lowed very direct interfacing to the machine hardware without many
+          layers  of security which might be found in other languages of the
+          day, such as COBOL.
+
+          This is evidenced in some of the constructs of the language.   The
+          ++ operator,  for instance, is a pre-increment, or post-increment,
+          operator.   The function  of  incrementing  a  register  is  often
+          directly  supported  in hardware.   Some processors even allow for
+          the incrementing to occur as a side effect of using the  register,
+          as  part  of  a  single  instruction.   The overhead of a full ALU
+          (Arithmetic and Logic Unit) math operation is not needed.
+
+          Put another way,  most other languages have  to  specify  the  in-
+          crementing  of  a  variable  by a full statement,  such as "i=i+1"
+          which is indistinguishable from any other math operation.   Such a
+          simple  line  of high level code might generate dozens of lines of
+          assembly instructions.   As mentioned,  simple incrementing of  an
+          index  may be possible in assembly language as an inherent part of
+          a single machine code instruction already doing  another  function
+          entirely.  In a sense the increment might be done for free without
+          additional instructions required and no additional processor time.
+          So,  the  C  language  allows the program to take advantage of the
+          processor architecture by providing operators which distinguish  a
+          simple increment from a more complex math equation.  Few other lan-
+          guages have such operators.
+
+          The  C  language  and  the UNIX operating system have been closely
+          linked since its inception.   AT&T charged a steep price for  it's
+          UNIX licenses for business use, approximately $30,000 per machine.
+          Universities, on the other hand, had only to show
+
+                                          3
+
+
+
+
+
+
+          having purchased a single license for $500, and tcould run as many
+          copies  of UNIX on as many machines as they wished.   At the time,
+          even a simple FORTRAN compiler could cost  a  university  $10,000.
+          The  UNIX  system not only had the UNIX Operating System and the C
+          Compiler, but also FORTRAN compilers, etc.  As a result,  UNIX was
+          widely used in Universities.  The C language became a popular tool
+          taught  in  those  schools.    It  is  only  in the past few years
+          (perhaps starting in 1987) that C has become  popularized  in  in-
+          dustry.  It's appearance as a general purpose language under other
+          operating  systems made this possible.   With the many college ex-
+          perienced programmers, C's wider spread use seems inevitable.
+
+          If you are new with C,  you may want to get (Brian) Kernigahn  and
+          Ritchie's The C Programming Language (Prentice-Hall).   This small
+          book,  written in 1978,  is sometimes called "the white book"  and
+          assumes  the  position  of  "bible"  to the language.   It is also
+          called "Kernigahn and Ritchie" or even "K&R" for short.
+
+          You may also, refer to James Handrix' Small C Compiler V2.2.   Al-
+          though  written  for  the  PC,  this  book will give insights to a
+          similar compiler's inner workings.   The PC version was the  model
+          for this F68HC11 version.
+
+          There are, of course, many other good C programming language books
+          available.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          4
+
+
+
+
+
+
+
+          IV. WRITING A SMALL C PROGRAM
+
+          The Small C compiler runs under MS-DOS.   It allows cross compila-
+          tion and assembly of code for the 68HC11.  This is not an interac-
+          tive process, but a batch mode development.
+
+          edit     >>     source    Create source file
+          source   >>     CC        Compile the source
+          CC       >>     .ASM      Compiler creates ASM file
+          .ASM     >>     AS11      Assemble .ASM
+          AS11     >>     .S19      Assembler creates .S19 file
+          .S19     >>     EPROM     .S19 file to EPROM or emulator
+          EPROM    >>     TEST      Test and repeat to completion
+
+          To use the Small C compiler,  an editor of the  user's  choice  is
+          employed  to  create  an  ASCII  source  code file.   This file is
+          processed by the batch file,  SC.BAT .   SC.BAT calls the Small  C
+          compiler,  CC.EXE.    The  batch file automatically appends 68HC11
+          library to the source code.   The compiler  generates  68HC11  as-
+          sembly language from this combined file.
+
+          The  batch  file  then invokes the assembler,  AS11.EXE .   It as-
+          sembles the code and data files generated by the  compiler.    The
+          assembler  outputs  a  list file and S-record file.   The S-record
+          file is an ASCII representation of object code  with  load  points
+          specified.
+
+          Then  the  S-record  file will be downloaded to a PROM programmer.
+          There,  a PROM,  EPROM or EEPROM is programmed with the code  con-
+          tained in the S-record file.   The physical device can "carry" the
+          code to the system.   An alternative is to use  a  PROM  emulator.
+          These  devices have plugs which simulate a PROM,  but have RAM in-
+          side.   They usually have another method of communicating  with  a
+          host  system,  such as a serial port or parallel port.   A program
+          running on the host downloads the S-record to these  devices,  and
+          they  simulate  a  programmed PROM.   The advantage is the load is
+          fast,  just a few seconds,  where it can take  twenty  minutes  to
+          erase and reprogram an EPROM.   In either case,  the loaded device
+          is installed in the target system and tested.
+
+          (There is one other alternative.   A resident Operating System  on
+          the  board  can be used to download the S-record into on-board RAM
+          and then autostart the program.   This  eliminates  the  need  for
+          EPROM's and EPROM programmers,  or,  PROM emulators during program
+          development.)
+
+          Based on the results observed when the installed program  is  run,
+          the  cycle  is repeated,  beginning with the editing of the source
+          code, and ending with the testing phase.   This is continued until
+          the code is tested satisfactorily.  Debugging is the respon-
+
+
+                                          5
+
+
+
+
+
+
+          sibility  of  the  programmer's  cleverness.    Some very costly C
+          sytems have source level debugging tools.  These are not available
+          in Small C.
+
+          New Micros has provided  a  (copyrighted)  serial  module  library
+          which may help with the debugging process, by allowing the program-
+          mer to insert printable messages in the target code,  which can be
+          observed through the 68HC11 SCI serial channel.
+
+          Also,  New Micros has provided an interface  allowing  a  resident
+          Max-FORTH   Operating   System   to  give  simple  downloading  of
+          S-records,  and some degree  of  interactivity  to  the  debugging
+          process.    A  modest  communications  package,  called MAXTALK is
+          provided which will allow a PC clone to communicate at  9600  baud
+          on COM1: to the F68HC11.  If run without a command line parameter,
+          MAXTALK  performs  basic terminal emulation,  allowing interactive
+          operation of the Max-FORTH.   If a command line variable indicates
+          a  file,  the file will be downloaded to the Max-FORTH system.   A
+          small source program is provided which allows loading of S-records
+          from the serial channel.
+
+          (To prepare to load an S-Record, connect the serial channel of the
+          F68HC11 system to the PC's COM1:.   Power-up  the  F68HC11  system
+          from  a cold start.   Enter MAXTALK SREC.4TH on the PC.   The file
+          will download and automatically envoke the loader.   Enter MAXTALK
+          ????????.S19  on  the  PC,  where  ????????.S19 is your compiled C
+          program in S-record format; or just enter once:
+                       MAXTALK SREC.4TH ???????.S19
+          After the file is loaded, a reset will start the C program.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          6
+
+
+
+
+
+
+
+
+          V. SPECIAL  FEATURES OF 68HC11 SMALL C
+
+          Small C shares most features with ANSI standard C.  The major dif-
+          ference is: Small C is an integer C.  It does not support floating
+          point  numbers.   This is not a terrible limitation.   In general,
+          using an integer number is faster than using floating  point  num-
+          bers.   In most embedded applications,  scaled integers are suffi-
+          cient for the task.
+
+          There are other minor differences.  James Hendrix provides the fol-
+          lowing information in the companion disk to his "A  Small  C  Com-
+          piler" 2nd Edition from M&T Books:
+
+          Small C supports arrays of one dimension.  Functions always return
+          integer  values.  External  functions  are automatically declared.
+          Initialization of global variables is supported.  The preprocessor
+          supports #include, #define, #ifdef, #ifndef, #else, #endif,  #asm,
+          #endasm commands.  The following control statements are supported:
+          if,  switch,  case,  default,  break,  continue,  while,  for, and
+          do/while.   All expression operators are supported.   Only  signed
+          and unsigned integer and character data types are supported.   The
+          following standard  C  features  are  not  supported:  structures,
+          fields, unions, arrays of pointers, and casts.
+
+          Small  C  ...  library includes over 80 functions -- a nearly com-
+          plete set of the standard UNIX/C repertoire.  Binary  as  well  as
+          character  stream  I/O  is supported.  The formatted I/O functions
+          printf() and scanf() are included...
+
+          The Small C language and compiler are fully described in "A  Small
+          C  Compiler:  Language,  Usage,  Theory,  and  Design" by James E.
+          Hendrix. Copies are available from:
+
+          M&T Publishing, Inc.              Henry Holt Co.
+          411 Borel Ave., Suite 100         115 W. 18th ST.
+          San Mateo, CA 94402-3516          NY, NY.10011
+                                            (801) 973-4663
+                                            (801) 973-4660
+
+          J. E. Hendrix
+          P.O. Box 1435
+          Oxford, MS 38655
+
+          The 68HC11 Small C compiler can generate two types of programs for
+          the 68HC11: one which is designed to  work  in  concert  with  the
+          defacto  standard operating system for the New Micros boards,  the
+          Max-FORTH Language and Operating System,  and another which  works
+          with the boards without the benefit of any monitor.
+
+
+
+                                          7
+
+
+
+
+
+
+          The  first  type  is designed to run under the control of the Max-
+          FORTH kernel built inside the F68HC11.   This version does not set
+          up reset vector.  It assumes the operating system already has con-
+          trol  of  the reset vector.   It also assumes the operating system
+          has initialized the processor's stack pointer  when  the  compiled
+          code  is invoked.   It does add an autostart pattern to the begin-
+          ning of the compiled C code, so the operating system will turn con-
+          trol over to main() at power-up, or after a reset.
+
+          The stand-alone ROM version is the second type  of  program  which
+          can be generated.   The ROM version does set up the stack and ini-
+          tialize all the reset and interrupt vectors.   The ROM version  of
+          code is generated by invoking the compiler with a  -R  option.
+
+          The  Small  C has had several features added to support the 68HC11
+          (See also README.TXT file). The added words are:
+
+          #code
+
+          #data
+
+          #stack
+
+          rom
+
+          interrupt
+
+          The first three keywords,  #code,  #data and #stack,  are used  to
+          specify  the  starting address of code and data segments,  and the
+          base address of stack.   The "rom" keyword provides a way for  the
+          user  to  set up a permanent array at code area.   The "interrupt"
+          keyword causes the compiler to generate a function with the proper
+          entrance to and exit from the interrupt service routine.  Now each
+          will be covered in greater detail.
+
+          The addresses of the code and data areas should  be  the  same  as
+          those on the target board.   For example,  If you are developing a
+          FORTH version with 8K EPROM, you may include:
+
+          #code 0xC000
+
+          where "0xC000" indicates hexadecimal number C000.  Any 1K boundary
+          can be used,  from 0400 to DC00 with Max-FORTH V3.3,  or CC00 with
+          V3.5.    This  address  must be in the address range of the target
+          memory device,  according to the board's address and  chip  select
+          jumpering.
+
+          If  you  are  developing  a  ROM version of program to put into 8K
+          EPROM, include:
+
+          #code 0xE000
+
+
+                                          8
+
+
+
+
+
+
+          The reset vector of the 68HC11 is at FFFE.  Therefore, an 8K EPROM
+          must start at E000,  the highest 8K boundry.   It covers  E000  to
+          FFFF, which includes the location of the reset  vector.    If  the
+          reset  vector  is  not  in the ROM version of the EPROM,  or,  the
+          EPROM is located somewhere other than the top 8K boundry of memory,
+          the system will not respond on power-up or reset.
+
+          The #data assigns the start of RAM useable for data storage.    In
+          FORTH  version,  the internal RAM of 68HC11 is not recommended for
+          use, because they are reserved for the Max-Forth Operating System.
+          You may use any available external memory area for your data.  As-
+          suming RAM at the bottom of memory,  for the 68HC11A8 include  the
+          following:
+
+          #data 0x100
+
+          or if for the 68HC11E9, include
+
+          #data 0x200
+
+          On  the other hand,  for 68HC11,  the internal RAM can be used for
+          data in ROM version.  Include:
+
+          #data 0x0000
+
+          As mentioned earlier,  for the FORTH version,  the stack does  not
+          need  to be set up.   If the internal stacks provided by Max-FORTH
+          are not large enough,  external stacks can be declared.   For  in-
+          stance,  at  the  top of an 8K RAM located at the bottom of memory
+          use
+
+          #stack 0x2000
+
+          For the rom versions the stacks can be at the top of the  internal
+          RAM, in the case of the 68HC11A8 by including the following:
+
+          #stack 0x100
+
+          or if for the 68HC11E9, include
+
+          #stack 0x200
+
+          The  "rom"  keyword  provides  a way for the user to set up a per-
+          manent array at code area.  For example, if the following is typed
+
+          char buf[]="This is a test";
+
+          the buffer will be created in RAM.   The RAM is  only  initialized
+          from the S-record download.  In the final application, after power
+          up,  the  string  won't  be in RAM.   The solution is to force the
+          string into ROM with the code segment.   This can be  accomplished
+          by typing:
+
+                                          9
+
+
+
+
+
+
+          rom char buf[]="This is a test";
+
+          However, it should be noted that ROM variables are not modifiable.
+
+          Finally, declaring a function to be of type "interrupt" causes the
+          compiler  to generate the proper entrance to and exit from the in-
+          terrupt service routine. (More details are in README.TXT file).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          10
+
+
+
+
+
+
+
+          VI. LIBRARIES FOR 68HC11 SMALL C
+
+          A number of Small C library functions were added  by  New  Micros,
+          Inc. to the shareware library.  Additionally, some of the existing
+          library  functions  were  modified.   The following new files were
+          created.
+
+          "init.k"   : Startup routine for the ROM version of code
+          "forth.k"  : Startup routine for the FORTH version of code
+          "for_out.c": Serial output routine for the FORTH version
+                       of code
+          "for_in.c" : Serial input routine for the FORTH version
+                       of code
+          "ser_out.c": Serial output routine for the ROM version of
+                       code
+          "ser_in.c" : Serial input routine for the ROM version of
+                       code
+
+          Either the file "init.k" or "forth.k" should be  included  in  the
+          program  depending upon whether you are working on the ROM version
+          or FORTH version.   The file "init.k" initializes the base of  the
+          68HC11  register  block.   The file "forth.k" not only initializes
+          the base of the 68HC11 register block but also sets  up  autostart
+          vector  in  order  for  the program to run on autostart under Max-
+          Forth.
+
+          The files "for_in.c",  "for_out.c" provide a  serial  input/output
+          function in FORTH version.   While. "ser_in.c" and "ser_out.c" are
+          for the ROM version.
+
+          A character can be sent to serial output by doing
+
+          #include <ser_out.c>
+
+          char c;
+
+          c='A';
+
+          SER_out(c);
+
+          And a character can be read from serial input and stored into char
+          variable c by doing
+
+          #incldue <ser_in.c>
+
+          char c;
+
+          c=SER_in();
+
+          In the following sample program,  a character typed in keyboard is
+          echoed to terminal.
+
+                                          11
+
+
+
+
+
+
+          =================================================================
+          /* Echo characters to terminal */
+          /* ROM version                 */
+
+          #data 0x0000             /* Data segment is at $0000      */
+          #code 0xE000             /* Code segment is at $E000      */
+          #stack 0xFF              /* Base Address of Stack is $100 */
+          #include <init.k>
+          #include <68hc11.h>
+          #include <ser_in.c>
+          #include <ser_out.c>
+
+          char c;                   /* Declare char variable c       */
+
+          main()                    /* Begin of main routine         */
+          {
+
+             pokeb(REG_BASE+BAUD,0x30); /* Set up the serial channel     */
+             pokeb(REG_BASE+SCCR2,0x0C);
+
+             while(1)                /* Create an infinite loop       */
+             {
+                c=SER_in();          /* Read a char from serial       */
+                SER_out(c);          /* Write a char to serial        */
+             }
+          }                          /* End of main routine           */
+          =================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          12
+
+
+
+
+
+
+
+
+          VII. COMPILING A C PROGRAM
+
+          After creating your source C program with an editor,  you may make
+          use of the batch file provided on disk, SC.BAT .  Simply type
+
+
+          SC <filename without extension>
+
+          at the DOS prompt, and then the batch file will do the following:
+
+
+          1) Link to the system library, 6811_LIB.C .
+
+          2) Compile the program and all the #included files.
+
+          3) Merge the compiler output files, DATAOUT.ASM and
+
+          CODEOUT.ASM.
+
+          4) Assemble the merged .ASM file.
+
+          5) Generate .LST file and .S19 file for FORTH version.
+
+          If you want to generate a ROM version, type
+
+
+          SC <filename without extension> -R
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          13
+
+
+
+
+
+
+
+
+          IX. SAMPLE PROGRAM FOR A FORTH VERSION
+
+          Following is a sample program for a FORTH  version.    The  source
+          code  is  provided  on  disk  (ATOD.C).   The program reads analog
+          values and converts to digital values,  and displays the values on
+          terminal every 1 second.
+
+
+          =================================================================
+          /* Define where things should reside... */
+          #code    0x0800
+          #data    0x0700
+
+          /* Define where register bank is mapped... */
+          #include <forth.k>
+
+          #include <68hc11.h>
+          #include <stdio.h>
+
+          /* Libraries needed by fprintf() */
+          #include <fopen.c>
+          #include <fputs.c>
+          #include <fputc.c>
+          #include <itoa.c>
+          #include <atoi.c>
+          #include <is.c>
+          #include <fprintf.c>
+          #include <itoab.c>
+          #include <reverse.c>
+          #include <strlen.c>
+
+          #include <delay.c>
+
+          /* Link in the device driver for the 68HC11 */
+          #include <FOR_out.c>
+
+          FILE stdout;
+
+          /* Make the message live in ROM, so it's there on power up!! */
+          rom char msg[]="%u %u %u %u ";
+
+          main()
+          {
+             unsigned int period;
+             period=1000;
+             stdout=fopen(FOR_out);
+             fprintf(stdout,"\nStarting A/D conversion...\n");
+
+             while(1)
+
+
+                                          14
+
+
+
+
+
+
+             {
+                rd_anlg();
+                delay(period); /* delays 1000 millisecond (= 1 second) */
+             }
+          }
+
+          rd_anlg()
+          {
+             pokeb(REG_BASE+ADCTL,0x10);
+             fprintf(stdout,msg,peekb(REG_BASE+ADR1),peekb(REG_BASE+ADR2),
+                                peekb(REG_BASE+ADR3),peekb(REG_BASE+ADR4));
+             pokeb(REG_BASE+ADCTL,0x14);
+             fprintf(stdout,msg,peekb(REG_BASE+ADR1),peekb(REG_BASE+ADR2),
+                                peekb(REG_BASE+ADR3),peekb(REG_BASE+ADR4));
+             fprintf(stdout,"\n");
+          }
+          =================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          15
+
+
+
+
+
+
+
+
+          VIII.    SAMPLE PROGRAM FOR A ROM VERSION
+
+          Following is a sample program for a ROM version.   The source code
+          is provided on disk (CLOCK2.C).   The program displays the elapsed
+          time on terminal using the Timer Overflow Interrupts.
+
+
+          =================================================================
+          /* Define where things should reside... */
+          #code    0xE000
+          #data    0x0000
+          #stack   0xFF
+
+          /* Define where register bank is mapped... */
+          #include <init.k>
+
+          /* Almost always need these standard definitions... */
+          #include <68hc11.h>
+          #include <stdio.h>
+
+          /* Libraries needed by fprintf() */
+          #include <fopen.c>
+          #include <fputs.c>
+          #include <fputc.c>
+          #include <itoa.c>
+          #include <atoi.c>
+          #include <is.c>
+          #include <fprintf.c>
+          #include <itoab.c>
+          #include <reverse.c>
+          #include <strlen.c>
+
+          /* Device driver for the 68HC11 */
+          #include <SER_out.c>
+
+          FILE            stdout;
+          unsigned int    sys_clk;
+          char            buf[10];
+
+          /* Make the message live in ROM, so it's there on power up!! */
+          rom char message[]="ELAPSED TIME: %u minutes and %u seconds.\n";
+
+          /* Define the Timer Overflow Interrupt service routine... */
+          interrupt toi()
+          {
+             sys_clk++;
+             /* Reset Timer Overflow Interrupt Flag */
+             bit_set(REG_BASE+TFLG2,0x80);
+          }
+
+
+                                          16
+
+
+
+
+ 
+          main()
+          {
+          /* Set Prescale Factor to 16 within 64 cycles */
+          #asm
+                LDX   #$1024
+                BSET  0,X $03
+          #endasm
+
+             /* Set up Baud rate and Turn on SCI */
+             pokeb(REG_BASE+BAUD,0x30);
+             pokeb(REG_BASE+SCCR2,0x0C);
+
+             /* jump to TOI address vector */
+             pokeb(0xD0,0x7E);
+             poke(0xD1,toi);
+
+             /* Clear the Timer Overflow Flag */
+             bit_set(REG_BASE+TFLG2,0x80);
+
+             /*  Enable the Timer Overflow Interrupt */
+             bit_set(REG_BASE+TMSK2,0x80);
+
+             /* Enable interrupts */
+             e_int();
+
+             sys_clk=0;
+             stdout=fopen(SER_out);
+             fprintf(stdout,"Starting system timer...\n");
+             while (1)
+             {
+                unsigned int temp;
+                temp=sys_clk;
+                while (temp/2==sys_clk/2);
+                fprintf( stdout,message,sys_clk/120,(sys_clk/2) % 60);
+             }
+          }
+          =================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          17
+
+
+
+
+
+
+
+
+          X.  PROGRAMMING EPROM
+
+          Now  is  the time to put the generated .S19 file into EPROM.   You
+          may have to relocate the code according to your  purpose  and  en-
+          vironment.
+
+          For example, supposing that your code is a ROM version starting at
+          $E000  on  target 68HC11 board,  be sure to set the offset to E000
+          when programming into EPROM.   Likewise,  if you are programming a
+          FORTH version of code into EPROM starting at $C000, set the offset
+          to C000.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          18
+
+
+
+
+
+
+
+
+          XI. RUNNING ON 68HC11 BOARD
+
+          (1) FORTH version
+
+          In case of the FORTH version, the internal ROM does not have to be
+          turned  off  because  the compilation method for the FORTH version
+          produces code which works under the Max-Forth operating system and
+          causes autostart of the code.
+
+          Only thing to be confirmed is the board configuration according to
+          the address of the program socket and the size of the EPROM.
+
+          After the EPROM is pluged in, just hit reset button to start execu-
+          tion.
+
+          (2) ROM version
+
+          In order to run your ROM version of program on F68HC11  controller
+          board,  you  need  to disable the internal ROM of F68HC11 which is
+          embedded with Max-Forth operating system.   Since the internal ROM
+          has  always  the  higher  priority than the external memory,  your
+          program will never have a chance to be  executed  without  turning
+          off  the  internal ROM.   A software called "WIPE.COM" may do this
+          job for you.
+
+          After disabling the internal ROM,  confirm that the configurations
+          of the board are correct according to the type of your EPROM,  and
+          that the address of the EPROM is $E000 assuming that the EPROM  is
+          8K,  or  $8000  if  the  EPROM  is  32K.   (Refer to the strapping
+          diagrams in "100 Squared System Documentation" of New Micros,Inc.)
+
+          After the EPROM is pluged in,  just hit reset button to  start  to
+          execute.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          19
+
+
+
+
+
+
+
+
+          XII.     PROGRAMMING HINT: REDUCING THE SIZE OF PROGRAM
+
+          As  mentioned  earlier,  the  Small C compiler integrates the main
+          file and all the #included files,  and compiles  it  as  one  con-
+          tinuous piece.   Normally,  this expands the size of the generated
+          machine code unnecessarily,  because most of the functions in  the
+          #included files may not be called.   Therefore, in order to reduce
+          the size of the generated machine code,  simply copy the necessary
+          functions from the library into the main program, and avoid includ-
+          ing the entire library file, or files.
+
+          For  example,  the  sample  program in section IV,  which echoes a
+          character from keyboard to terminal,  is compiled to generate  520
+          bytes of code.
+
+          However,  by  importing  only  the  needed  function  "pokeb" from
+          "6811_lib.c" and not the whole library,  the size of the generated
+          machine code is reduced to 166 bytes.  This is approximately a 66%
+          space savings.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          20
+
+
+
+
+
+
+
+
+          XIII.    BUGS IN SMALL C
+
+          A  few  minor  bugs  have been discovered in the Small C compiler.
+          While few people may run into these problems, a great deal of time
+          can be saved by knowing what a bug might act like ahead  of  time.
+          It  is  worthy of a few moments of familiarization now.   They are
+          listed here to save the programmer time.
+
+          1. The exit condition of "for" loop is miscompiled.   For example,
+          let's consider the following two "for" statements.
+
+          F1: for(i=0;i<10;i++) stmt();
+          F2: for(i=0;i<=10;i++) stmt();
+
+          In statement F1,  stmt() is supposed to be executed 10 times,  but
+          executed 11 times in reality.  And, in statement F2, stmt() is sup-
+          posed to be executed 11 times, but executed 10 times in reality.
+
+          2. A global variable cannot be initialized at the time of declara-
+          tion.  Therefore, the global variable should be initialized inside
+          the main routine.
+
+
+          (These are all the bugs of which we are currently aware.   If  you
+          should  happen  to  discover other possible bugs,  please consider
+          sharing them with us, so we can make others aware of them.  Please
+          document the nature of the problem as thoroughly as  possible  and
+          mail a report.  If this is not practical at least call and tell us
+          your  suspicions.   It is also possible we or others may have dis-
+          covered other  problems  after  this  printing,  so  if  you  have
+          suspicions,  you  might  want  to  call  and check if the list has
+          grown, before investing much of your own time.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          21
+
+
+
+
+
+
+
+
+          XIV.     SMALL C REFERENCE GUIDE
+
+          The following brief listing of the language syntax is quoted  from
+          "A Small C Compiler" 2nd Edition by James Hendrix from M&T Books:
+
+          LANGUAGE SYNTAX
+
+          ArgumentDeclaration:
+              ObjectDeclaration
+
+          ArgumentList:
+              NameList
+
+          Directive
+              #include "Filename"
+              #include <Filename>
+              #include Filename
+              #define Name CharacterString?...
+              #ifdef Name
+              #ifndef Name
+              #else
+              #endif
+              #asm
+              #endasm
+
+          Constant:
+              Integer
+              'Character'              (escape sequence allowed)
+              'CharacterCharacter'     (escape sequence allowed)
+
+          ConstantExpression:
+              Constant
+              Operator ConstantExpression
+              ConstantExpression Operator ConstantExpression
+              (ConstantExpression)
+
+          Declarator:
+              Object Initializer?      (global initializers only)
+
+          EscapeSequence:
+              \n                       (newline)
+              \t                       (tab)
+              \b                       (backspace)
+              \f                       (formfeed)
+              \OctalInteger
+              \OtherCharacter
+
+
+
+
+
+                                          22
+
+
+
+
+
+
+          Expression:
+              Primary
+              Operator Expression
+              Expression Operator
+              Expression Operator Expression
+
+          FunctionDeclaration:
+              void? Name (ArgumentList?)
+                   ArgumentDeclaration?...
+                   CompoundStatement
+
+          Global Declaration:
+              ObjectDeclaration
+              FunctionDeclaration
+
+          Initializer:
+              = ConstantExpression
+              = (ConstantExpressionList)
+              = StringConstant
+
+          Object:
+              Name
+              *Name
+              Name [ConstantExpression?]
+              Name()
+              (*Name)()           (arguments and locals only)
+
+          Primary:
+              Name
+              Constant
+              StringConstant
+              Name [Expression]
+              Primary (ExpressionList?)
+              (Expression)
+
+          Program:
+              Directive?... GlobalDeclaration...
+
+          Statement:
+              ;
+              ExpressionList;
+              return Expressionlist?;
+              Name:
+              goto Name:
+              if (ExpressionList) Statement
+              if (ExpressionList) Statement else Statement
+              switch (ExpressionList) CompoundStatement
+              case ConstantExpression:
+              default:
+              break;
+              while (ExpresionList) Statement
+
+
+                                          23
+
+
+
+
+
+
+              for (ExpresionList?:
+                   ExpresionList?:
+                   ExpresionList?) Statement
+              do Statement while (ExpressionList):
+              continue;
+              {ObjectDeclaration?... Statment?...}
+
+          StringConstant:
+              "CharacterString"        (escape sequences allowed)
+
+          Type:
+              char
+              int
+              unsigned
+              unsigned char
+              unsigned int
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          24
+
+
+
+
+
+
+
+
+          XIV.     STANDARD FUNCTIONS
+
+          The  following  listing of the standard functions is taken from "A
+          Small C Compiler" 2nd Edition by James Hendrix from M&T Books:
+
+          Function________________________________________ Returns_______
+
+          abs(nbr) int nbr;                                absolute value
+
+          abort(errcode) int errcode;
+
+          atoi(str) char *str;                                      value
+
+          atoib(str, base) char *str; int base;                     value
+
+          auxbuf(fd, sz) int fd; char *sz;                      zero, ERR
+
+          avail(abort) int abort;                  # bytes avaiable, zero
+
+          bseek(fd, offset, from) int fd, offset[], from;       zero, EOF
+
+          btell(fd, offset) int fd, offset[];       byte number -> offset
+
+          calloc(nbr, sz) int nbr, sz                       pointer, zero
+
+          cfree(addr) char *addr;                              addr, zero
+
+          clearerr(fd) int fd;
+
+          cseek(fd, offset, from) int fd, offset, from;         zero, EOF
+
+          ctell(fd) int fd;                                  block number
+
+          ctellc(fd) int fd;                         byte number in block
+
+          delete(name) char *name;                              zero, ERR
+
+          dtoi (str, nbr) char *str; int *nbr;               field length
+
+          exit (errcode) int errcode;
+
+          fclose (fd) int fd;                              zero, non-zero
+
+          feof(fd) int fd;                                 non-zero, zero
+
+          ferror(fd) int fd;                               non-zero, zero
+
+          fgetc(fd) int fd;                                character, EOF
+
+          fgets(str, sz, fd) char *str; int sz, fd;             str, zero
+
+                                          25
+
+
+
+
+
+          fopen(name, mode) char *name, *mode;                   fd, zero
+
+          fprintf(fd, str, arg1, arg2, ...)          # characters printed
+                   int fd; char *str;
+
+          fputc(c, fd) char c; int fd;                             c, EOF
+
+          fputs(str, fd) char *str; int fd;
+
+          fread(ptr, sz, cnt, fd)                            # items read
+
+          free(addr) char *addr;                               addr, zero
+
+          freopen(name, mode, fd)                                fd, zero
+                   char *name, *mode; int fd;
+
+          fscanf(fd, str, arg1, arg2 ...)           # fields scanned, EOF
+                   int fd; char *str;
+
+          fwrite(ptr, sz, cnt, fd)                        # items written
+                   char *ptr; int sz, cnt, fd;
+
+          getarg(nbr, str, sz, argc, argv)              field length, EOF
+                   char *str; int nbr, sz, argc, *argv;
+
+          getc(fd) int fd;                                 character, EOF
+
+          gets(str) char *str;                                  str, zero
+
+          isalnum(c) char c;                               non-zero, zero
+
+          isalpha(c) char c;                               non-zero, zero
+
+          isascii(c) char c;                               non-zero, zero
+
+          isatty(fd) int fd;                               non-zero, zero
+
+          iscntrl(c) char c;                               non-zero, zero
+
+          iscons(fd) int fd;                               non-zero, zero
+
+          isdigit(c) char c;                               non-zero, zero
+
+          isgraph(c) char c;                               non-zero, zero
+
+          islower(c) char c;                               non-zero, zero
+
+          isprint(c) char c;                               non-zero, zero
+
+          ispunct(c) char c;                               non-zero, zero
+
+          isspace(c) char c;                               non-zero, zero
+
+                                          26
+
+
+
+
+
+
+          isupper(c) char c;                               non-zero, zero
+
+          isxdigit(c) char c;                              non-zero, zero
+
+          itoa(nbr, str) int nbr; char *str;
+
+          itoab(nbr, str, base) int nbr; char *str; int base;
+
+          itod(nbr, str, sz) int nbr, sz; char *str;                  str
+
+          itoo(nbr, str, sz) int nbr, sz; char *str;                  str
+
+          itou(nbr, str, sz) int nbr, sz; char *str;                  str
+
+          itox(nbr, str, sz) int nbr, sz; char *str;                  str
+
+          left(str) char *str;
+
+          lexcmp(str1, str2) char *str1, *str2                  <0, 0, >0
+
+          lexorder(c1, c2) char c1, c2                          <0, 0, >0
+
+          malloc(nbr) int nbr;                              pointer, zero
+
+          otoi(str, nbr) char *str; int *nbr;                field length
+
+          pad(dest, ch, n) char *dest, ch, int n;
+
+          poll(pause) int pause;                          character, zero
+
+          printf(str, arg1, arg2, ...)                #characters printed
+                   char *str;
+
+          putc(c, fd) char c; int fd;                              c, EOF
+
+          putchar(c) char c;                                       c, EOF
+
+          puts(str) char *str;
+
+          read(fd, ptr, cnt) int fd, cnt; char *ptr;         # bytes read
+
+          reverse(str) char *str;
+
+          rewind(fd) int fd;                                    zero, EOF
+
+          scanf(str, arg1, arg2, ...)               # fields scanned, EOF
+
+          sign(nbr) int nbr;                                    -1, 0, +1
+
+          strcat(dest, sour) char *dest, *sour;                      dest
+
+
+
+                                          27
+
+
+
+
+
+
+          strchr(str, c) char *str, c;                      pointer, zero
+
+          strcmp(str1, str2) char *str1, *str2;                 <0, 0, >0
+
+          strcpy(dest, sour) char *dest, *sour;                      dest
+
+          strlen(str) char *str;                            string length
+
+          strncat(dest, sour, n) char *dest, *sour; int n;           dest
+
+          strncmp(str1, str2, n) char *str1, *str2; int n;      <0, 0, >0
+
+          strncpy(dest, sour, n) char *dest, *sour; int n;           dest
+
+          strrchr(str, c) char *str, c;                     pointer, zero
+
+          toascii(c) char c;                                  ASCII value
+
+          tolower(c) char c;                                    lowercase
+
+          toupper(c) char c;                                    uppercase
+
+          ungetc(c, fd) char c; int fd;                            c, EOF
+
+          unlink(name) char *name;                              zero, ERR
+
+          utoi(str, nbr) char *str; int *nbr;                field length
+
+          write(fd, ptr, cnt) int fd, cnt;char *ptr;       # bytes written
+
+          xtoi(str, nbr) char *str; int *nbr;                field length
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          28
+
+
+
+
+
+
+
+
+          XIV.     ERROR MESSAGES
+
+          The following listing of the standard functions is taken  from  "A
+          Small C Compiler" 2nd Edition by James Hendrix from M&T Books:
+
+          already defined    A name is declared more than once at the global
+          level or among the formal arguments of a function.
+
+          bad label               A  goto statement has an improperly formed
+          label.   Either it does not conform to the C naming convention  or
+          it is missing something altogether.
+
+          can't subscript    A  subscript is associated with something which
+          is neither a pointer nor an array.
+
+          cannot assign to pointer
+                             An initializer consisting of a  constant  or  a
+          constant  expression  is  associated  with  a  pointer.    Integer
+          pointers do not take initializers and character pointers take only
+          expression-list or string initializers.
+
+          control statement nesting limit
+                             The level of nesting of any combination of  do,
+          for, while and switch statements exceeds the capacity of the while
+          queue.
+
+          global symbol table overflow
+                             The global symbol table has overflowed.
+
+          illegal address    The  address  operator  is applied to something
+          which is neither a variable, a pointer,  nor a subscripted pointer
+          or array name.
+
+          illegal argument name
+                             The  name  in a function's formal argument list
+          does not conform to the C naming conventions.
+
+          illegal function or declaration
+                             The compiler  found  something  at  the  global
+          level which is not a function or object declaration.
+
+          illegal symbol          The compiler found a symbol which does not
+          conform to the C naming conventions.
+
+          invalid expression An  expression  contains  a  primary  which  is
+          neither a constant, a string, nor a valid C name.  Note that previ-
+          ously undeclared names
+
+
+
+
+                                          29
+
+
+
+
+
+
+          (if they are correctly formed) are assumed to  be  function  names
+          and do not produce this error.
+
+          line too long      A  source  line,  after preprocessing,  is more
+          than LINEMAX characters long.   This can be corrected by  breaking
+          the line into parts.
+
+          literal queue overflow
+                             A string constant would overflow the compiler's
+          literal pool.
+
+          local symbol table overflow
+                             A  local  declaration  would overflow the local
+          symbol table.
+
+          macro name table full
+                             A #define command would overflow the macro name
+          table.
+
+          macro string queue full
+                             A #define  command  would  overflow  the  macro
+          string queue
+
+          mismatched expressions
+                             The  second  and  third expressions of a condi-
+          tional operator (expr1 ?  expr2 : expr3) are not compatible.   The
+          compiler does not know to determine the attributes of the result.
+
+          missing token      The syntax requires a particular token which is
+          missing.
+
+          multiple defaults  A switch contains more than one default prefix.
+
+          must assign to char pointer or char array
+                             A  string  initializer  is applied to something
+          other than a character pointer or a character array.
+
+          must be constant expression
+                             Something other than a constant expression  was
+          found where the syntax requires a constant expression
+
+          must be lvalue          Something other than a lvalue is used as a
+          receiving  field  in  an  expression.   An lvalue is an expression
+          (possibly just a name) for a storage location in memory which  may
+          be al
+
+
+
+
+
+
+
+
+                                          30
+
+
+
+
+
+
+          tered.   Assigning something to a constant or an unsubscripted ar-
+          ray name will produce this message.
+          must be object or type
+                             The sizeof operator refers to something besides
+          an object name or a type specification.
+
+          must declare first in block
+                             A local declaration occurs after the first  ex-
+          ecutable statement in a block.
+
+          need array size    A  local array declaration does not specify the
+          number of elements in the array.
+
+          negative size illegal
+                             An array is dimensioned to  a  negative  value,
+          Recall  that constant expressions may be used as array dimensions.
+          Such an expression may very well evaluate to a negative value.
+
+          no apostrophe      A  character  constant  lacks  its  terminating
+          apostrophe.
+
+          no comma           An argument or declaration list lacks a separat-
+          ing comma.
+
+          no final }         The end of the input occurred while inside of a
+          compound statement.
+
+          no matching #if... An  #else  or  #endif is not preceded by a cor-
+          responding #ifdef or #ifndef directive.
+
+          no open paren      An apparent function declaration lacks the left
+          parenthesis which introduces the formal argument list.
+
+          no quote           A string constant lacks its terminating  double
+          quote.    This quotation mark must be on the same line as the ini-
+          tial quotation mark.
+
+          no semicolon       A semicolon does not appear  where  the  syntax
+          requires one.
+
+          not a label        The name following the keyword goto is defined,
+          but not as a label.
+
+          not allowed in switch
+                             A local declaration occurs within the body of a
+          switch statement.  Small C disallows that possibility.
+
+
+
+
+
+
+
+                                          31
+
+
+
+
+
+
+          not allowed with block-locals
+                             A  goto  statement  occurs in a block below the
+          highest level in a  function  which  contains  a  goto  statement.
+          Small C disallows that possibility.
+
+          not an argument    The  names in a function's formal argument list
+          do not match the corresponding type declaration.
+
+          not in switch      A case or default prefix occurs  outside  of  a
+          switch statement.
+
+          open failure on include file
+                        An #include file cannot be opened.
+
+          out of context          A  break statement is not located within a
+          do, for, while, or switch statement, or a continue is not within a
+          do, for, or while statement.
+
+          staging buffer overflow
+                             The code generated by an expression exceeds the
+          size of the staging buffer.
+
+          too many cases          The number of case prefixes  in  a  switch
+          exceeds the capacity of the switch table.
+
+          try (*...)         An  argument  or  local declaration specifies a
+          function, instead of a function pointer.
+
+          wrong number of arguments
+                             One or more of the formal arguments in a  func-
+          tion header was not typed before entering the function body.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          32
+

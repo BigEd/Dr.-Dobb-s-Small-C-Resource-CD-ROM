@@ -1,0 +1,102 @@
+Title:			65C02 Assembler
+Author:			Alan Phillips
+Version:		1.6
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Alan Phillips, 
+			Department of Computing, 
+			Lancaster University
+Date:			04/10/87
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a01
+Date mounted/updated:	04/10/87
+File names:		a01asm.hex
+			a01asm.dc1
+			a01asm.dc2
+			a01*.wwh
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+You will first need to download the files to a BBC micro. The documentation
+files a01asm.dc1 and a01asm.dc2 are large: if you have 40 track discs each
+will need one complete surface.
+
+Once you have the files, use the converter program d99deh.bas to convert
+the Intel Hex form of the Assembler into a binary file. You can then either
+load this to Sideways RAM or program it into a 27128 EPROM.
+
+The User Guide can be printed directly onto any printer. The form supplied
+has no printer control characters in it, so it can be output to any device.
+However, there will be no bold or underlined text: if you wish to obtain
+these, you will need to use the WordWise Plus source files.
+
+The files a01*.wwh are Intel Hex encodings of the WordWise Plus source files
+for the User Guide. You should use the converter D99DEH.BAS to convert them
+to their original form: when doing this, you will need to use specific names
+for the output files.
+
+a01rps.wwh         becomes     RPS
+a01c1a.wwh         becomes     CHAP1A
+a01c1b.wwh         becomes     CHAP1B
+a01c2.wwh          becomes     CHAP2
+a01c3.wwh          becomes     CHAP3
+a01c4.wwh          becomes     CHAP4
+a01c5.wwh          becomes     CHAP5
+a01c6.wwh          becomes     CHAP6
+a01c7.wwh          becomes     CHAP7
+a01c8.wwh          becomes     CHAP8
+a01c9.wwh          becomes     CHAP9
+a01c10a.wwh        becomes     CHAP10A
+a01c10b.wwh        becomes     CHAP10B
+a01a1.wwh          becomes     APP1
+a01a2a.wwh         becomes     APP2A
+a01a2b.wwh         becomes     APP2B
+a01a2c.wwh         becomes     APP2C
+a01a3.wwh          becomes     APP3
+a01a4.wwh          becomes     APP4
+a01a5.wwh          becomes     APP5
+a01print.wwh       becomes     PRINT
+a01spool.wwh       becomes     SPOOL
+
+The file RPS contains 4 "rps" commands that define how underline and bold is
+turned on and off for your printer: as supplied the codes are correct for
+Epson FX80 and compatibles.
+
+PRINT is a segment program that prints all the parts of the User Guide. To
+use it simply load it to a segment and use SHIFT-Fn.
+
+SPOOL is a source file that generates a spooled copy of the Guide on disc.
+To use it, load it to the text area (not to a segment) and use menu option
+8 (Spool Text).
+
+Description:
+
+The 65C02 Assembler is a full-facilities macro assembler for the BBC Micro. It
+runs on models B, B+, B+128, Master and Master Compact, and is compatible with
+a 6502 second processor. It operates with DFS, ADFS, NFS, ANFS and other
+fully Acorn -compatible filing systems, but will not run on cassette systems.
+
+This release is also reported to run on Archimedes machines in 6502-
+compatibility mode, but has not been tested by the author on this system.
+
+The Assembler is copyright (C) Alan Phillips 1987, but may be used by anyone
+for any purpose. It may be freely distributed or posted on Bulletin Board
+systesms: see the header page of the User Guide for the full terms.
+
+Version 1.60 is a development of the last release 1.52. It contains many
+improvements, bug-fixes and new facilities: for full details of the changes
+see Appendix 4 of the User Guide.
+

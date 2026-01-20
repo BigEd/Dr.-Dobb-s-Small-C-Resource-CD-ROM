@@ -1,0 +1,198 @@
+                         KEYLOCK TOOLKIT - MANUAL
+
+Key  lock  has  been designed to allow entry of key combinations such as
+SHIFT-ed  letters  and  CTRL-SHIFT-ed  function  keys  using  single  key
+sequences on the BBC and MASTER range of microcomputers.
+ 
+Installation.
+ 
+  Two versions of Key lock are supplied. RAMKEY is the low ram version
+intended as a  demonstration  version  because  the area of memory used
+(page  &9  to  page  &C)  may be  overwritten  by  a  user  program,
+re-installation mey be required.
+
+To install RAMKEY, type:
+ 
+                   */RAMKEY followed by RETURN.
+ 
+  The second version is called ROMKEY. This  is a true ROM image which may
+be either blown into EPROM and permanently installed  inside  the machine,
+or may be loaded into sideways ram if this is  available  (in  which case,
+follow  the  instructions  of the ram board manufacturer to load ROMKEY or
+use the loader file  "Srload"  supplied.  This  has the same syntax as the
+SRLOAD on the Master series).
+
+  The  Acorn  Master  series  of computers have four banks of sideways ram
+(slots 4 to 7) built  in,  therefore,  to  install ROMKEY into say bank 7,
+type:
+ 
+              *SRLOAD ROMKEY 8000 7 followed by RETURN.
+                    (CTRL-BREAK to initialise)
+ 
+                    *TYPE T.MANUAL for instructions.
+ 
+Operation.
+ 
+  Operation  is  very simple, pressing the SHIFT key once  followed  by  a
+letter or number  key  gives  the  same  result as depressing the two keys
+simultaneously in normal operation.  The CTRL key operates  in exactly the
+same way (CTRL G - beep, CTRL L - clear screen etc),  but perhaps the most
+useful application is the operation of CTRL, SHIFT or  CTRL-SHIFT function
+key combinations in a wordprocessor such as View 3.0, these being a little
+awkward for anyone.
+
+ 
+*HELP KEYLOCK or *H.K. will give the following help information :
+ 
+Keylock Toolkit 1.01
+ 
+  ASC     <addr> <+len/end> (<rom/T>)
+  BOOT    (<drv>)
+  CATALL
+  CLOSE
+  CHKSUM  <rom>
+  DIS     <addr> <+len/end> (<rom/T>)
+  EXPALL
+  EXPLAIN
+  FILESYS
+  HEX     <addr> <+len/end> (<rom/T>)
+  INSERT  (<rom>)
+  KILL    (<rom>)
+  KLON
+  KLOFF
+  MDUMP   <addr> <+len/end> (<rom/T>)
+  MEDIT   <addr> (<rom/T>)
+  QUIT
+  ROMS    (<rom>)
+  SRLOAD  <fsp> <addr> <ramslot>
+  SRSAVE  <fsp> <addr> <+len/end> <rom>
+  SRWIPE  <ramslot>
+  STAT
+  TDUMP
+>
+ This uses the following abbreviations:
+fsp   : file specification or filename
+drv   : disc drive number
+rom   : sideways rom number in decimal or hex
+T     : select tube
+addr  : hexadecimal start address
++len  : "+" followed by length in hex
+end   : last address in hex
+<xxxx>   - must be specified
+(<xxxx>) - optional
+ 
+ 
+Command: *ASC <addr> <+len/end> (<rom/T>)
+Description: Memory dump in ascii format.
+ 
+Command: *BOOT (<drv>)
+Description:Execute !BOOT file on disc. Useful for some physically
+handicapped persons.
+ 
+Command: *CATALL
+Description: Catalogue all files on ADFS disc.
+ 
+Command: *CLOSE
+Description: Close any open files. Equivalent to CLOSE#0 in BASIC.
+ 
+Command: *CHKSUM <rom>
+Description: Generate a checksum for any sideways rom image in a format
+widely used by commercial eprom programmers.
+ 
+Command: *DIS <addr> <+len/end> (<rom/T>)
+Description: Disassembly of memory contents in 65C02 mnemonics.
+ 
+Command: *FILESYS
+ 
+ 
+Description: Returns currently selected filing system.
+ 
+Command: *EXPLAIN
+Description: Catalogues disc and if any BASIC programs are found that
+have a REM statement in the first line, EXPLAIN will echo the associated
+text to the screen. Very useful for finding programs, latest versions etc.
+ 
+Command: *EXPALL
+Description: Performs the EXPLAIN command in all directories from the
+currently selected one on an ADFS disc.
+ 
+Command: *KILL (<rom>)
+Description:  Kills off sideways rom images without having to physically
+unplug them. If no rom is specified then you will be prompted for a Y/N
+response on each rom. Survives ctrl-break!
+ 
+Command: *INSERT (<rom>)
+Description: Opposite to *KILL. If you find that you have killed Keylock
+Rom, then corrupting the middle of the stack (&150,&151,&152) followed by
+break will restore normality.
+ 
+Command: *KLON
+Description: Turns on Keylock facility, thus enabling entry of CTRL and
+SHIFTed key combinations with single consecutive key presses. RETURN will
+cancel the effect of CTRL or SHIFT if it has been pressed accidentally.
+ 
+Command: *KLOFF
+Description: Disables the Keylock facility.
+ 
+Command: *QUIT
+Description: Quits current application and enter Keylock Toolkit as a
+simple language with a "*" prompt. All input is sent directly to the CLI.
+ 
+Command: *HEX <addr> <+len/end> (<rom/T>)
+Description: Memory dump in hexadecimal format.
+ 
+Command: *MDUMP <addr> <+len/end> (<rom/T>)
+Description: Memory dump in hexadecimal and ascii format. Similar in
+format to the DFS command *DUMP.
+ 
+Command: *MEDIT <addr> (<rom/T>)
+Description: Powerful memory editor/bi-directional disassembler enabling
+editing in hex or ascii format. Within the editor, the following keys have
+special functions:
+ Cursor keys - find your way around the screen with these
+ Ctrl-T      - toggle tube/io memory (beeps if no tube present)
+ Ctrl-G      - goto address - prompts for four digit hex number
+ Ctrl-R      - select sideways rom - prompts for hex number (0-F)
+ Ctrl-A      - ascii input as indicated by block cursor
+ Ctrl-H      - hexadecimal input - standard cursor
+ Ctrl-U      - move address indicated by cursor to top of the screen
+ Ctrl-P      - print current screen
+ TAB         - changes format of display
+Note:
+Before entering the editor, a *FX12 1 will make the display scroll faster.
+ 
+Command: *ROMS (<rom>)
+Description: Rom lister highlighting the current "active or dead" status
+of all roms.
+ 
+Command: *SRLOAD <fsp> <addr> <ramslot>
+Description: Loads a rom image into sideways ram. A ctrl-break is often
+needed after this.
+ 
+Command: *SRSAVE <fsp> <addr> <+len/end> <rom>
+Description: saves the contents of sideways ram or rom socket to a file.
+ 
+Command: *SRWIPE  <ramslot>
+Description: erases contents of write-enabled sideways ram.
+ 
+Command: *STAT
+Description: produces a dynamic display of the current machine status.
+e.g.
+ 
+>*STAT
+ 
+Keylock Toolkit 1.01
+ 
+PRINTER     SERIAL
+IGNORE      0
+TRANSMIT    9600
+RECEIVE     9600
+DELAY       35
+REPEAT      1
+DATA        8 BITS 2 STOP
+PREFIX      M
+SHIFT CAPS
+ 
+Command: *TDUMP
+Description: text dump of the current screen to a printer.
+

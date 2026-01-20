@@ -1,0 +1,234 @@
+*basic
+
+NEW
+MODE 7
+  10 REM Intel hex to binary converter
+  15 REM By John Leach (LEACH_JM @ UK.CO.PCR.SVAX05)
+  20 REM Version 3 decoding with machine code February 1987
+  25 REM Modified to avoid CLOSE#0, for use in *exec file by A.J.Travis
+  30 MODE7
+  40 VDU15,3
+  50 REM CLOSE#0
+  60 DIM image 20480
+  70 PROCassemble
+  80 
+  90 INPUT "Name of input hex file    ? " in$
+ 100 INPUT "Name of output binary file? " out$
+ 110 in%=OPENIN(in$)
+ 120 IF in%=0 THEN PRINT"Input file does not exist":END
+ 130 
+ 140 ?imagesize% = 0
+ 150 imagesize%?1 = 0
+ 160 ?record%   = 0
+ 170 record%?1 = 0
+ 180 ?first%  = 0
+ 190 ?error%  = 0
+ 200 ?handle%  = in%
+ 210 T%=0
+ 220 
+ 230 REPEAT
+ 240  IF EOF#in% OR T%=1 THEN PROCsave:CLOSE#in%:END ELSE PROCreadrecord
+ 250 UNTIL FALSE
+ 260 END
+ 270 
+ 280 
+ 290 DEF PROCreadrecord
+ 300 CALL read_record
+ 310 A%=256*?address%+address%?1
+ 320 C%=?count%
+ 330 E%=?error%
+ 340 R%=?record%+256*record%?1
+ 350 T%=?type%
+ 360 A%=A%-C%
+ 370 IF E%=1 PRINT "*** Unknown record type ";T%;" aborting":CLOSE#in%:END
+ 380 IF E%=2 PRINT "Bad check sum on record - aborting":CLOSE#in%:END
+ 390 PRINT"Record ";R%;" : Size ";C%;", address $";~A%
+ 400 
+ 410 IF T% <> 0 THEN PRINT"+++ End-of-file record detected":ENDPROC
+ 420 ENDPROC
+ 440 DEF PROCsave
+ 450 B%=256*?base% + base%?1
+ 460 I%=?imagesize% + 256*imagesize%?1
+ 470 loadaddress% = B% OR &FFFF0000
+ 480 OSCLI("*SAVE "+out$+" "+STR$~image+" "+STR$~(image+I%)+" "+STR$~loadaddress%+" "+STR$~loadaddress%)
+ 490 ENDPROC
+ 500 
+ 510 DEF PROCassemble
+ 530 imagesize%=&70
+ 540 record% =&72
+ 550 address% =&74
+ 560 pointer% =&76
+ 570 image_loc%=&78
+ 580 base%  =&7A
+ 590 csum%  =&7C
+ 600 storecsum%=&7D
+ 610 count% =&7E
+ 620 type%  =&7F
+ 630 byte%  =&80
+ 640 value% =&81
+ 650 handle% =&82
+ 660 error% =&83
+ 670 first% =&84
+ 680 OSBGET =&FFD7
+ 690 
+ 700 DIM code% 250
+ 710 FOR PASS%=0 TO 3 STEP 3
+ 720 P%=code%
+ 730 [OPT 0
+ 740 
+ 750 .read_record
+ 760 JSR colon
+ 770 CLC
+ 780 LDA #1
+ 790 ADC record%
+ 800 STA record%
+ 810 LDA #0
+ 820 ADC record%+1
+ 830 STA record%+1
+ 840 LDA #0
+ 850 STA csum%
+ 860 JSR get_byte
+ 870 STA count%
+ 880 JSR get_byte
+ 890 STA address%
+ 900 JSR get_byte
+ 910 STA address%+1
+ 920 LDA first%
+ 930 BNE not_first
+ 940 LDA address%
+ 950 STA base%
+ 960 LDA address%+1
+ 970 STA base%+1
+ 980 LDA #1
+ 990 STA first%
+ 1000 .not_first
+ 1010 JSR get_byte
+ 1020 STA type%
+ 1030 BEQ type_OK
+ 1040 CMP #1
+ 1050 BEQ type_1
+ 1060 LDA #1
+ 1070 STA error%
+ 1080 RTS
+ 1090 .type_1
+ 1100 LDA #2
+ 1110 STA first%
+ 1120 RTS
+ 1130 .type_OK
+ 1140 SEC
+ 1150 LDA address%+1
+ 1160 SBC base%+1
+ 1170 STA pointer%
+ 1180 LDA address%
+ 1190 SBC base%
+ 1200 STA pointer%+1
+ 1210 LDX count%
+ 1220 .loop
+ 1230 JSR get_byte
+ 1240 PHA
+ 1250 LDA #(image MOD 256)
+ 1260 STA image_loc%
+ 1270 LDA #(image DIV 256)
+ 1280 STA image_loc%+1
+ 1290 CLC
+ 1300 LDA pointer%
+ 1310 ADC image_loc%
+ 1320 STA image_loc%
+ 1330 LDA pointer%+1
+ 1340 ADC image_loc%+1
+ 1350 STA image_loc%+1
+ 1360 LDY #0
+ 1370 PLA
+ 1380 STA (image_loc%),Y
+ 1390 CLC
+ 1400 LDA #1
+ 1410 ADC address%+1
+ 1420 STA address%+1
+ 1430 LDA #0
+ 1440 ADC address%
+ 1450 STA address%
+ 1460 CLC
+ 1470 LDA #1
+ 1480 ADC pointer%
+ 1490 STA pointer%
+ 1500 LDA #0
+ 1510 ADC pointer%+1
+ 1520 STA pointer%+1
+ 1530 DEX
+ 1540 BNE loop
+ 1550 JSR get_byte
+ 1560 STA storecsum%
+ 1570 LDA csum%
+ 1580 BNE bad_csum
+ 1590 SEC
+ 1600 LDA pointer%
+ 1610 SBC imagesize%
+ 1620 LDA pointer%+1
+ 1630 SBC imagesize%+1
+ 1640 BCC end_read
+ 1650 LDA pointer%
+ 1660 STA imagesize%
+ 1670 LDA pointer%+1
+ 1680 STA imagesize%+1
+ 1690 .end_read
+ 1700 RTS
+ 1710 .bad_csum
+ 1720 LDA #2
+ 1730 STA error%
+ 1740 RTS
+ 1760 .colon
+ 1770 LDY handle%
+ 1780 JSR OSBGET
+ 1790 CMP #58
+ 1800 BNE colon
+ 1810 RTS
+ 1830 .get_byte
+ 1840 JSR get_nibble
+ 1850 ASL A
+ 1860 ASL A
+ 1870 ASL A
+ 1880 ASL A
+ 1890 STA byte%
+ 1900 JSR get_nibble
+ 1910 ORA byte%
+ 1920 STA byte%
+ 1930 CLC
+ 1940 ADC csum%
+ 1950 STA csum%
+ 1960 LDA byte%
+ 1970 RTS
+ 1980 
+ 1990 .get_nibble
+ 2000 LDY handle%
+ 2010 JSR OSBGET
+ 2020 CMP #65
+ 2030 BCS letter
+ 2040 SEC
+ 2050 SBC #48
+ 2060 RTS
+ 2070 .letter
+ 2080 SEC
+ 2090 SBC #55
+ 2100 RTS
+ 2110 ]
+ 2120 NEXT PASS%
+ 2130 ENDPROC
+
+RUN     
+sh_x
+sh
+
+RUN
+dehex_x
+dehex
+
+RUN
+shar_x
+shar
+
+*delete sh_x
+*delete dehex_x
+*delete shar_x
+
+*compact
+

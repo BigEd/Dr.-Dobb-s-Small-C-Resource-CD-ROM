@@ -1,0 +1,5544 @@
+
+
+     
+
+
+
+     
+
+
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+                                 (Version 1.40)
+     
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     This User Guide describes how to use the FANFARE Display System to set
+     up and maintain a teletext display system on a BBC Computer.
+     
+     
+     FANFARE  is  copyright  (C) Alan Phillips 1987. It may be passed on by
+     anyone, to anyone, and used for any peaceful purpose. No licensing  or
+     permission  is  needed. It may be distributed in any way provided that
+     it is not sold (apart from reasonable handling and media costs),  that
+     due  credit is made for authorship, and that this paragraph is brought
+     to the attention of the recipient.
+     
+
+
+
+
+
+
+
+
+
+
+
+                                                                Edition 1.1
+                                                              February 1987
+     
+
+
+
+
+
+     
+
+
+
+
+
+                                        
+
+
+
+                                    CONTENTS
+     
+          1.  INTRODUCTION TO FANFARE
+              1.1 An introduction to FANFARE teletext
+              1.2 The structure of this guide
+              1.3 Starting FANFARE
+                  1.3.1 The menus
+                  1.3.2 Using function keys
+                  1.3.3 The main menu
+          
+          
+          2.  THE FILER
+              2.1 The filer menu
+              2.2 The current file
+              2.3 Creating a new file
+              2.4 Updating a file
+              2.5 Reading a file
+              2.6 Closing files
+          
+          
+          3.  THE PAGE EDITOR
+              3.1 The page editor menu
+              3.2 Loading a page to the buffer
+              3.3 Saving a page from the buffer
+              3.4 Editing the page in the buffer
+              3.5 Updating a page in a file
+              3.6 Using stand-alone pages
+                  3.6.1 Importing a page
+                  3.6.2 Exporting a page
+          
+          
+          4.  BASIC EDITING TECHNIQUES
+              4.1 The status lines
+              4.2 Simple typing and positioning
+              4.3 Manipulating characters on a line
+              4.4 Inserting and deleting lines
+              4.5 Moving and copying lines
+              4.6 Using the COPY key
+          
+          
+          5.  COMPOSING TEXT PAGES
+              5.1 How teletext operates
+              5.2 Specifying control codes
+              5.3 Coloured text
+              5.4 Flashing text
+              5.5 Setting background colours
+              5.6 Double height mode
+          
+          
+
+
+
+
+
+
+
+          
+
+
+
+
+
+          
+
+
+
+          6.  TELETEXT GRAPHICS
+              6.1 How graphics operate
+              6.2 Graphics control codes
+              6.3 Producing graphics characters
+                  6.3.1 Pixel mode
+                  6.3.2 Designing a graphics character
+              6.4 Non-contiguous graphics
+              6.5 Hold and release graphics
+          
+          
+          7.  ADVANCED PAGE EDITOR FACILITIES
+              7.1 Windows
+                  7.1.1 Selecting a window
+                  7.1.2 Defining a window
+                  7.1.3 Releasing windows
+                  7.1.4 Automatic window selection
+              7.2 Blocks
+                  7.2.1 Defining a block
+                  7.2.2 Copying and overlaying a block
+                  7.2.3 Saving a block to a file
+                  7.2.4 Loading a block from file
+              7.3 Searching and replacing
+                  7.3.1 Specifying a search/replace character
+          
+          
+          8.  THE DISPLAY SEQUENCE EDITOR
+              8.1 The sequence editor menu
+              8.2 Editing a display sequence
+                  8.2.1 Moving from entry to entry
+                  8.2.2 Changing values
+                  8.2.3 Inserting and deleting entries
+              8.3 Page chaining
+          
+          
+          9.  PAGE CONTROL FACILITIES
+              9.1 The page control menu
+              9.2 Page locks
+              9.3 Manipulating page titles
+              9.4 Changing the default window
+              9.5 Examining the status of pages
+          
+          
+          10. RUNNING A FANFARE DISPLAY
+              10.1 The display system
+              10.2 Using one BBC Computer only
+              10.3 Using two unlinked BBC Computers
+          
+          
+          APPENDIX 1 : PAGE AND SEQUENCE EDITOR FUNCTION KEYS
+          APPENDIX 2 : PAGE EDITOR CONTROL KEYS
+     
+
+
+
+
+
+     
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     1. INTRODUCTION TO FANFARE
+     
+     
+        FANFARE is a system that allows you to produce a  teletext  display
+     service  on  a  BBC  Computer,  similar  in appearance to the teletext
+     services available on most television channels. The FANFARE program is
+     held in an EPROM that fits into a  sideways  ROM  socket  on  the  BBC
+     Computer,  and provides you with sophisticated facilities for creating
+     teletext display pages and for controlling the sequence in which  they
+     are displayed. Pages can also be saved in separate stand-alone files.
+     
+        The  FANFARE  system  can  be  obtained  in  a  number of different
+     versions, depending on your requirements. The simplest system runs  on
+     one single BBC Computer, which must have a colour monitor and at least
+     one  disc  drive.  This  single  machine  is  used both to produce the
+     teletext display sequence and also to edit the contents of the  pages:
+     it  is  not  possible  to perform both functions at the same time with
+     this version.
+     
+        If you have two BBC Computers available, you can link them together
+     and use one to produce the display while  simultaneously  udating  the
+     contents on the other.
+     
+        The  most  advanced  versions  of  FANFARE allow you to produce the
+     teletext display on a large  number  of  screens  simultaneously.  The
+     screens  need not be close to the BBC Computer: they are controlled by
+     FANFARE Remote Display Controller units, which can be  linked  to  the
+     central  BBC  Computer  either by special cabling, or over an existing
+     terminal network system.
+     
+        Whichever version of FANFARE you wish to use, you will use the same
+     commands and keys to edit the display contents and control the system.
+     The display files each version uses are completely compatible, so  you
+     can change from one FANFARE version to another with no problems.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       1
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     1.1 An introduction to FANFARE teletext
+     
+     
+        Undoubtedly,  you will have watched teletext displays on the BBC or
+     ITV  CEEFAX  and  ORACLE  services.   Teletext   displays   are   very
+     low-resolution  (the  standard  is 24 lines of 40 characters), but you
+     can use 7 colours simultaneously, can produce low-resolution graphics,
+     and can  use  various  special  effects  such  as  flashing  areas  or
+     double-height  lettering.  The  total  effect  is  to  provide  a very
+     sophisticated display system, with which  some  highly  effective  and
+     artistic screens can be produced.
+     
+        It  can, though, be somewhat complicaed to produce the more complex
+     teletext effects.  You  may  have  used  teletext  displays  in  BASIC
+     programs  on the BBC Computer - if so, you will know how easy it is to
+     make a small positioning error in a control code that turns a work  of
+     art  into a disaster. Because of this, FANFARE incorporates a powerful
+     teletext  page  editor,  that  lets   you   compose   teletext   pages
+     interactively, invoking even the most complicated teletext effect with
+     simple,  easy-to-learn  keystrokes.  You will be able to place text on
+     the screen; move it around to exactly the place you require it; design
+     graphics effects and build up libraries of picture elements - with  no
+     need  to  understand any of the complexities of the teletext system or
+     any programming languages.
+     
+        Of course, besides creating teletext screens, you will need to link
+     them together to produce a changing display. When you use FANFARE, you
+     can create special display files. Each file can contain a  maximum  of
+     250 teletext pages (if your discs are large enough). Also contained in
+     each  file  is  a display  sequence  table.  This tells FANFARE how to
+     produce the display: for instance, it will contain  instructions  such
+     as  "display  page  5 for 10 seconds, then page 9 for 20 seconds, then
+     page 3 for 30 seconds"  and  so  on.  Naturally,  FANFARE  provides  a
+     powerful sequence  editor  to let you change the display sequence held
+     in a file.
+     
+        You can create any number  of  display  files,  and  use  the  ones
+     appropriate  for  your  current  needs. In many cases, you may wish to
+     have the same or similar pages in several files: FANFARE lets you copy
+     pages from one file to another in an extremely easy way.
+     
+        When producing your display screens, you will undoubtedly  generate
+     parts  of  the  screen  that  you  wish  to include in other pages - a
+     standard logo, for example. FANFARE  will  let  you  extract parts  of
+     display  screens  and  store  them in files: these picture elements or
+     blocks can then be easily imported into other  pages  at  any  desired
+     position.
+     
+        Should  you  wish  to  use  only the page editor facilities without
+     creating a display file, FANFARE will allow you to store your  designs
+     in separate files, which can then be used outside FANFARE. Conversely,
+     you  can  import  teletext  screens  from other systems (such as saved
+     PRESTEL frames, for example) into the FANFARE system.
+     
+
+
+                                       2
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     1.2 The structure of this guide
+     
+        This guide will tell you all you need to know in order to  use  the
+     FANFARE  system.  You  do  not  need  to know anything of how teletext
+     operates - this is explained later in the guide. Some familiarity with
+     operating the BBC Computer and with using discs is assumed,  though  -
+     the  BBC  Computer  User  Guide contains several introductory chapters
+     that will show you how the machine is operated, but you do not need to
+     involve yourself with programming in BASIC.
+     
+        Chapter 2 of the guide explains the filer, the part of FANFARE that
+     you use to create and manipulate the display files.
+     
+        Chapter 3 begins the description of the page editor that you use to
+     create teletext pages - here we discuss the basics, and  see  how  you
+     specify the pages you wish to update and move them around from file to
+     file.  Chapters  4  to 7 then describe the things that you can do when
+     actually creating a display page, and explains  how  you  control  the
+     various teletext effects.
+     
+        Chapter 8 then discusses the display sequence editor, which you use
+     to set up the order in which pages are displayed and their timings.
+     
+        Chapter  9  describes  how to use the more sophisticated facilities
+     for controlling pages in a display file, which allow you, for example,
+     to safeguard vital pages against accidental unintended changes.
+     
+        Chapter 10 then brings the previous chapters together and shows you
+     how to set up and manage a FANFARE teletext display.
+     
+        The guide finishes with  some  Appendices  that  contain  reference
+     material:  this  will give you brief details of the system's operation
+     that will be useful once you have become familiar with it.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       3
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     1.3 Starting FANFARE
+     
+        The FANFARE code is completely unprotected. You can program it into
+     a 27128 EPROM and fit it into a sideways ROM socket in  your  machine,
+     or you can load it to sideways RAM and run it from there.
+     
+        To start FANFARE, type the command
+     
+                                    *FANFARE
+     
+        You  can  abbreviate  this if you require, provided that you follow
+     the abbreviation with a ".", so that, for instance, the command
+     
+                                     *FAN.
+     
+     would also work. Note that if  you  have  the  FANFARE  EPROM  as  the
+     highest  priority  language  ROM  in  your  machine it will be started
+     automatically when you turn the machine on.
+     
+     
+     1.3.1 The menus
+     
+        FANFARE is controlled from a number of menus  that  show  you  what
+     options  are  available  to you at any time. Each menu will show you a
+     list of options, numbered from 0 to 9: to select a specific option you
+     need only type the number. Some options are not  currently  used,  and
+     typing the numbers of these will have no effect.
+     
+        Alternatively,  you  can issue operating system commands whenever a
+     menu is visible on the screen. Instead of  typing  an  option  number,
+     type  the  character "*" followed by the operating system command. For
+     example, you could type
+     
+                                      *CAT
+     
+     to see what files are on your disc. After the  command  has  completed
+     you  will  be  asked to press a key to continue: pressing "*" will let
+     you issue another operating system command at once, but if  you  press
+     any other key you will return to the menu screen.
+     
+     
+     1.3.2 Using function keys
+     
+        If you wish, you can configure FANFARE so that some fixed sequences
+     of  operations  can be easily invoked by pressing one key only instead
+     of several. For example, you could automate the process of  opening  a
+     file called "INFO" and starting a display from it).
+     
+        You  can store a sequence of key presses in the BBC's function keys
+     with the *KEY command, which you can issue either from a FANFARE  menu
+     page  or before you enter FANFARE. To use the string, you should press
+     the function key together with the SHIFT and CONTROL keys.
+     
+     
+
+
+                                       4
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     
+     1.3.3 The main menu
+     
+     
+        When you enter FANFARE, the menu screen you will see is termed  the
+     main menu. It provides you with the following options:
+     
+     
+     Enter page editor
+     
+               This  option  takes you into the page editor, from where you
+               can edit teletext pages.
+               
+               
+     Enter filer
+     
+               This option takes yu into the filer, which  permits  you  to
+               mainpulate display files.
+               
+               
+     Enter display sequence editor
+     
+               This  option takes you to the display sequence editor, which
+               lets you chnage the  timing  and  sequence  of  pages  in  a
+               display.
+               
+               
+     Enter page control menu
+     
+               This  option  takes  you  to  the  page  control menu, which
+               provides functions for the detailed control of  pages  in  a
+               display file.
+               
+               
+               Start local display
+               
+               This option starts a FANFARE teletext display.
+     
+     
+        The facilities controlled by all these options are described in the
+     following chapters of this guide.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       5
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2. THE FILER
+     
+     
+        In  order to create a FANFARE display you will need to first set up
+     a suitable display file, then update the  information  within  it  and
+     generally  manipulate  it.  FANFARE  performs  all operations on files
+     through the filer menu, in which you will  see  a  number  of  options
+     concerned with creating files, opening them for updating, and so on.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       6
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.1 The filer menu
+     
+        You  enter  the filer menu by selecting the enter filer menu option
+     of the main menu. The menu screen will then show you the various filer
+     options that you can select.
+     
+        Briefly, the options you can select from the filer menu are these:
+     
+     
+     Create new file
+     
+               This allows you to set up a new, empty FANFARE display file.
+               
+     Read existing file
+     
+               This allows you to access a file that you created earlier in
+               such a way that you can move display pages  or  the  display
+               sequence out of it, but you cannot change it in any way.
+               
+     Update existing file
+     
+               This allows you to access a file that you created earlier so
+               that you can change display pages or the display sequence.
+               
+     Close current file
+     
+               This  closes  the current  file,  whose name is displayed on
+               every menu screen. Any other files you have open will remain
+               open.
+               
+     Close all files
+     
+               This closes all the files that you have open in one go.
+               
+     Enter page editor menu
+     
+               This takes you to the menu that controls  the  operation  of
+               the page editor.
+               
+     Enter sequence editor
+     
+               This  takes  you  to the menu that controls the operation of
+               the display sequence editor.
+               
+     Enter page control menu
+     
+               This takes you to the  menu  that  allows  you  to  use  the
+               detailed facilities for controlling individual pages.
+     
+     
+     
+        The  following  sections will examine how these options are used in
+     more detail.
+     
+
+
+                                       7
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.2 The current file
+     
+     
+        FANFARE allows you to use up to four files simultaneously (with the
+     Acorn DFS filing system - other filing systems may not let you use  so
+     many  at one time) so that you can easily move display pages from file
+     to file, for example. Details of all the files you have  open  at  any
+     time are recorded by FANFARE.
+     
+        Of  the  four  files  that  you  may have open, one is known as the
+     current file. The name of this file is displayed on all menu  screens,
+     and  everything  you  do  with  files, such as loading pages, updating
+     them, running a display and so on, will  work  on  this current  file.
+     Whenever  you  open or create a file, it becomes the new current file:
+     you can switch to one of the previously opened files by  pressing  the
+     UP  or DOWN  cursor  keys. You can do this from any menu - it does not
+     need to be the filer menu.
+     
+        As well as showing you the name of the current file, the menu  will
+     also  indicate  the mode  in which you opened it. If you used the read
+     existing file option, the mode will appear as "R", indicating that you
+     can read, but not update the file. If  you  used  the update  existing
+     file or create new file options, the mode will be "U" to show that you
+     may update the file as well as read it.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       8
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.3 Creating a new file
+     
+     
+        A  file  which  is  to  hold  a  FANFARE  display must be specially
+     prepared, and this is done with the create  new  file  option  of  the
+     filer menu.
+     
+        Creation  of  a  new file is really quite straightforward - FANFARE
+     will make sure you don't make  any  mistakes  -  but  a  little  prior
+     preparation will save time.
+     
+        The first thing you will need to consider is how big the file is to
+     be. If, for example, you wished to have a display file that could hold
+     150  pages,  FANFARE  would set it up initially holding that number of
+     blank  pages,  so  you  would  need  to  have  sufficient  disc  space
+     available. You will need to provide one kilobyte of disc space (4 disc
+     sectors)  for  each  display  page,  plus  one  further  kilobyte  for
+     FANFARE's own use. The file must fit one one disc surface, so that  if
+     you  are using the Acorn DFS you are limited to an absolute maximum of
+     98 pages on a 40 track disc, or 198 pages on an 80 track  disc.  Other
+     filing  systems  may  let you create larger files, but whatever system
+     you are using FANFARE will not create a file  holding  more  than  250
+     pages.
+     
+        If  you are using the Acorn DFS or a similar system you should also
+     use *COMPACT to make sure that all the free space on the disc you  are
+     using  is  available  -  otherwise a "Can't extend" error may occur at
+     some point when FANFARE is setting up the file.
+     
+        Once you have prepared a suitable disc, you can  select  the create
+     new  file  option of the filer menu. FANFARE will ask you for the name
+     of the file you wish to create: this should be a legal  name  for  the
+     filing  system  you  are using, and may not be more than 16 characters
+     long. After typing the name, you should press RETURN. FANFARE now asks
+     you how many pages it is to prepare: type the number  you  decided  on
+     earlier and again press RETURN.
+     
+        Now  FANFARE  asks  you  for  a title  for  the  file.  This is the
+     information that appears on the left side of the  top  line  of  every
+     page  when it is displayed. You can type any characters you like here,
+     followed by RETURN, but only the first 27 will appear on the  display.
+     You can if you wish simply press RETURN without typing a title: if you
+     do  this  every  page  will  have  the  title "FANFARE Display System"
+     displayed. If you wish to have no title at all  on  the  pages,  press
+     SPACE then RETURN in answer to the prompt. Initially, all the pages in
+     the file will be given the title you specify, but you can later change
+     the  titles  of  individual  pages  using  the  facilities of the page
+     control menu.
+     
+        FANFARE will now try to create the file for you.  It  first  checks
+     whether  any  file of the same name exists already, and if it does you
+     will asked if you want the whatever is  in  the  file  already  to  be
+     cleared out. This prevents you accidentally losing a valuable file due
+     to mistyping a file name.
+
+
+                                       9
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     
+        When  the  file  has been created correctly its name will appear on
+     each menu page as the current file, and unless you  choose  otherwise,
+     all  operations will use this new file. You will be able to update the
+     file or read from it.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       10
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.4 Updating a file
+     
+     
+        The most common thing you will need to do with a file after it  has
+     been  created  is  to update it, either to change some of the pages or
+     the sequence in which they are  displayed.  In  order  to  change  the
+     information in a file, you must choose the update existing file option
+     of  the  filer menu. FANFARE will prompt you for the name of the file,
+     and again you can type in a name of up to  16  characters  in  length,
+     followed  by RETURN.  To use this option, the file must exist; it must
+     have been set up earlier with the create new file option; and it  must
+     not be locked.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       11
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.5 Reading a file
+     
+     
+        When you are running a display, or wish to move pages from one file
+     to  another,  you  will  normally use the read existing file option to
+     open the file you are displaying or from which you are  taking  pages.
+     As  with  the update  existing  file option, you will be asked for the
+     name of the file: now, though, FANFARE will not allow  to  change  the
+     file in any way. Thus you are prevented from accidentally changing the
+     pages  in  the display if you select this file by mistake from several
+     that you are working with.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       12
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     2.6 Closing files
+     
+     
+        Once you have finished using a file, you should close it  with  one
+     of  the filer menu options. FANFARE will not lose any information from
+     a file if you do forget to close it, but you may get a "disc  changed"
+     error occuring if you omit to close a file and then change discs.
+     
+        There  are  two  options  in  the filer menu concerned with closing
+     files. The first, close current file closes only the file  whose  name
+     appears  as  the current file on all menu screens. Any other files you
+     have open will remain open.
+     
+        The second option, close all files,  closes  every  file  you  have
+     open.  You  might  use  this to tidy up after a session moving display
+     pages from file to file.
+     
+        Depending on your filing system, you may need to use this option in
+     another circumstance. FANFARE keeps track of what files you have open,
+     of course, but  a  case  can  arise  where  this  information  becomes
+     incorrect.  If  you  press  the BREAK key while using FANFARE you will
+     find that you have returned to the main menu, and can carry  on  using
+     FANFARE  as  before.  However,  some filing systems will automatically
+     close any files that are open whenever you  press BREAK,  and  FANFARE
+     has  no way of knowing that this has been done. Thus, although FANFARE
+     believes that, say, 3 files are open, in reality none of them are. You
+     cannot use the close current file option  here,  as  this  causes  the
+     filing  system  to  check that the file is actually open: however, the
+     close all files option has been designed to work whether  or  not  the
+     files  really  are  open,  and  will  bring  what  FANFARE believes is
+     happening into line with what the filing system is doing.
+     
+        The Acorn DNFS filing system (DFS 1.20) will not cause the  problem
+     described  above,  but  the  earlier  DFS  system  (DFS 0.9x) and some
+     non-Acorn systems will.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       13
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3. THE PAGE EDITOR
+     
+     
+        Once you have set up a display file using the  filer  menu  options
+     described earlier, you will wish to create the display pages to put in
+     it, and later update them as you require.
+     
+        FANFARE  provides a sophisticated page editor that lets you type in
+     teletext display pages in a simple way: you can select the whole range
+     of  available  teletext   functions,   including   colour,   graphics,
+     double-height text and so on with simple key presses.
+     
+        The  page editor is controlled from the page editor menu, which you
+     enter by selecting the enter page editor option of the  main  menu  or
+     the filer menu. This chapter describes the options available to you in
+     the page editor menu, and explains how you can select pages to edit or
+     move  pages  from  one  file  to  another. Later chapters go into full
+     detail of the use of the page editor for composing a display page.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       14
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.1 The page editor menu
+     
+        You invoke the page editor by choosing the enter page editor option
+     of the main menu or the filer menu. Once you do this, the page  editor
+     menu will appear, providing you with a list of options to choose from.
+     
+        Briefly, the use of the options is as follows:
+     
+     
+     Load page to buffer
+     
+               This  loads  one  display  file  from  the current file into
+               FANFARE's edit buffer.
+               
+     Save page from buffer
+     
+               This writes whatever is in the edit buffer into the  current
+               display file, at whatever page number you select.
+               
+     Edit page in buffer
+     
+               This  option  lets you change whatever is in the edit buffer
+               using the interactive facilities of the page editor.
+               
+     Update page in file
+     
+               This option combines  the load  page, edit  buffer  and save
+               buffer  functions to give you an easy way of changing a page
+               in a file. The page is loaded, and  the  editor  is  entered
+               automatically.  Then, when the edit is complete, the changed
+               page is automatically saved in its original place.
+               
+     Export page from buffer
+     
+               This option writes the contents of  the  edit  buffer  to  a
+               stand-alone file, where it can be used outside FANFARE.
+               
+     Import page to buffer
+     
+               This  option  loads  a page from a stand-alone file into the
+               edit buffer where it can be edited. The file can be produced
+               by the export page from buffer option above,  or  can  be  a
+               saved  teletext  screen  produced, for example, by a PRESTEL
+               adaptor ROM.
+               
+               
+        The following sections describe the use of these  options  in  full
+     detail.
+     
+
+
+
+
+
+
+
+                                       15
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.2 Loading a page to the buffer
+     
+     
+        This option will load one display page from the current file into a
+     part  of memory that FANFARE uses as its edit buffer. FANFARE will ask
+     you for the page number you require, and you can specify any page from
+     number 1 up to the last in the current file. The page is  loaded  into
+     the buffer, after which you can select another edit menu option.
+     
+        In  order to prevent you from accidentally loading something to the
+     buffer and losing the work you had already done  there,  FANFARE  will
+     warn  you  whenever  loading  would  lose  any edits that had not been
+     written to disc, and will give you the option of abandoning  the  load
+     without changing the buffer.
+     
+        The  contents  of the edit buffer are preserved whatever FANFARE is
+     doing, and will last until you decide to change it.  Thus,  you  could
+     load  a  page from a file, go to the filer menu, open another file, go
+     back to the editor menu and then write the contents of the buffer into
+     this new file. In fact, this is exactly how you move  pages  from  one
+     file to another - we shall see an example of this in the next section.
+     
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       16
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.3 Saving a page from the buffer
+     
+     
+        This  option  writes  the  display page in the edit buffer into the
+     current file, which you must have opened either  with  the create  new
+     file or update existing file options of the filer menu.
+     
+        FANFARE will ask you for the page number that you wish this page to
+     have  in  the  file, and you can type in any number from 1 to the last
+     page in the current file. It then writes  the  contents  of  the  edit
+     buffer  into  the file, making sure that the page number that is shown
+     on the top right of the display is correctly set up.
+     
+        So that you do not accidentally write the buffer  contents  to  the
+     wrong  page  and  thus  lose  previous work, FANFARE keeps a record of
+     which pages in a display file have been used. If the page  you  choose
+     to  write to has never been used, the buffer is written to the file at
+     once: otherwise, FANFARE will warn you and  give  you  the  option  to
+     abandon the operation without changing the file. (Note that if you are
+     using  a  display  file which you have edited with versions of FANFARE
+     prior to 1.40, pages will appear as "unused" whether or not  you  have
+     saved  anything  to them. However, as soon as you write to a page with
+     version 1.40 or later the page will be correctly recorded as "used").
+     
+        This option and the previous one, load page from file  provide  the
+     means  to  copy  a  display page from one file to another. Suppose you
+     wished to take page 7 of file  NEWS,  and  make  it  page  3  of  file
+     DISPLAY. One way of doing this would be to use the following steps:
+     
+             1 Open  file DISPLAY, using the update existing file option of
+               the filer menu.
+               
+             2 Open file NEWS with the read existing  file  option  of  the
+               filer menu.
+               
+             3 Enter the page editor menu and use the load page into buffer
+               option to bring page 7 into the edit buffer.
+               
+             4 Use the UP or DOWN cursor keys to select file DISPLAY as the
+               current  file.  Its name will appear on the menu screen when
+               it is the current file.
+               
+             4 Use the save page from buffer option to write  the  contents
+               of the edit buffer into file DISPLAY as page number 3.
+     
+        Note  here  that  the title of the page (the words displayed on the
+     top left of each display page) is not transferred when  you  load  and
+     save pages. Thus, in the example above, the new page 3 of file DISPLAY
+     would appear with the same title as it had before, even if file NEWS's
+     pages had a different title.
+     
+
+
+
+
+
+                                       17
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.4 Editing the page in the buffer
+     
+     
+        This  option  takes  you  into the page editor proper, and lets you
+     manipulate whatever display page is in the edit buffer.  You  can  use
+     all  the facilities of the editor, described in the following chapters
+     of this guide. You need not have a file open in order to do  this:  it
+     is  quite in order to edit the page in the buffer, then open a file if
+     you wish to save the page. Initially, FANFARE sets the edit buffer  up
+     to  hold a blank display page, so you can go straight into this option
+     at the start of a FANFARE session if you wish.
+     
+        When you have finished the edit,  pressing CONTROL-F9  will  return
+     you  to  the  edit  menu,  and  the  page  you were working on will be
+     preserved in the edit buffer. You can resume editing it  as  often  as
+     you  wish, and even use other FANFARE options in between edits without
+     losing the contents of the buffer.
+     
+        If you press the BREAK key whilst editing a display page, you  will
+     return to the main menu screen, but the edits you have done will still
+     be  kept  in  the edit buffer. If you wish, you can return to the page
+     editor menu and resume your edit session where it left off.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       18
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.5 Updating a page in a file
+     
+     
+        This option combines the load page, edit page  in  buffer  and save
+     page  from  buffer  options  in a way that lets you update a page in a
+     file in the easiest way.
+     
+        Initially, you will be asked to give the number  of  the  page  you
+     wish  to  update,  and it will be loaded into the edit buffer. As with
+     the load page to buffer option above, FANFARE will  warn  you  if  any
+     unsaved  edits in the buffer would be lost by this operation. The page
+     editor is then entered automatically, and you can change  the  display
+     as  you wish. To leave the page editor you press CONTROL-F9 as before,
+     but now FANFARE will ask you if you wish to save  the  result  in  the
+     file, replacing the original contents of that page.
+     
+        If you reply to the question by typing "Y", FANFARE will update the
+     file  and  return you to the page editor menu. If you realise that you
+     wish to make some more changes before saving the page, pressing ESCAPE
+     will let you carry on editing. Finally, replying to  the  question  by
+     pressing  "N" will return you to the page editor menu without changing
+     the file.
+     
+        However you return to the page editor menu, the edit buffer will be
+     left holding the display page you have just finished editing, and  you
+     could make further changes to it with the edit page in buffer option.
+     
+        If  you  press the BREAK key during the edit you will return to the
+     main menu, but the edit buffer will still contain the  page  you  were
+     editing.  You  can  then  return  to the page editor menu and carry on
+     changing it. Now, though, you will need  to  use  the save  page  from
+     buffer  option  to write the page into the file (and depending on your
+     filing system, you may need to open the file again. You should consult
+     section 2.6 on this).
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       19
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     3.6 Using stand-alone pages
+     
+     
+        If you wish, you can also  use  FANFARE  simply  to  edit  teletext
+     screens,  without  creating a display file. The import page and export
+     page options permit you to do this in a simple way.
+     
+     
+     3.6.1 Importing a page
+     
+        This option lets you copy a saved teletext  screen  from  a  single
+     stand-alone  file into the edit buffer. You will be asked for the name
+     of the file, which will then be loaded. The file can be  created  with
+     the export  page  option  of  FANFARE, or, for example, by another ROM
+     such as a PRESTEL adaptor. Alternatively, you could have  created  the
+     page  yourself  by  *SAVEing a MODE 7 screen. You should note, though,
+     that only the first 23 lines of the file will be available in the edit
+     buffer. For saved PRESTEL pages this will give you the title line, but
+     will lose the response line (usually blank) from  the  bottom  of  the
+     screen. If the page came from some other system you may lose some data
+     from the end.
+     
+        If you load a saved PRESTEL page by this method you will be able to
+     edit  it normally, but you may need to adjust some parts of it for the
+     most convenient use. This is further described in section 4.7
+     
+     
+     3.6.2 Exporting a page
+     
+        This option lets you write the contents of the  edit  buffer  to  a
+     stand-alone  file  for  use outside FANFARE. You will be asked for the
+     name of the file, and if one of the same name already exists you  will
+     be asked if you wish the existing contents to be lost.
+     
+        The  edit  buffer  will  be  written  to the file exactly as it is,
+     without the title line that appears on pages  in  a  display  file.  A
+     total  of  25 lines is written to the file, making it 1000 bytes long.
+     The last two lines of the file will be blank. The file's load  address
+     will  be  set  to  &FFFF7C00 so it can be quickly loaded into a MODE 7
+     screen.
+     
+        You can then use the file in any way you wish from outside FANFARE.
+     You can load it to a MODE  7  screen  if  you  wish:  from  BASIC  the
+     commands
+     
+                    CLS
+                    *LOAD FILE
+                    
+     would load the file into a non-shadow MODE 7 screen.
+     
+
+
+
+
+
+
+                                       20
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4. BASIC EDITING TECHNIQUES
+     
+     
+        The  first  thing to discover when using the FANFARE page editor is
+     how to type simple text at the place you require, and  manipulate  the
+     screen lines to compose your display and correct any errors.
+     
+        You  might  like  to  try  some of the things explained here as you
+     read. If so, enter FANFARE as described earlier, select the enter page
+     editor option from the main menu, then select edit page in buffer from
+     the page editor menu. You will see a screen that is blank  apart  from
+     two  status lines at the top. The cursor will be positioned at the far
+     left of the screen, immediately under the status lines.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       21
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.1 The status lines
+     
+     
+        The status lines are shown at the top of the  screen  whenever  you
+     are editing, and contain various information to help you.
+     
+        The top status line
+        
+           On  the  left  of this line you will see the word "File". If you
+        have any files open, this will be  followed  by  the  name  of  the
+        current  file,  to  remind  you  where  pages  will be read from or
+        written to. If you have no files open, the name area will be blank.
+        
+           If you entered the page editor through the update page  in  file
+        option, this will be followed by the page number you specified. If,
+        though, you used the edit page in buffer option, this field will be
+        blank,  since  the  editor doesn't know where (or even if) you will
+        write the page to a display file.
+        
+           Finally, on the right of the  top  line  is  the  message  area.
+        Various  messages,  either  reporting  errors  or  asking you to do
+        something, will appear in this area as you edit.
+        
+        
+        The bottom status line
+        
+           This contains information directly related to the  page  editor.
+        On  the  left,  you will see two numbers: for example you could see
+        "(03,21)". This tells you that the cursor is in character  position
+        3  in line 21 of the screen. As you type, or move the cursor, these
+        numbers will be constantly updated. The top left of the  screen  is
+        character 0, line 0, and the bottom right is character 39, line 22.
+        
+           Next is an area that is used when the cursor is positioned on an
+        invisible character. Such characters as FLASH don't themselves show
+        up  on  the screen, so you can't easily tell where on a line you've
+        put the code. However, whenever you place the cursor  over  such  a
+        code, a mnemonic for it will appear in the status line to tell you:
+        in  this  case,  you  would see "FLSH" to indicate a FLASH code. In
+        some circumstances, such as when the  cursor  is  over  a  graphics
+        character,  you may see a hexadecimal number here giving the actual
+        code of the character.
+        
+           After this comes  the window  indicator,  which  tells  you  the
+        number of the edit window you have selected.
+        
+           Next  on the bottom status line come the letters "SL:", followed
+        by a number. This tells you  the  number  of  the  current selected
+        line. We shall see the use of this later in this chapter.
+        
+           Then  comes  a  group of four letters known as the status flags,
+        which, when you first enter the page editor, will be "CASO".  These
+        tell  you  the current settings of the page editor's mode switches.
+        We shall look at the use of the various modes  in  this  and  later
+
+
+                                       22
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+        chapters,  so  for  now  you  need  only  remember that the initial
+        settings indicate
+        
+                         C - Character Mode
+                         A - Auto-cursor Mode
+                         S - Single-height Mode
+                         O - Overwrite Mode
+                         
+           Finally, on the far right of the bottom status line, is an  area
+        where  the  current selected  character  is displayed. This will be
+        discussed in the chapters on Graphics Design.
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       23
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.2 Simple typing and positioning
+     
+     
+        Putting simple text  into  a  FANFARE  screen  is  extremely  easy.
+     Whenever  you  press  a key, such as "A", the character will appear on
+     the screen at the place where the cursor is, and the cursor will  move
+     one  place  to the right. When the cursor reaches the far right of the
+     screen, it automatically goes to the left hand side of the  next  line
+     down, and when it reaches the bottom right of the screen it returns to
+     the  top  left.  If you press RETURN, the cursor goes to the left hand
+     side of the next line down. Thus you can simply type your text, as  if
+     you were using a word processor or a text editor.
+     
+        You  will  also find the DELETE key useful here. When you press it,
+     the cursor moves one place to the  left  and  rubs  out  the  previous
+     character, just as it does in BASIC or other editors.
+     
+        Of  course,  the FANFARE editor lets you control precisely where on
+     the screen you  wish  to  type.  The  four  cursor  keys  on  the  BBC
+     Computer's  keyboard  will  move  the  cursor  over  the screen as you
+     require. When you move the cursor over an edge of the screen, it  will
+     reappear  on  the opposite edge automatically. You can move around the
+     screen even quicker by pressing any of the cursor keys  and  the SHIFT
+     key  simultaneously.  This  will  take  you  as far as possible in the
+     selected direction: this SHIFT-RIGHT takes you to  the  right  of  the
+     screen; SHIFT-DOWN takes you to the bottom of the screen, and so on.
+     
+        One  thing  to  note  here  is  that  initially,  the  editor is in
+     overwrite mode, indicated by an "O" in the  status  flags  area.  This
+     means  that,  whenever  you type a character, it replaces whatever was
+     previously on the screen in that position. This makes it  easy  to  go
+     back  and correct minor typing errors, but if you wish the page editor
+     will work in insert  mode,  which  we  shall  discuss  later  in  this
+     chapter.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       24
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.3 Manipulating characters on a line
+     
+     
+        Once  you  have  typed  some  text  onto  the edit screen, you will
+     certainly want to change it, either to correct errors, or to alter its
+     layout. The FANFARE page editor contains a number  of  functions  that
+     let  you manipulate the contents of a line to get what you want. These
+     functions are all controlled by the red function keys at  the  top  of
+     the  BBC  Computer  keyboard.  For  some  functions,  you press only a
+     function key by itself, but for others  you  may  need  to  press  the
+     function  key together with the SHIFT key, or with the CONTROL key, or
+     with both the SHIFT and CONTROL keys.
+     
+        In this guide, we use a standard way of indicating  which  keys  to
+     press.  Whenever, for example, you see F0, this indicates function key
+     0 by itself. SHIFT-F0 means function key 0 and the SHIFT key together;
+     CONTROL-F0 means function  key  0 and  the CONTROL  key;  and  finally
+     CONTROL-SHIFT-F0  means  function  key  0 and  the SHIFT  key and  the
+     CONTROL key. The function key labelling strip  supplied  with  FANFARE
+     will help you remember the key combinations used.
+     
+        To  return  to  manipulation  of the characters on a line, we shall
+     look in turn at the various operations available.
+     
+     
+     
+     Delete character
+     
+         SHIFT-F0 lets you delete one character on  the  line.  Unlike  the
+         DELETE  key,  which  rubs out the previous character, this deletes
+         the  character under  the  cursor.  It  moves  all  the  following
+         characters  on  the line one place to the left to fill up the gap,
+         and introduces a space character on the far right-hand side of the
+         line.
+         
+         This function is useful if, for example, you  want  to  remove  an
+         entire  word  from  a  line.  Position  the  cursor  on  the first
+         character of the line, then press SHIFT-F0 until all the charaters
+         have been deleted. The rest of the line will have been  closed  up
+         to remove the gap.
+         
+         
+     Insert Space
+     
+         This function is somewhat the opposite of Delete Character. If you
+         press SHIFT-F1, a space will appear under the cursor. The previous
+         character  under  the  cursor,  and  the rest of the line, will be
+         moved one place to the right to make room, and the last  character
+         of the line will disappear.
+         
+         In  combination with the Delete Character function, this operation
+         will let you type some text, then move it easily left and right on
+         the line, so that, for instance, you can centre some text.
+         
+
+
+                                       25
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+         
+     Clear Line
+     
+     
+         Pressing SHIFT-F2 will clear the whole of the line the  cursor  is
+         on to spaces. The cursor will remain in its original position.
+         
+         
+         
+     Clear to End-of-Line
+     
+         SHIFT-F7  also  lets you clear a line to spaces, but here only the
+         character under the cursor and those  to  the  right  will  become
+         spaces.  Anything to the left of the cursor will be unchanged. The
+         cursor will remain in its original position.
+         
+         
+     Swap case
+     
+         F5 allows you quickly to change the case of  the  character  under
+         the  cursor.  If the character is an upper-case letter, it becomes
+         lower case, and vice-versa. Of course, nothing will happen if  the
+         character under the cursor is not a letter.
+         
+         
+     Clear top bit
+     
+         F4  is  normally  used  when you are editing saved PRESTEL frames.
+         Characters in these frames are often held with  the  top  bit  set
+         (i.e.   128  has  been  added  to  their  character  codes).  Such
+         characters will appear quite normally on the screen,  but  because
+         their  codes  are not the standard ones, FANFARE functions such as
+         search and replace will not be able to process them. You can  tell
+         that  a  character  has such a non-standard code by seeing what is
+         shown in the mnemonic field of  the  status  line:  normally,  for
+         printable  characters  (such  as "A" or SPACE), this field will be
+         blank, but if a hexadecimal code is shown there the character  has
+         a  non-standard  code.  Pressing F4  will  adjust  the code to the
+         standard value if it is non-standard.
+         
+           Note, though, that some care  and  some  detailed  knowledge  of
+         teletext codes is needed for this function: particularly, graphics
+         characters quite legitimately have codes with the top bit set, and
+         you should not use F4 on them.
+         
+
+
+
+
+
+
+
+
+
+
+
+                                       26
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.4 Inserting and deleting lines
+     
+        The  FANFARE  page  editor  also lets you operate on whole lines in
+     various ways. The first operations we  shall  consider  are  those  of
+     inserting and deleting whole lines.
+     
+     
+     Insert Line
+     
+         SHIFT-F3  lets you insert a line into the screen. The exact action
+         it takes depends on where you have positioned the cursor,  so  you
+         should  be  careful  to  see that you have things set up correctly
+         before using it.
+         
+         Suppose you simply wish to open up a one-line gap in a  screen  to
+         type  some  extra  information  in. Position the cursor to the far
+         left-hand side of the line where you want  the  gap  to  be,  then
+         press SHIFT-F3. The line the cursor is on, and all the lines below
+         it,  will  move  one  line  downwards,  and  a line of spaces will
+         appear. The cursor will now be positioned in this new blank  line.
+         The bottom line of the screen, of course, will disappear.
+         
+         Suppose,  though,  that you had the cursor positioned somewhere in
+         the middle of the line in the above example. Now, when  you  press
+         SHIFT-F3,  the effect is different. The line the cursor was on has
+         split into two parts. You  now  have  two  lines:  the  upper  one
+         consists  of the original left-hand side, and spaces on the right;
+         below this is a line consisting of spaces on  the  left,  and  the
+         original right-hand side. Again, the bottom line of the screen has
+         disappeared.
+         
+         
+     Delete Line
+     
+         SHIFT-F4  lets you delete a line from the screen. The exact action
+         it takes depends on where you have positioned the cursor,  so  you
+         should  be  careful  to  see that you have things set up correctly
+         before using it.
+         
+         Suppose you simply wish to delete an entire  line  and  close  the
+         page up to fill the gap. You should position the cursor to the far
+         left-hand side of the line to be deleted, then press SHIFT-F4. The
+         line  will  disappear,  and  the lines below will move up one. The
+         bottom line of the page will become an empty line.
+         
+         Suppose, though, that you had had  the  cursor  somewhere  in  the
+         middle  of  the  line  in  the  example  above. Now when you press
+         SHIFT-F4 the effect is different. The line the cursor was  on  has
+         become a merger of the original of the line below. It now contains
+         the left-hand  side  of the original line, and the right-hand side
+         of the line below. As before, the rest of the page has  moved  one
+         line up.
+         
+
+
+
+                                       27
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.5 Moving and copying lines
+     
+     
+        Frequently,  when  you  are  creating  FANFARE pages, you will find
+     yourself putting the same information into a number of  lines  on  the
+     page.  Typically,  you  may  wish  to  have  15  lines  with  the same
+     background and text colour, so would need  to  put  the  same  control
+     characters on each line in the same place.
+     
+        The FANFARE page editor gives you the means to do this very quickly
+     and simply. One page line is always the current selected line, and you
+     can  copy  this  line to another, or move it. When first you enter the
+     page editor, the selected line will be line 0, the  top  line  of  the
+     page.  You  can,  though,  select  any  line:  simply place the cursor
+     anywhere on the line, and press CONTROL-F5. The machine will  beep  to
+     confirm  that  the  line  is now selected, and you will see its number
+     appear on the lower status line.
+     
+        With the line of your choice selected, you can now copy or move it.
+     
+     
+     Copy Selected Line
+     
+         To copy the current selected line into another line, simply  place
+         the cursor anywhere in the destination line, and press CONTROL-F6.
+         The  line  the  cursor  is  on  will  become  an exact copy of the
+         selected line: the original line will be unchanged. It will remain
+         the selected line, so you can repeat the  copy  as  often  as  you
+         wish.
+         
+         Using CONTROL-F6  you  can quickly set every line to have the same
+         colour control characters: simply set one line up as you want  it,
+         make it the selected line with CONTROL-F5, then copy it to each of
+         the other lines in turn.
+         
+         
+     Move Selected Line
+     
+         This  operation  is  similar  to  the  one  described above. After
+         selecting a line move the cursor to anywhere  on  the  destination
+         line  and  press CONTROL-F7.  The  destination line will become an
+         exact copy of the selected line, but now the selected line  itself
+         is cleared to spaces.
+         
+         Note,  though,  that  the  number  of  the selected  line  has now
+         changed: the selected line is now the  line  you  moved  the  data
+         into,  so  that  the  selection will follow the actual data as you
+         move it around the screen.
+     
+
+
+
+
+
+
+
+                                       28
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     4.6 Using the COPY key
+     
+        An alternative way of copy data from one  part  of  the  screen  to
+     another is to use the COPY key. This operates in a very similar way to
+     the normal BBC Computer editor.
+     
+        You  turn  on  COPY mode by pressing the COPY key once. The machine
+     will bleep, and you will see  two  rapidly  flashing  cursors  at  the
+     current   position.  One  cursor,  the output  cursor  is  the  normal
+     underline shape, and the other, the copy cursor is a block covering an
+     entire character.
+     
+        Once in copy mode you can move the two  cursors  independently.  If
+     you  press  the  cursor keys by themselves, or with the SHIFT key, the
+     output cursor will move. If, though, you press  the CONTROL  key  with
+     the  cursor  key  or  with  the cursor key and the SHIFT key, the copy
+     cursor will move.
+     
+        To actually copy some characters, you should move the  copy  cursor
+     to the first character you wish to copy, and move the output cursor to
+     where  you  wish  the  character to go. Then, every time you press the
+     COPY key, the character under the  copy  cursor  will  appear  at  the
+     output  cursor,  and both cursors will move to the right. You can copy
+     as many characters as you wish, and can combine cursor moves with  use
+     of  the COPY  key. You can also type normally in copy mode: characters
+     will appear at the output cursor, but the copy cursor will not move.
+     
+        Finally, to exit copy mode you should press ESCAPE. The two cursors
+     will join and become the normal editing cursor.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       29
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5. COMPOSING TEXT PAGES
+     
+     
+        In this chapter, we shall look at how you can use the FANFARE  page
+     editor   to   create  pages  containing  pure  text.  We  shall  defer
+     considering graphics design to the next chapter.
+     
+        We begin here by looking at how teletext actually works, and seeing
+     how you use control codes  to  specify  such  things  as  colours  and
+     backgrounds.  Then  we  shall see how you can achieve various effects,
+     and finally we look at how to produce text in double height.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       30
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5.1 How teletext operates
+     
+     
+        When you use your BBC Computer  in  teletext  mode  (mode  7),  the
+     characters  on the screen are produced by a chip known as the teletext
+     character generator. Each character that you  see  is  stored  in  the
+     BBC's  memory as one byte, and the character generator reads the value
+     and converts it into the pattern of the letter or number.
+     
+        It is because the hard work of forming the characters on the screen
+     is done  by  the  teletext  character  generator  that  teletext  mode
+     occupies so little memory in the BBC Computer. In all other modes, the
+     video  memory  itself  has  to store the information on how to build a
+     character on the screen, rather than the simple one-byte code  of  the
+     character  itself.  The normal BBC Computer mode 7 screen has 25 lines
+     of 40 characters, so only 1000  bytes  (25  times  40)  of  memory  is
+     needed.  (Note  that  this is actually a non-standard size of teletext
+     screen - a FANFARE page provides 24 lines of 40 characters,  with  one
+     of these being reserved for the page title).
+     
+        Now, since the video memory stores only the code for each character
+     rather  than  the details of how to display it on the screen, some way
+     is needed to provide information about colour and so  on.  After  all,
+     the  code  for  a letter A will be the same whether it appears in red,
+     blue or is flashing on and off. The teletext  character  generator  is
+     told what to do with special character values known as control codes.
+     
+        When  building  a picture, the generator will procede one line at a
+     time, looking at each character in turn from right to  left.  When  it
+     sees  a  code  for  a  letter  "A", it arranges for the pattern of the
+     letter to appear on the screen, as you would expect. However,  of  the
+     possible  256  values that can be stored in each byte of video memory,
+     only some actually represent characters. Some of the others  are  used
+     by  the  generator  as  control codes, which modify its behaviour. For
+     example, suppose that, as it scans along the values  for  a  line  the
+     generator  finds  the value 130. This does not represent a letter, but
+     rather the control code GREEN. The generator notes that  it  has  seen
+     this  code:  then,  it  arranges  for  every character it subsequently
+     places on the line to appear in green. Further down the line,  it  may
+     find  a  value 132: all characters past this code will appear in blue.
+     It may then find a value 136: now all characters it  outputs  will  be
+     flashing  on  and  off  (although  still,  of  course, coloured blue).
+     Finally the generator will come to the end of the line,  and  it  will
+     forget  all the control codes it has seen so that the next line starts
+     as white, non-flashing text.
+     
+        To give a pictorial example, suppose you wanted to have a  line  of
+     text saying
+     
+                                  HELLO THERE
+     
+     
+     with  "HELLO"  in  red and "THERE" in yellow. The line you create will
+     actually contain the characters
+
+
+                                       31
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     
+     
+                            <RED>HELLO<YELLOW>THERE
+     
+     
+     where <RED> and <YELLOW> represent the control codes. Note that  there
+     is no space between "HELLO" and "THERE" - this is because the <YELLOW>
+     control code will appear on the display as a space.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       32
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5.2 Specifying control codes
+     
+     
+        The  FANFARE  page  editor gives you a very simple means of putting
+     control codes in your display page, with no  need  for  you  to  think
+     about - or even to know - the values of the codes themselves.
+     
+        Control  codes  can  be  typed  by pressing various combinations of
+     keys. In general, the keys have been chosen to give you an easy way of
+     recalling what they do: thus if you press CONTROL-R  (that  is,  press
+     the "R" and the CONTROL keys simultaneously), the control code for RED
+     will be placed on the screen.
+     
+        To  see  the  effect  of  this,  enter  the  page  editor and press
+     CONTROL-R. If you then type a few characters, you will find that  they
+     appear  in  red.  Then  press CONTROL-Y  and  type some more: now your
+     characters appear in yellow.
+     
+        As we have seen, the control codes themselves appear as  spaces  on
+     the  screen,  so  there  is  no  way you can tell whether any space is
+     really a space or whether it's a control code. The  page  editor  will
+     show you in the status line, though: whenever the cursor is positioned
+     over  a control code, a mnemonic for that code will appear on the left
+     of the bottom status line to help you.
+     
+        A further way of locating control codes on the screen is  to  press
+     F9. This will position the cursor on the next control code between the
+     cursor and the end of the screen, and will display the mnemonic for it
+     in the status line.
+     
+        Appendix  2  contains a complete list of the teletext control codes
+     available. Here we  shall  confine  ourselves  to  those  relevant  to
+     ordinary text, and to general usage.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       33
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5.3 Coloured text
+     
+        There are seven control codes that affect the colour of the text on
+     the screen. They are:
+     
+                         blue                CONTROL-B
+                         cyan                CONTROL-C
+                         green               CONTROL-G
+                         magenta             CONTROL-M
+                         red                 CONTROL-R
+                         yellow              CONTROL-Y
+                         white               CONTROL-W
+                         
+                         
+        Remember  that every line starts automatically in white - you don't
+     need to press CONTROL-W before you begin to type on a line.
+     
+        Each control code cancels the effect of a preceding  one,  allowing
+     you to mix colours on one line.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       34
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5.4 Flashing text
+     
+        Two  further control codes allow you to select text that flashes on
+     and off. If you press CONTROL-F, then all text following,  up  to  the
+     end  of  the line, will flash on and off. CONTROL-S reverts to steady,
+     non-flashing text, so you can mix flashing and non-flashing text in  a
+     line.
+     
+        Remember that every line starts automatically in non-flashing mode.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       35
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     5.5 Setting background colours
+     
+        As  well  as  selecting  the  colour  of  the  text on the display,
+     teletext permits you to control the colour of the background. The  way
+     the  teletext  character  generator  does  this  makes the operation a
+     little tricky, but once you have got familiar with the process it will
+     be simple to get right.
+     
+        The character generator will change the colour  of  the  background
+     whenever  it  encounters a NEW BACKGROUND control code, which you type
+     on the keyboard by pressing CONTROL-X. Now, since  there  is  only one
+     code  available to change background colour, the generator must obtain
+     the information on what to change the colour to from  somewhere  else.
+     In fact, the colour it uses is that defined by the last colour control
+     byte  that  it  saw  on  the same line. If there are no colour control
+     bytes, it will use the colour white. The background colour will change
+     immediately, rather than at  the  position  after  the NEW  BACKGROUND
+     code.
+     
+        Thus,  suppose  you  are  the  left-hand  side  of a line, and type
+     CONTROL-Y (yellow) then CONTROL-X (new background). What  will  appear
+     on  the line is a space where the YELLOW code is, followed by a change
+     in background colour to yellow that lasts to the end of the line.  The
+     cursor  will  be  in the third character of the line, of course, since
+     the NEW BACKGROUND code will appear as a space in the second.
+     
+        However, if you now type some characters, nothing  appears  on  the
+     screen,  although  the cursor still moves. The reason is that, besides
+     telling the NEW BACKGROUND code the colour to use, the YELLOW  control
+     code  is also affecting text, so that you now have both background and
+     text set to yellow.
+     
+        To get the text to be visible, you must therefore  type  a  further
+     colour control code. If you move the cursor back to character position
+     2  (immediately after the NEW BACKGROUND code) and type CONTROL-R, the
+     control code RED will be placed on the screen. Anything you type  will
+     now appear as red text on a yellow background.
+     
+        You  can  change  background colour as often as you like on a line.
+     Although it is most common for the NEW BACKGROUND code to  immediately
+     follow  the colour control byte, this need not be so. For example, you
+     could type CONTROL-M, followed by  some  text  which  will  appear  in
+     magenta, then CONTROL-X to select a magenta background.
+     
+        Since  there  is  no  colour  control code to select black, a black
+     background is obtained in a slightly different way. Pressing CONTROL-Z
+     will write a BLACK BACKGROUND control code to the  screen:  this  will
+     change  the  background  colour  to  black.  The  change  is performed
+     immediately, rather than at the following character position.
+     
+        Remember that every line starts  out  as  white  text  on  a  black
+     background.
+     
+     
+
+
+                                       36
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     
+     5.6 Double height mode
+     
+        The  teletext character generator can also produce output in double
+     height mode. Here all characters (text or  graphics)  will  appear  as
+     twice their normal height, but the same width.
+     
+        This  effect is also produce with various control codes. Basically,
+     to produce a double height display, you should  provide  two identical
+     lines,  one  immediately  below  the other, and start each line with a
+     DOUBLE HEIGHT control code.
+     
+        To see how this works, position the cursor at the left-hand side of
+     a line. Press CONTROL-D to output a DOUBLE HEIGHT control  code,  then
+     type  "ABCD".  The  characters that appear will be rather strange - in
+     fact they will be the top halves of the  double  height  letters.  Now
+     press RETURN  to  move the start of the line below, and once more type
+     CONTROL-D and "ABCD". This time the bottom halves of the letters  will
+     be output, and the effect will be to produce double height letters. In
+     this case, it's entirely up to you to make the bottom line a duplicate
+     of  the  top. You can obtain interesting effects by pairing the top of
+     one letter with the bottom of another, or by having  the  top  in  one
+     colour and the bottom in a different one.
+     
+        Although   it  is  perfectly  possible  to  produce  double  height
+     characters in the way described, it can be laborious and  error-prone.
+     The  FANFARE  screen  editor allows you to work in double height mode,
+     where  it  will  automatically  ensure  that  lines   are   duplicated
+     correctly.
+     
+        When  first  you enter the screen editor, it is operating in single
+     height mode, and there will be an "S" in the status flags area. If you
+     press F1 the "S" will change to a "D", indicating that  double  height
+     mode  is  selected.  (Pressing F1  again  will return to single height
+     mode).
+     
+        In double height mode,  everything  is  automatically  done  twice.
+     Every  character  you type, whether an ordinary character or a control
+     character, is output at the position of the  cursor and  at  the  same
+     position  on  the  line  below.  Thus,  suppose  that  you  are at the
+     left-hand side of a line, and select double-height mode.  First,  type
+     CONTROL-D  to  output a DOUBLE HEIGHT control code on the current line
+     and the one below, then  type  some  text.  The  letters  will  appear
+     automatically  as  double  height  letters. Similarly, if you delete a
+     character, both top and bottom will disappear,  and  the Insert  Space
+     and Delete  Character  functions will also work on both top and bottom
+     halves. If you move the cursor up and down it will  move  in  two-line
+     jumps,  and the Insert Line and Delete Line functions will also insert
+     or delete double-height lines.
+     
+        However, although the screen editor  allows  you  to  easily  write
+     characters  to  two lines together, it is entirely up to you to ensure
+     that DOUBLE HEIGHT control characters are present at the right places.
+     As an example of what can happen,  select  double-height  mode,  press
+
+
+                                       37
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     CONTROL-D,  then  type  characters until the line is full. If you type
+     some more, the characters will continue on the next double-height line
+     below, but since these lines have no DOUBLE HEIGHT  control  codes  on
+     them,  the letters appear as ordinary characters, one above the other.
+     One solution to this is to always remember to press CONTROL-D  at  the
+     start  of  every  line. You can make this process easier by using edit
+     windows, which we shall discuss in a later chapter.
+     
+        The final thing to consider here is the NORMAL HEIGHT control code,
+     which causes subsequent characters to be output in normal height,  and
+     which  you  can  produce  by  pressing CONTROL-N. This is not quite as
+     useful as it might be, because of various peculiarities  (not  to  say
+     bugs) in the operation of the teletext character generator. Basically,
+     you can switch from double height to single height in a line, but only
+     if  it  is  the top line of a double-height pair. If you try to switch
+     the bottom line to single height mode, the line will appear as  spaces
+     past  the NORMAL  HEIGHT  code,  whatever characters are really there.
+     There is no way of overcoming this problem.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       38
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6. TELETEXT GRAPHICS
+     
+     
+        In this chapter, we shall examine how you can extend your  teletext
+     pages with graphics characters.
+     
+        We  shall  begin,  as  we did chapter 4, by looking at how teletext
+     graphics operate, then turn to the FANFARE page editor facilities that
+     let you compose pictures.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       39
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.1 How graphics operate
+     
+        As we saw in chapter 4, each character in a teletext page is stored
+     in memory as one byte, and the  teletext  character  generator  either
+     converts the value into a visible character, or treats it as a control
+     code.  So  far, the visible characters we have used have been ordinary
+     letters and numbers. However, some of the 256 possible values in  each
+     memory  byte  are  regarded  by  the  character  generator as graphics
+     characters, and  appear  as  special  graphics  patterns  rather  than
+     letters or numbers.
+     
+        The  teletext system provides very low resolution graphics. You can
+     regard the space a character occupies on the screen as  a  rectangular
+     box,  divided  into  3 rows of two blocks or pixels. In graphics mode,
+     each of these six pixels can be either on or off, and each must be the
+     same colour. Thus, you could regard the 40 column by 23 line page that
+     FANFARE provides you as an 80 by 69 graphics screen.
+     
+        Now, each line of the display starts, as we  have  seen,  as  white
+     text  on  a  black background. In order to obtain graphics characters,
+     you must place a graphics control code  on  a  line.  This  code  will
+     select graphics mode, and also specify the graphics colour to be used.
+     Any  characters  following  this  code  will,  if correctly set up, be
+     displayed on the screen as a graphics character with  various  of  the
+     pixels on in the specified colour.
+     
+        You  can,  of course, mix graphics of various colours on a line, by
+     outputting graphics control codes for different colours. You can  also
+     use  the FLASH, DOUBLE HEIGHT and STEADY codes amongst others, and can
+     mix graphics with text.
+     
+        There are some other graphics effects that you can obtain, and  the
+     subsequent parts of this chapter will explain and illustrate them.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       40
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.2 Graphics control codes
+     
+        There  are  seven  control  codes that select graphics mode and the
+     colour to be used. These can all be produced  from  the  keyboard,  as
+     follows:
+     
+     
+                         blue                CONTROL-SHIFT-B
+                         cyan                CONTROL-SHIFT-C
+                         green               CONTROL-SHIFT-G
+                         magenta             CONTROL-SHIFT-M
+                         red                 CONTROL-SHIFT-R
+                         yellow              CONTROL-SHIFT-Y
+                         white               CONTROL-SHIFT-W
+                         
+                         
+        Each  control  code cancels the effect of a the one preceding it on
+     the same line.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       41
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.3 Producing graphics characters
+     
+        Working out the values to use  to  get  the  correct  pixels  in  a
+     graphics  characters  is a tedious business. FANFARE, though, provides
+     two means of designing graphics, neither of which require you to  even
+     know what the values are.
+     
+     
+     6.3.1 Pixel mode
+     
+        The  easiest  way  to  produce  graphics is to set the FANFARE page
+     editor into pixel mode, where the keyboard  changes  into  a  graphics
+     design keyboard.
+     
+        To  try  this, position the cursor at the left-hand side of a line.
+     First, output a  graphics  control  code  by,  for  example,  pressing
+     CONTROL-SHIFT-G (GRAPHICS GREEN). Now you can set the page editor into
+     pixel  mode by pressing F8. A "P" will appear in the status flags area
+     to indicate that pixel mode is in use.
+     
+        Once in pixel  mode,  only  a  few  keys  of  the  keyboard  remain
+     operative. You can use the function keys as normal, use the cursor and
+     RETURN  keys  to  move  around the screen, or produce control codes by
+     pressing CONTROL and one of the keys in the lists given  earlier.  The
+     only other keys that are used are SPACE, Q, W, A, S, Z and X.
+     
+        These last 6 keys are arranged in a rough block
+     
+                                   Q W
+                                   A S
+                                   Z X
+                                   
+     and  you  can  regard the keys as corresponding to the six pixels in a
+     graphics character.
+     
+        Suppose in this example the character  under  the  cursor  was  not
+     already  a  graphics  character, and you  press "Q". On the screen the
+     character under the cursor will be replaced with a graphics  character
+     which  has  only  the top left pixel on. Note that the cursor does not
+     move: in pixel mode you must always move it  manually,  regardless  of
+     whether you have auto-cursor mode or manual-cursor mode selected. Then
+     if you press "S", another pixel will come on in the character. You can
+     use  the  six  keys to turn any pixels on: if you press a key when the
+     corresponding pixel is on, it will turn off.
+     
+        If the character under  the  cursor  at  the  start  was already  a
+     graphics  character,  the  effect will be similar to that shown above,
+     except that the first keypress will not clear the character.
+     
+        If you wish to clear the whole character out and start  again,  you
+     can press SPACE: this will turn all the pixels off.
+     
+        Once  the  graphics  character  is as you require, you can move the
+     cursor to the next position  with  the  cursor  keys  and  repeat  the
+
+
+                                       42
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     operation.  When  you  have  finished in pixel mode, press F8 again to
+     return to character mode, when a "C" will appear in the  status  flags
+     area.
+     
+        Pixel  mode  lets  you draw "freehand" on the screen at will. Note,
+     though, that your characters will only appear as  graphics  characters
+     if  there  is a graphics control character earlier on the line. If you
+     have forgotten to put one in the right  place,  move  there  with  the
+     cursor  and  use  one  of  the CONTROL-SHIFT  keys  in the list above.
+     (Remember though that the cursor will not move  after  you  have  done
+     this,  so  be  careful  that you don't then overwrite the control code
+     with another graphics character).
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       43
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.3.2 Designing a graphics character
+     
+     
+        The other means of producing graphics characters uses the character
+     designer. If you press SHIFT-F5 you will see a  prompt  "Design  char"
+     appear at the right of the top status line.
+     
+        In  this  mode, only  the Q, W, A, S, Z and X keys will operate. As
+     before, each corresponds to a pixel of a graphics character, only  now
+     as you press them the result will appear at the far right of the lower
+     status  line.  You  can set the pixels of this character on and off as
+     required, then, when you have the character you want, press RETURN  to
+     store it.
+     
+        The  editor  is  now  back  in  normal mode, but the screen has not
+     changed. The character you designed is shown in the top right  of  the
+     status line, and now you can put this on the screen by pressing F3.
+     
+        You  can  repeat this process to design another character. However,
+     each  subsequent  use  of SHIFT-F5  will  take  the  currently   shown
+     character   as   the  starting  point,  allowing  you  to  make  small
+     modifications to the design.
+     
+        A further way of setting up the character used by F3 is  to  select
+     an  existing character from the screen. If you wish, say, to produce a
+     large number of copies of a graphics character that you have  produced
+     earlier,  then,  instead of redesigning it, simply position the cursor
+     on it and press F2. The character will appear on the right  hand  side
+     of the lower status line, and will be output when you press F3.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       44
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.4 Non-contiguous graphics
+     
+     
+        Normally,   graphics  characters  will  appear  on  the  screen  in
+     contiguous graphics mode. This  indicates  that  all  the  pixels  are
+     joined  together  into  a large blob. The character generator, though,
+     allows you to select separate graphics mode, in which each pixel  will
+     appear as a small block, separated from its neighbours by a thin line.
+     (This  is  how  the selected character appears at the far right of the
+     lower status line).
+     
+        Separate graphics mode is selected by  a  control  code  which  you
+     produce  by  pressing CONTROL-@. All graphics characters after this on
+     the line will appear as separated pixels. You can revert to contiguous
+     graphics at any time with the control code produced by CONTROL-K.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       45
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     6.5 Hold and release graphics
+     
+     
+        When you come to design graphics screens, you will find that it can
+     be awkward changing the graphics colour used  to  select  flash,  etc,
+     without leaving a gap where the control code goes.
+     
+        The  character  generator  provides  a  means  of  overcoming  this
+     problem, by letting you select hold graphics mode. This is switched on
+     with a control code that you produce by  pressing CONTROL-H.  In  this
+     mode,  the generator will not leave a gap when it sees a control code,
+     but will place a copy of the previous  graphics  character  where  the
+     control code would go.
+     
+        You  can revert to normal, release graphics mode at any time on the
+     line with the control code produce by pressing CONTROL-U.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       46
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     7. ADVANCED PAGE EDITOR FACILITIES
+     
+        The techniques described in the preceding chapters will  allow  you
+     to  create  and  manipulate  any teletext pages you wish. However, the
+     FANFARE page editor contains some powerful extra  facilities  to  make
+     editing  much  easier  and  more flexible, and allowing you to build a
+     library of elements of pages.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       47
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     7.1 Windows
+     
+        When you come to edit complex pages you  will  probably  find  that
+     great  care  is  needed  to avoid disturbing the layout of the control
+     codes. Typically, a page might consist of a set of  control  codes  at
+     the  start  of  every  line  so  that inserting and deleting lines can
+     produce gaps without them. Also, operations such as centering text can
+     disturb the border you might have placed round the screen, and so on.
+     
+        The nature of teletext pages is  such  that  some  care  is  always
+     needed,  but  FANFARE  offers a powerful facility to help you. You can
+     define an edit window, which can encompass  a  specific  part  of  the
+     screen.  Once this is done, all edit operations take place only within
+     the window, and everything outside is unchangeable.  For  example,  if
+     you  have  a  page  with  a  border round it, you can declare a window
+     within the border. Then you can insert and  delete  lines,  move  text
+     about, even wipe the contents out completely, while leaving the border
+     exactly as it is.
+     
+     
+     7.1.1 Selecting a window
+     
+        FANFARE  allows you to set up seven windows when editing, and these
+     can be overlapping, or even exactly the same, as you  wish.  Only  one
+     window  will  actually  be in force at any time, and you determine the
+     one you want to use with the select window function. FANFARE will  ask
+     you to specify the window you wish to use: you can reply with a number
+     between  1 and 6 for windows 1 to 6, or can press RETURN to select the
+     temporary window. The status line will indicate  the  window  you  are
+     using:  the  characters "W1", "W2" and so on will appear if you select
+     window 1, 2, etc; and "W-" indicates the temporary window.
+     
+        All seven windows can be used in the same way, and you can use  any
+     of them at any time. However, there is an important difference between
+     the  temporary  window  and  windows  1  to 6. The temporary window is
+     defined only for the period of one edit, and it reverts to  being  the
+     entire  screen  every  time  you  start a new edit. The other windows,
+     though, are permanently associated with the page you are editing,  and
+     will be recorded when you save the page in a display file. If you then
+     edit  that  page again later, the window settings will be available as
+     they were.
+     
+        Typically, you would use the temporary window for most  operations,
+     since  you  would  not  wish to record most settings. If, though, your
+     page contained some areas that were to be frequently updated  (perhaps
+     by  users  not  so  experienced in using FANFARE who might easily make
+     mistakes and unintentionally  spoil  the  design)  you  could  set  up
+     permanent  windows  for  those  areas. Updating would then be a simple
+     matter of selecting the window  appropriate  and  editing:  all  other
+     areas  of  the page would be protected from accidental change. Section
+     7.1.4 describes some further features that will  be  of  use  in  this
+     area.
+     
+     
+
+
+                                       48
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     7.1.2 Defining a window
+     
+        To  define  an  edit  window, you should first select the window as
+     described above, then press CONTROL-SHIFT-F0. A flashing  prompt  will
+     appear  on  the right of the top status line, inviting you to mark the
+     bottom left of the window. Using the cursor keys only, move the cursor
+     till it is positioned on the character that is the bottom left  corner
+     of  the  window,  then press RETURN. The prompt will now invite you to
+     mark the top right of the window: again, position the  cursor  on  the
+     character  that  will be the top right of the window, and press RETURN
+     to mark it. Note that once you have marked the bottom left, you cannot
+     move the cursor below or left of that point.
+     
+        Once the top right is marked, the window has been defined, and  the
+     cursor  will  move to the top right corner. Now if you move the cursor
+     or type you will find that  it  is  impossible  to  move  outside  the
+     window.  Functions such as Insert Line and Delete Line still work, but
+     they operate only on  the  parts  of  the  lines  inside  the  window.
+     Similarly  in copy mode the output cursor is restricted to the current
+     window; however, the copy cursor can always be positioned anywhere  on
+     the screen regardless of the window.
+     
+        As  an  example,  suppose  you  wish  to set up a screen consisting
+     entirely of yellow text on a red background. Set up the screen so each
+     line starts with the RED, NEW  BACKGROUND  and YELLOW  control  codes,
+     then  set  up  a  window so that the codes are outside it. Now you can
+     type freely, insert and delete lines or characters, and the  text  and
+     background colours will never change.
+     
+        At  any  time  when  you  are defining a window you can abandon the
+     process by  pressing ESCAPE.  The  previous  window  setting  will  be
+     restored.
+     
+     
+     7.1.3 Releasing windows
+     
+        You can, of course, always redefine a window to encompass the whole
+     of  the  screen.  A  quicker  way of doing this, though, is to use the
+     release window  function.  Pressing CONTROL-SHIFT-F1  will  unset  the
+     current  window,  so  that  you  can once more access the whole of the
+     screen. If the current window is window 1  to  6,  then  FANFARE  will
+     record that that window is no longer defined.
+     
+        If   you   wish   to  release all  seven  windows,  you  can  press
+     CONTROL-SHIFT-F3. You will be asked if you are sure  you  wish  to  do
+     this:  if  you reply "Y" to the question all windows will be marked as
+     undefined.
+     
+     
+     7.1.4 Automatic window selection
+     
+        In section 7.1.1 we used as an example the case where a page had to
+     be frequently updated, possibly by inexperienced users.  Windows  were
+     used  as  the  means of constraining the edits to the correct parts of
+
+
+                                       49
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     the screen to avoid accidental  damage.  FANFARE  provides  a  further
+     means  of  protection  here  to  make  things  as easy as possible for
+     inexperienced users to do updates.
+     
+        As we saw, windows 1 to 6 are recorded in  the  display  file  with
+     each page, and can be selected at will in an edit session. By default,
+     FANFARE will always arrange for the temporary window to be active when
+     you  enter  the  page editor, and this window will encompass the whole
+     screen. However, if  you  wish,  you  can  specify  that  one  of  the
+     permanent windows 1 to 6 will be automatically selected instead. Thus,
+     in  the  example here, you could set windows 1 to 6 to "safe" areas of
+     the screen, and specify that, say, window 3 would be selected whenever
+     you start to edit the page. On entry to the  editor,  window  3  would
+     then  be  in  use,  and  the user would need to explicitely select the
+     temporary window before he could access the whole of the design.
+     
+        In order to specify the window that you  wish  selected,  you  will
+     need  to  use  the  facilities  available  in  the page  control menu,
+     described in section 9.5.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       50
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     7.2 Blocks
+     
+     
+        The FANFARE page editor also lets you define parts  of  the  screen
+     known  as blocks.  The contents of a block are stored in memory in the
+     block storage area: from there they can be copied  at  will  to  other
+     parts of the screen, or saved into a file for later use.
+     
+        Using  the  load and save block options, you can build up a library
+     of parts of pages - standard logos, for example.
+     
+     
+     7.2.1 Defining a block
+     
+        To define  a  block  and  store  its  contents,  you  should  press
+     CONTROL-SHIFT-F5.  A  flashing  prompt will appear at the right of the
+     top status line, inviting you to mark the bottom right of  the  block.
+     Using the cursor keys only, position the cursor on the character which
+     is  the  bottom  right of the block, then press RETURN. Now the prompt
+     will ask you to mark the top right: again, position the cursor to  the
+     character  which  is the top right of the block, and press RETURN. The
+     contents of the block so defined will be copied to the  block  storage
+     area,  replacing  anything  already there, and you can resume editing.
+     (Note that you can cancel the operation by pressing ESCAPE instead  of
+     positioning the cursor).
+     
+        Note  that, once you have defined a block, its contents will not be
+     changed if you alter the screen area it came from.
+     
+     
+     7.2.2 Copying and overlaying a block
+     
+        Once a block is defined, you can copy it  from  the  block  storage
+     area  to  the screen as often as you wish. You have two choices in how
+     the operation is to be done, known  as block  copy  and block  overlay
+     respectively.
+     
+        Block  Copy  is  selected  by pressing CONTROL-SHIFT-F6. A flashing
+     prompt will appear at the right of the top status line,  inviting  you
+     to  mark  the  bottom  left  corner of where you wich the block to go.
+     Using the cursor keys only, position the cursor  to  this  point,  and
+     press RETURN.  The  saved  block  will  appear on the screen, with its
+     bottom left corner at the place where you have the cursor.  Note  that
+     if  the  copied  block  would  overlap  an  edit  window,  only  those
+     characters inside the window will appear. In this mode, the  block  is
+     copied  to  the  screen exactly, and any spaces within the rectangular
+     shape of the block will replace characters on the screen.
+     
+        Block Overlay is selected by pressing CONTROL-SHIFT-F7, and is used
+     in the same way as the block copy described above.  Now,  though,  the
+     characters  copies to the screen are tested, and any spaces within the
+     block  are ignored,  the  corresponding  characters  on   the   screen
+     remaining  as they are. This allows you, for example, to store a small
+     pattern in a block and bring it back without the inevitable border  of
+
+
+                                       51
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     spaces.  If you want to copy some spaces when using block overlay, you
+     must write a special control character NULL instead  of  pressing  the
+     space  bar  when  creating  the  block.  This character is produced by
+     pressing CONTROL-O, and apart from its action in block overlay it will
+     appear and behave as though it were a real space.
+     
+        Remember, though, that it is up to you to  ensure  that  conditions
+     are set correctly for the appearance of the copied block. For example,
+     if  the block contains only graphics characters, you must yourself put
+     the appropriate control codes on the lines into which you copy it.
+     
+     
+     7.2.3 Saving a block to file
+     
+        As well as copying a block, you can also save it into a file,  from
+     which  it  be  subsequently  loaded. To save a block, you should press
+     CONTROL-SHIFT-F8. A dialogue box will appear  at  the  bottom  of  the
+     screen,  asking you for the name of the file. Type this in, then press
+     RETURN, after which the editor will write the contents of the  current
+     block  to the file. The screen will then return to normal, and you can
+     resume editing.
+     
+        Should the file you name already exist on the  disc,  you  will  be
+     asked whether or not you wish to overwrite its current contents.
+     
+     
+     7.2.4 Loading a block from file
+     
+        A  saved  block  can  be  reloaded  from disc whenever you wish. To
+     accomplish this, press CONTROL-SHIFT-F9. A dialogue box will appear at
+     the bottom of the screen, and will ask you for  the  file  name.  Type
+     this  in  and  press RETURN: the editor will then load the saved block
+     into the block storage area. The screen will return to normal, and you
+     can carry on with editing as normal, and copy the block to the  screen
+     whenever you wish.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       52
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     7.3 Searching and replacing
+     
+        Occasionally you may wish to change a large number of characters in
+     a  display  page  (for example, you may want to change all red text to
+     green by altering the colour control codes). The FANFARE  page  editor
+     provides a means for you to do such changes in one operation, with the
+     minimum of work.
+     
+        The search  and  replace  function, which you invoke with SHIFT-F9,
+     lets you change occurences of any  single  character  into  any  other
+     single   character.   You   can   elect   to  change  all  occurrences
+     automatically, or to change only some of them.
+     
+        In order to perform a search  and  replace  operation,  you  should
+     first  position the cursor so that it is higher on the screen than the
+     first character you wish to change. FANFARE will then ask you for  the
+     character  you  wish  to change, and the character you wish it changed
+     into. You can specify any character you wish  here,  and  the  various
+     ways  you can specify control or other characters are described below.
+     Next, FANFARE asks if you wish to change all occurrences. If you reply
+     "Y", the editor will  at  once  locate  all  the  matching  characters
+     between  the  starting cursor position and the end of the current edit
+     window, and will change them.  If  you  reply  "N",  the  editor  will
+     position  the  cursor  at each matching character in turn and ask what
+     you wish to do. You can then type "Y" to change the character, "N"  to
+     leave it as it is, or press ESCAPE to end the operation.
+     
+        Note  that,  as  with  all  other editor functions, only characters
+     within the current edit window will be changed.
+     
+     
+     7.3.1 Specifying a search/replace character
+     
+        As described above, the search and replace function  will  ask  you
+     for  the  character  to be searched for, and the character it is to be
+     changed into. You can reply to both questions in one of several  ways,
+     depending  on  how you wish to specify the character. You can also, of
+     course, press ESCAPE to abandon the operation.
+     
+          a. A printable character
+             
+             If the character you wish to specify is a printable one,  such
+             as  "A"  or  "3",  for  instance,  simply  type  the character
+             concerned. The character will appear on the screen as you type
+             it (the space bar will be echoed as the word "SPACE").
+             
+          b. The selected graphics character
+             
+             If the character you wish to search  for  or  replace  is  the
+             selected graphics character that is output by F2, simply press
+             F2
+             
+          c. A designed graphics character
+             
+
+
+                                       53
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+             If  you  wish  to  specify a graphics character other than the
+             selected one, you can enter graphic design  mode  by  pressing
+             SHIFT-F5.  You  can  now  specify  the pixels of the character
+             using the Q, W, A, S, Z and X keys, as  described  in  section
+             6.3.2.  When  you have set the character as you require, press
+             RETURN.
+             
+          d. A hexadecimal code
+             
+             Sometimes you may wish to specify a character as a hexadecimal
+             code value, for instance to change all occurences of code  &A0
+             (the  code  for  "SPACE"  with  the top bit set) into ordinary
+             spaces. To specify a character  as  a  hexadecimal  code,  you
+             should  press CONTROL-SHIFT-&. You will now see the characters
+             "&--"  on  the  screen,  inviting  you  to  type  exactly  two
+             hexadecimal  digits  (that is, numbers from 0 to 9 and letters
+             from A to F).
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       54
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8. THE DISPLAY SEQUENCE EDITOR
+     
+     
+        Once you have constructed a FANFARE file consisting of a number  of
+     teletext  pages,  you  will  wish to set up the values controlling how
+     these pages are to be displayed. Each file you  create  has  a display
+     sequence  associated  with  it,  and  this sequence tells FANFARE, for
+     example, to display page 3 for 10 seconds, then display page 9 for  15
+     seconds,  then  page 25 for 5 seconds, and so on. You create and amend
+     the display sequence with a special sequence  editor  which  lets  you
+     manipulate the values it contains.
+     
+        This  chapter  will describe and illustrate the use of the sequence
+     editor, and show how you obtain various display effects.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       55
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8.1 The sequence editor menu
+     
+        You invoke the  sequence  editor  by  choosing  the enter  sequence
+     editor  option  of  the  main menu or filer menu. Once you select this
+     option, you will see the sequence editor menu appear,  presenting  you
+     with a set of options related to changing the display sequence.
+     
+        The  sequence  editor operates in a similar way to the page editor,
+     and you will see  similar  options  available  to  you  in  the  menu.
+     Briefly, the operations you can perform are these:
+     
+     
+     Load sequence to buffer
+     
+               This  option will read the display sequence contained in the
+               current file, and hold it in a buffer in  memory  for  later
+               use.
+               
+     Save sequence in buffer
+     
+               This option will write the display sequence contained in the
+               memory  buffer  into  the  current file. This option and the
+               previous one could be used, for example, to load the display
+               sequence from one file and copy it to another: you would use
+               the load option, change the current file with the UP or DOWN
+               cursor keys, then use the save option.
+               
+     Edit sequence in buffer
+     
+               This option lets you amend the display sequence contained in
+               the memory buffer. Again, you might combine this option with
+               the first two to move a display sequence from  one  file  to
+               another.  The memory buffer always contains the last display
+               sequence you were editing, whatever options you used to load
+               it, and initially it contains  a  completely  empty  display
+               sequence.
+               
+     Update sequence in file
+     
+               This  option is the one you will most commonly use to change
+               the display sequence in a file. It will  load  the  sequence
+               from  the  file  into  memory,  allow  you  to edit it, then
+               automatically write the amended sequence back into the  same
+               file.
+               
+     Update and display page chaining
+     
+               These  options  are  used  to  control  a  refinement of the
+               display sequence termend page  chaining.  We  shall  discuss
+               this in section 8.3.
+               
+
+
+
+
+
+                                       56
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8.2 Editing a display sequence
+     
+        Once  you  enter  the display sequence editor, with either the edit
+     sequence in buffer or update sequence in file options, you will see  a
+     screen  displaying  the  first  20  entries  out  of  the 256 that the
+     sequence holds. At the top of the screen is a header  line  to  remind
+     you that you are using the sequence editor: you will also see here the
+     name of the current file, if you have one open.
+     
+        Each  entry will appear on the screen in 3 columns. on the left you
+     will see the number of the entry within the sequence, running  from  1
+     to  256.  The  FANFARE display starts at entry number 1, then moves to
+     number 2, until it reaches entry number 256, at which point it returns
+     to entry number 1 again. The second column shows you the number of the
+     page that is to be displayed by this entry, and the right-hand  column
+     gives you the time in seconds for which the page is to appear.
+     
+        Initially, you will see the page number and time columns containing
+     nothing  but  "..." entries. Any entry displayed in this way is empty,
+     and will be ignored when the display is running: initially, of course,
+     the display sequence in a file will be entirely empty.
+     
+        At the start, you will also  see  that  the  "1"  indicating  entry
+     number 1 is displayed on a red background. This shows you which of the
+     entries  on  the  screen  you  are currently editing. Also, the screen
+     number field is on a yellow background: this indicates  that  you  are
+     currently editing the page number part of the entry.
+     
+     8.2.1 Moving from entry to entry
+     
+        To  move  from one entry to another in the display sequence you use
+     the UP and DOWN cursor keys. As you press them you will  see  the  red
+     background  in  the left-hand column move up and down, indicating that
+     you are moving to different  entries.  When  the  cursor  reaches  the
+     bottom  of  the  screen,  using  the DOWN cursor will scroll the whole
+     screen, taking you to higher and higher entries: conversely, with  the
+     cursor  at the top of the screen, use of the UP cursor key scrolls the
+     screen in the opposite direction.
+     
+        Since there are 256 entries in the display  sequence  it  can  take
+     some  time  to  move  from one end to the other, so you can arrange to
+     move from one entry to another in  larger  jumps.  If  you  press  the
+     CONTROL key with either the UP or DOWN cursor keys, you will find that
+     you  move  up  and down the sequence in jumps of 20 entries. With this
+     method it takes only a few key presses to move from  one  end  of  the
+     display sequence to the other.
+     
+        As  a  further  aid,  pressing F0  will  always return you to entry
+     number 1. (Note that this is labelled on the screen editor keystrip as
+     Home Cursor, since it takes you to the start of a  screen  -  function
+     keys  in  the screen editor and sequence editor have been deliberately
+     set to have similar effects).
+     
+     
+
+
+                                       57
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8.2.2 Changing values
+     
+        Once you have used the UP and DOWN cursor keys to select the  entry
+     you  wish  to  change,  altering  the values in the entry is similarly
+     easy.
+     
+        The field whose value you are changing is the one with  the  yellow
+     background,  as  we  discussed  earlier: pressing the RIGHT cursor key
+     will increase the value of the field, and pressing the LEFT cursor key
+     will decrease it. The value will change by one every  time  you  press
+     the  key:  if  you  wish  to  alter  the value more rapidly, press the
+     CONTROL key and the cursor key together, and the value will change  in
+     steps of 10.
+     
+        You  can  change  the  value  in  the other  field  of the entry by
+     pressing the TAB key. This causes the yellow background to move to the
+     other column of the entry, and now the cursor  keys  will  change this
+     value. Pressing TAB once more returns you to the original column.
+     
+        If  you  wish to empty an entry, you can either use the LEFT cursor
+     key to decrease the page number field to zero, or, to  accomplish  the
+     operation more easily, you can press CONTROL-F0.
+     
+        There are some limits on what you can change the values in an entry
+     to, and FANFARE will ensure that every entry is complete and sensible.
+     The rules are quite simple and obvious:
+     
+          If  you are editing an empty entry, you must edit the page number
+          field first. This is  so  you  cannot  set  an  entry  that  says
+          "display  page  for 10 seconds" without saying what page you want
+          displayed. You will not be able to use TAB to move  to  the  time
+          field until you have edited the page number.
+          
+          Similarly, FANFARE will make sure that you do not create an entry
+          saying,  for example, "display page 3" without specifying for how
+          long. Thus, when you edit an empty entry, the time field will  be
+          automatically  set  to  10  seconds  as soon as you edit the page
+          number.
+          
+          The maximum value you can set in the time field  is  255  seconds
+          and the minimum you can set is 1 second.
+          
+          The  lowest  page  number you can set is 1, and if you decrease a
+          page number that is already at one the whole entry will be wiped.
+          If you have a current file open, FANFARE will not let you specify
+          a page number greater than the highest page in the  file.  If  no
+          file  is  open  (you  might  be using the edit sequence in buffer
+          option) you can set the page number to any value from 1  to  255,
+          but  if  you  then  write this display sequence to a file FANFARE
+          will ignore any entries referring to pages not in the file.
+          
+          
+     
+
+
+
+                                       58
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8.2.3 Inserting and deleting entries
+     
+        Besides altering individual entries in the  display  sequence,  you
+     will probably want to move existing entries around.
+     
+        Pressing SHIFT-F3   will  insert  a  blank  entry  in  the  display
+     sequence. The entry you are currently editing, and all those below it,
+     will move one place down: the final entry in the display sequence will
+     be lost.
+     
+        Pressing SHIFT-F4 will delete the entry you are currently  editing,
+     and  will  move the entry below, and all those following it, one place
+     up in the table. Entry 256 will become empty as  its  values  move  up
+     into entry 255.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       59
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     8.3 Page chaining
+     
+        You  can  refine  the  operation  of  the display sequence by using
+     FANFARE's page chaining facilities. This lets you link pages  together
+     so  that  they can be displayed with one entry in the display sequence
+     rather than several. Thus you can both reduce the  number  of  entries
+     needed in the dispaly sequence, and also ensure that similar pages are
+     always displayed together.
+     
+        As  an  example,  suppose that you wish to build a large display of
+     many pages, but that you wish to show pages 2, 4, 6 and 9 in  sequence
+     every  few  minutes.  These pages might be a list of concert-hall seat
+     availability, to be displayed regularly during a much longer  sequence
+     of coming events and reviews, for instance.
+     
+        One  way  of  doing  this would be to explicitely place entries for
+     each of the four pages at many places in the  display  sequence.  This
+     approach  would,  of  course, produce the desired effect, but would be
+     tedious to construct, and would use  up  a  lot  of  display  sequence
+     entries. A better way would be to place the pages in a chain.
+     
+        In orer to chain pages in a file, you will need to have a file open
+     for  updating, and should enter the sequence editor menu. Then, select
+     the update page chaining option.
+     
+        You will be asked for the number of the page you wish to chain.  In
+     this  example,  we  will  assume  you type the number "2", followed by
+     RETURN. Then you will be asked for the number of the  page  that  this
+     page  chains  onto. Here you would type the number "4" to chain page 2
+     to page 4, and press RETURN. The file is then updated.
+     
+        You can then repeat this action to chain page 4 to page 6, and then
+     chain page 6 to page 9. If you wish to check what you have  done,  the
+     display  page chaining option will display a list of which pages chain
+     to which in the file.
+     
+        Now the display sequence you need to create  is  much  simpler.  To
+     display  the  sequence  of  four pages, you need only create one entry
+     specifying page 2 for, say, 15 seconds. FANFARE will  display  page  2
+     when  its turn comes, then, detecting the chaining, will automatically
+     display page 4 for the same time. It then detects that page 4 is  also
+     chained,  and  shows page 6; this in turn causes it to display page 9.
+     This page is not chained,  so  FANFARE  will  return  to  the  display
+     sequence  to  see what to do next. You need not always start the chain
+     with the first page: to keep up with  the  example  above,  you  could
+     create  a  display  sequence  entry  displaying page 6 for 15 seconds,
+     which would show page 6 and page 9 automatically, but not pages  2  or
+     4.
+     
+        You  can chain pages in any way you like. Each page can chain on to
+     only one other, although, for example, you could have pages 12, 15, 18
+     and 201 all chaining on to page  99.  The  sequence  editor  will  not
+     permit  you to chain a page to itself, as this would create an endless
+     loop showing only that page: however, it is up to you  to  ensure  tat
+
+
+                                       60
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     you  don't create a sequence such that, for instance, page 4 chains to
+     page 5, which chains to page 4 again.
+     
+        You can, of course, remove page chaining whenever you wish.  To  do
+     this,  select  the update page chaining option as before, and give the
+     number of the page you wish to change. Now, though, when asked for the
+     page it should chain onto, type the number 0 and RETURN rather than  a
+     page  number. The page chaining will be cancelled and the file will be
+     updated.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       61
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9. PAGE CONTROL FACILITIES
+     
+        Besides the  facilities  described  in  earlier  chapters,  FANFARE
+     provides  you  with means of more detailed control over the pages in a
+     display file. This chapter will examine them in detail.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       62
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9.1 The page control menu
+     
+        You access the page control facilities by choosing  the enter  page
+     control  menu  option  of  the main menu or the filer menu. A new menu
+     will appear, presenting you with the following options:
+     
+     
+     Lock page in file
+     
+               This option locks one page  in  the  current  file,  so  you
+               cannot then change it.
+               
+     Unlock page in file
+     
+               This option unlocks a page in the current file, allowing you
+               to change it once more.
+               
+     Change default window
+     
+               This  option  selects  the  edit  window that you wish to be
+               selected whenever you start to edit a page.
+               
+     Display page statuses
+     
+               This option displays the status of each page in the  current
+               file,  telling  you whether it is locked or not, and whether
+               it has been used since the file was created.
+               
+     Display page title
+     
+               This lets you see the title that will be  displayed  when  a
+               specific page in the current file is displayed.
+               
+     Display all page titles
+     
+               This  lets  you see the titles of all the page titles in the
+               current file.
+               
+     Change page title
+     
+               This option allows you to  change  the  title  of  one  page
+               within the current file.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       63
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9.2 Page locks
+     
+        Page  locks  allow you to protect individual pages within a display
+     file against being changed. You can, of course, use the filing  system
+     command  *ACCESS to lock the entire file, but this facility allows you
+     to lock only parts of it.
+     
+        To lock a page, the current file should be open in update mode. You
+     should select the lock page in file option and type the  page  number,
+     followed by RETURN. Once you have done this the only change allowed to
+     that  particular  page  is to unlock it again: you will not be able to
+     save a page to it or update it.
+     
+        To unlock a page, you should select the unlock page in file  option
+     and again give the page number.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       64
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9.3 Manipulating page titles
+     
+        As  we  saw  in  section  2.3,  when  you create a display file you
+     specify a page title which is associated with all pages in  the  file.
+     This title will be shown at the left side of the top line whenever the
+     page is displayed in display mode.
+     
+        Initially,  all  pages  in  the  display  file have the same title.
+     However, the page control menu facilities let you change this, so that
+     if you wish you can give a different title to each page in the file.
+     
+        Selecting the change page title option allows  you  to  change  the
+     title  of  one  page  in  the current file. You first specify the page
+     number, then press RETURN. Next you are asked for the  new  title:  as
+     before,  the  first 27 characters you type will be used. If you simply
+     press RETURN the default title "FANFARE Display System" will be  used.
+     To set up a title of spaces you should press SPACE then RETURN.
+     
+        Two  options  allow  you  to  see the title associated with a page.
+     Display page title shows you the title of one page only: you  will  be
+     asked  for  the page number, which you should type followed by RETURN.
+     The display all page titles option will display  the  title  of  every
+     page: depending on the size of the file the display may take more than
+     one  screen,  and  you will be given the chance to continue or quit at
+     the end of each page.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       65
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9.4 Changing the default window
+     
+        Section 7.1 discussed edit windows and explained how you could  use
+     up  to  seven  of  them: one temporary window, and 6 permanent windows
+     whose settings were recorded in the display file along with the page.
+     
+        By default, whenever you start to edit a page, FANFARE will  select
+     the temporary window, which is always reset at the start of every edit
+     to  encompass  the  whole  screen.  You  can, though, specify that the
+     editor should automatically select one of the permanent  windows  when
+     you  edit  a  particular page, and you accomplish this with the change
+     default window function, which will let you update the  value  of  one
+     page in the current file.
+     
+        When  you  invoke this function you will be asked for the number of
+     the page you wish to change, whcih you should type followed by RETURN.
+     Next, you will be asked to specify  the  window  to  be  automatically
+     selected.  Here  you  can  reply  with either a number from 1 to 6 for
+     windows 1 to 6, then press RETURN; or you can simply  press RETURN  by
+     itself to select the temporary window.
+     
+        The  setting  you  have chosen will be stored in the file, and will
+     remain in force until you choose otherwise. You can freely change  the
+     settings  of  the  window  itself,  and  can  even release it with the
+     release window function should you wish.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       66
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     9.5 Examining the status of pages
+     
+        The display page statuses option will show you the status  of  each
+     page  in  the  current  file. For each page, the display will indicate
+     whether it is locked or unlocked, and  whether  or  not  it  has  been
+     written to since the display file was created. The letters used in the
+     display have the following meaning:
+     
+               U Page is unlocked
+               L Page is locked
+               
+               V Page is vacant (has never been written to)
+               O Page is occupied (has been written to)
+               
+     Following  these  letters  you  will  see  the  page's default  window
+     displayed. This will be "W1", "W2", etc, up to  "W6"  if  one  of  the
+     permanent widows is selected, or "W-" if the temporary window is to be
+     used when the page is edited. 
+     
+     Depending  on the size of the display file, the status information may
+     occupy several screens. At the end of each screenful you will be given
+     the opportunity to continue or return to the menu.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       67
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     10. RUNNING A FANFARE DISPLAY
+     
+     
+        The previous chapters have  described  the  various  facilities  of
+     FANFARE  that  allow  you  to  create and amend files; to edit display
+     pages; and to specify the sequence in which they  will  be  displayed.
+     Here  we  shall  look  at  how  you start, control and stop the actual
+     display itself.
+     
+        To recap on the matters described earlier in the guide, the various
+     steps you need to go through to set up a display file are these:
+     
+          You will need to use the filer to create and initialise a display
+          file in which to store your display pages....
+          
+          ....you will use the page editor to compose the pages to hold the
+          displays and information to meet your requirements  and  artistic
+          tendencies....
+          
+          ...and  you  will use the sequence editor to specify the order in
+          which these pages are to be displayed, and for how long.
+          
+        Now, with a display file prepared, we can examine how you put it on
+     display.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       68
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     10.1 The display system
+     
+     
+        When you start a FANFARE display you  enter  part  of  the  program
+     known as the display system. This takes the current file that you have
+     opened  using  the  filer,  and displays its contents according to the
+     display sequence.
+     
+        The exact nature and limitations of the display will depend on what
+     FANFARE hardware you are using. There are several  possibilities  that
+     you can use:
+     
+     
+          If  you  have  only  one  BBC computer, then you can use only the
+          local display facilities. The display  pages  are  shown  on  the
+          BBC's  monitor, and you will need to stop the display if you wish
+          to change any of the pages or the display sequence.
+          
+          If you have two BBC computers available, you must still  use  the
+          local  display  facilities,  but you can handle updates in one of
+          two ways.
+          
+               If your BBC computers are  not  linked  (they  might  be  in
+               different  rooms or owned by different people, for instance)
+               you can install a FANFARE EPROM in each. You  can  take  the
+               disc  out  from  the machine running the display (using some
+               control facilities described later), update it on the second
+               machine, then replace it. For this option disc  drives  must
+               be available on each machine.
+               
+               Alternatively,  you  can  link  the  RS423  ports of the two
+               machines together to form  a master/slave  pair.  The master
+               machine is fitted with a FANFARE EPROM, and must have a disc
+               drive:  the slave  machine  is fitted with a FANFARE-DISPLAY
+               EPROM, and need have no discs. With this system,  the  slave
+               machine produces the display, and you can update it as it is
+               running  on  the  master.  The two machines will communicate
+               with each other to keep the  display  consistent  with  your
+               updates.
+               
+          A  further possibility is that you have one or more display units
+          to produce the displays, and one BBC  computer  with  a  disc  to
+          control them.
+          
+
+
+
+
+
+
+
+
+
+
+
+
+                                       69
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     10.2 Using one BBC Computer only
+     
+     
+        The  first  case described above was that you had one BBC computer,
+     fitted with a FANFARE EPROM, a colour monitor, and one  or  more  disc
+     drives.  This  configuration lets you run a display, but you will need
+     to stop it to update the file.
+     
+        In order to run the display, you must of course have a  file  open.
+     You  can select the file you wish using the options available from the
+     filer menu: the file to be displayed must be set as the current  file.
+     If you have several files open, use the UP and DOWN cursor keys on any
+     menu page to select the one you want.
+     
+        From  the  main menu select the option Start Local Display. FANFARE
+     will check that the current file  is  correctly  set  and  contains  a
+     non-empty  display  sequence,  then  will read into memory a number of
+     pages, starting from page 1. The actual number read in will depend  on
+     how  much  memory  is  free,  and  this in turn depends on what filing
+     system you are using and what other ROMs are fitted: typically,  using
+     the  Acorn  DNFS ROM and no others that use private workspace, FANFARE
+     will read in about 20 pages. You will see the actual  number  reported
+     in a message on the screen.
+     
+        Once these pages have been read in, FANFARE will start the display,
+     using  the  display  sequence and any page chaining information in the
+     file to control what it does. You will see that the pages  which  were
+     read into memory are displayed at once, with no disc access, but other
+     pages  are  being  read  from disc every time they are needed. It will
+     help the appearance of your system (and reduce wear on your discs)  if
+     you  arrange  for  the  most  frequently-displayed pages to be amongst
+     those loaded into memory.
+     
+        Once the display has started it will run for ever unless  you  wish
+     otherwise.  You  have  only  one way of altering the display sequence:
+     pressing the RETURN key will cause the display  to  switch immediately
+     to  the  next page, regardless of the set display time. If you wish to
+     update the information in any of the  pages,  or  change  the  display
+     sequence,  you  must stop the display by pressing ESCAPE. This returns
+     you to the main menu, from where you can enter one of the  editors  or
+     the filer.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       70
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     10.3 Using two unlinked BBC Computers
+     
+     
+        The second case we saw above used two identical BBC computers (each
+     with  disc,  colour  monitor  and  FANFARE EPROM). One of the machines
+     produces the display, and you start this in exactly the  same  way  as
+     described above.
+     
+        Now,  though,  you need not stop the display in order to update the
+     file, since you are going to do the update by taking the disc  to  the
+     other machine. However, once you do this, the display machine will not
+     be  able  to access any of the pages not already in its memory, so you
+     need to tell it to ignore any display sequence entries requiring pages
+     from disc, and show only the pages that it does have available.
+     
+        To do this, press CONTROL-SHIFT-SPACE (that is, press  the CONTROL,
+     SHIFT and SPACE keys simultaneously). Once you have done this, FANFARE
+     will  not  attempt to read from the disc. You can now remove the disc,
+     take it to the other machine, and update it. Then, when you have  made
+     the  changes  you require, replace the disc in the display machine and
+     press the TAB key. FANFARE will now read in the  first  pages  of  the
+     file  and  the  display sequence afresh, and carry on with the updated
+     display.
+     
+        While you are updating the disc, the machine  running  the  display
+     will  bleep every 10 seconds, to indicate that it is operating on only
+     those pages it has in its memory.
+     
+        In order to avoid encountering problems with the filing  system  of
+     the  BBC  Computer  during  this operation, FANFARE will close all the
+     files that you have open  when  you  press CONTROL-SHIFT-SPACE.  Then,
+     when  you press TAB to resume the display, it will re-open the file it
+     was running the display from, in read-only mode (i.e. as  if  you  had
+     used  the Read Existing File option of the filer menu). This technique
+     ensures that no problems will arise if, for example, you use  *COMPACT
+     on  the disc while you are updating it: it will even let you change to
+     using a completely different file, providing it has the same  name  as
+     the one you were originally displaying.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       71
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     APPENDIX 1 : PAGE AND SEQUENCE EDITOR FUNCTION KEYS
+     
+     
+        In this Appendix you can find a brief formal description of the use
+     of the function keys in the FANFARE screen editor and sequence editor.
+     The Appendix is intended to provide an easy reference list if you need
+     to check on what a key is used for. You should consult the chapters on
+     the screen editor for a discussion of each key and how it can be used.
+     
+        The Appendix uses the same notation as the rest of this guide. Thus
+     F0  refers  to  function  key 0 pressed on its own; SHIFT-F0 indicates
+     function key 0 and the SHIFT key pressed at the same time, and so on.
+     
+        Note that not all the keys described are  used  in  both  page  and
+     sequence editors.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       72
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     F0 (Home Cursor)
+     
+          In  the  page editor, this key returns the cursor to the top left
+          corner of the current edit window.
+          
+          In the sequence editor, this key returns  you  to  editing  entry
+          number 1 of the sequence.
+          
+          
+     F1 (Single/Double)
+     
+          This   key   switches  the  editor  from  single-height  mode  to
+          double-height mode or vice-versa. In single-height mode an "S" is
+          displayed in the status flags area; in  double-height  mode  this
+          changes  to  a  "D".  You  will  not  be  allowed  to change from
+          single-height to double-height mode  if  the  cursor  is  in  the
+          bottom line of the current edit window.
+          
+          
+     F2 (Select Character)
+     
+          This  function  key  loads  the character under the cursor as the
+          current "selected character". If you subsequently  press F3  this
+          character will appear on the screen. An error message will appear
+          if  the  character  under  the cursor is not a graphics character
+          when you press F2. The character selected will appear on the  far
+          right of the status line at the top of the screen.
+          
+          
+     F3 (Output Selected Character)
+     
+          This key writes the current "selected character" to the screen at
+          the  cursor  position.  The character output is that displayed at
+          the far right of the status line. You can  define  the  character
+          either with F2 or with SHIFT-F5.
+          
+          
+     F4 (Clear top bit)
+     
+          This  key  amends the character under the cursor so that the most
+          significant bit of its  code  value  is  unset.  This  effect  is
+          described in more detail in section 4.3.
+          
+          
+     F5 (Swap Case)
+     
+          This  key  reverses  the  case of the character under the cursor,
+          providing of course that  it  is  an  alphabetic  character.  The
+          cursor  will move one place to the right unless you have selected
+          manual cursor mode with F7.
+          
+          
+     F6 (Insert/Over)
+     
+
+
+                                       73
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          This key switches the editor from insert mode to  overwrite  mode
+          and  vice-versa.  In  overwrite mode, any character you type will
+          replace the character under the cursor, but in  insert  mode  the
+          characters  in the line will be shifted to the right to make room
+          for the new character. Insert and overwrite modes  are  indicated
+          by  an  "I" or an "O" respectively in the status flags area. When
+          you first enter the editor, it will be in overwrite mode.
+          
+     F7 (Auto-cursor/Manual cursor)
+     
+          This key switches the editor from auto-cursor  to  manual  cursor
+          mode  and  vice-versa.  In auto-cursor mode, the cursor will move
+          one place to right whenever you type a character, so that you can
+          type in the normal fashion. In manual cursor mode,  however,  the
+          cursor  will never  move by itself: you must position it yourself
+          with the four cursor keys. Auto-cursor and  manual  cursor  modes
+          are  indicated  by  an  "A"  or an "M" respectively in the status
+          flags area. When first  you  enter  the  editor  it  will  be  in
+          auto-cursor mode.
+          
+          
+     F8 (Pixel/Character)
+     
+          This  key  switches  the  editor from character to pixel mode and
+          vice-versa. In character mode, any character you type appears  on
+          the screen exactly as you type it. In pixel mode, though, you use
+          the  cursor keys, control keys and the SPACE, Q, W, A, S, Z and X
+          keys to change the pixels in a graphics character: the other keys
+          have no effect. Character and pixel modes are indicated by a  "C"
+          or a "P" in the status flag area: when first you enter the editor
+          it will be in character mode.
+          
+          
+     F9 (Find Control Character)
+     
+          This  key  moves the cursor from its current position to the next
+          control character between it and the end of the screen.  This  is
+          useful if you wish to locate colour control bytes, for example.
+          
+          
+     SHIFT-F0 (Delete Character)
+     
+          This  key  deletes  the character under the cursor, and moves the
+          rest of the line one place to the left.
+          
+          
+     SHIFT-F1 (Insert Space)
+     
+          This key moves the characters under  and  to  the  right  of  the
+          cursor  one  place  to  the  right,  and leaves a space under the
+          cursor. One character will be lost from the end of the line.
+          
+          
+     SHIFT-F2 (Clear line)
+
+
+                                       74
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+     
+          In the page editor, this key clears the whole  of  the  line  the
+          cursor is in to spaces. The cursor does not move.
+          
+          In the sequence editor, this key clears the entry being edited.
+          
+          
+     SHIFT-F3 (Insert Line)
+     
+          In  the page editor, this key moves the screen between the cursor
+          and the end of the display one line downwards. If the  cursor  is
+          at  the left hand side of the edit window, this has the effect of
+          creating a new blank line. If the cursor is in the  middle  of  a
+          line,  this  line  will  appear to "split" and the rightmost side
+          will move down. The bottom-most line of the edit window  will  be
+          lost.
+          
+          In the sequence editor, this key moves the entry being edited and
+          all  those  below  it  one  place down in the sequence. The entry
+          being edited becomes empty.
+          
+          
+     SHIFT-F4 (Delete Line)
+     
+          In the page editor, this key deletes the line the cursor  is  on,
+          and moves the rest of the screen one line up. If the cursor is on
+          the  left-hand  side of the edit window, the whole of the current
+          line will disappear. If the cursor is in the middle of the  line,
+          the  line  below  will  be  merged  into  it,  giving  you a line
+          consisting of the left half of the current  line  and  the  right
+          half of the line below. A blank line will appear at the bottom of
+          the edit window.
+          
+          In  the sequence editor, this key removes the entry being edited,
+          and moves all the entries below it one place up in the table.
+          
+          
+     SHIFT-F5 (Design Character)
+     
+          This key allows  you  to  design  a  graphics  character  without
+          changing the scren itself. Once you press it, you are editing the
+          current  "selected  character"  displayed on the far right of the
+          status line. The Q, W, A, S, Z and X keys will set the pixels  of
+          the  character on or off: you can see the effect in the character
+          of the status line. When finished, you can press RETURN  to  make
+          your designed character the new "selected character", and you can
+          put  this  on  the  screen  by pressing F3. Alternatively, if you
+          press ESCAPE the previous "selected character" will  be  restored
+          unchanged.
+          
+          
+     SHIFT-F6
+     
+          This key is not used.
+
+
+                                       75
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          
+          
+     SHIFT-F7 (Clear to End-of-line)
+     
+          This  key  clears  the  current  line  to  spaces from the cursor
+          position to the right-hand side of the edit window.
+          
+          
+     SHIFT-F8
+     
+          This key is not used.
+          
+          
+     SHIFT-F9 (Search and replace)
+     
+          This key invokes the search and replace  function,  which  allows
+          you to change any or all occurences of one characetr to any other
+          character. The use of this key is described fully in section 7.3.
+          
+          
+     CONTROL-F0 (Clear Window)
+     
+          In the page editor, this key clears the whole of the current edit
+          window  to  spaces. The cursor is moved to the top left corner of
+          the window.
+          
+          In the sequence editor,  this  key  deletes all  entries  in  the
+          table.
+          
+          
+     CONTROL-F1 (Checkpoint Screen)
+     
+          This  key  causes  a  copy  of the edit screen to be taken in the
+          checkpoint area, from where it can be  restored  with CONTROL-F2.
+          You  could use this key to preserve the screen periodically in an
+          edit if you wished to do some experimental design and think  that
+          you might want to return to some previous point if the experiment
+          does not work out.
+          
+          
+     CONTROL-F2 (Restore Screen)
+     
+          This  key  restores  the  screen  from  the  copy  saved  in  the
+          checkpoint area by CONTROL-F1.
+          
+          
+     CONTROL-F3
+     
+          This key is not used.
+          
+          
+     CONTROL-F4
+     
+          This key is not used.
+
+
+                                       76
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          
+          
+     CONTROL-F5 (Select Line)
+     
+          This key marks the line the cursor is in as the source  line  for
+          line  copy  and line move operations (CONTROL-F6 and CONTROL-F7).
+          When first you enter the editor, the selected line is line 0, the
+          top line of the whole screen.
+          
+          
+     CONTROL-F6 (Copy Line)
+     
+          This key copies the current  selected  line  (set  by CONTROL-F5)
+          into  the  line  the  cursor  is  on.  Only that part of the line
+          fitting within the current edit window is  copied.  The  selected
+          line is not changed by this operation.
+          
+          
+     CONTROL-F7 (Move Line)
+     
+          This  key moves the contents of the current selected line (set by
+          CONTROL-F5) into the line the cursor  is  on,  and  replaces  the
+          selected  line  with  spaces.  Only the parts of the line fitting
+          within the current edit window are affected. The line into  which
+          the data was copied becomes the new selected line.
+          
+          
+     CONTROL-F8
+     
+          This key is not used.
+          
+          
+     CONTROL-F9 (Exit Editor)
+     
+          In  both the page and sequence editors, this key returns from the
+          editor to the edit menu. If  you  entered  the  editor  with  the
+          Update  Page  in File or Update Sequence in File option, you will
+          be asked whether or not the editor is to write the  current  page
+          or sequence table back to the file.
+          
+          
+     CONTROL-SHIFT-F0 (Define Window)
+     
+          This  key lets you define the current edit window, which controls
+          which parts of the screen  can  be  changed.  When  a  window  is
+          defined, the operations of all function keys and ordinary keys is
+          confined to the window: the rest of the screen cannot be changed.
+          When  you  press  the  key,  you  will be prompted to specify the
+          bottom left corner of the window.  Using  the  cursor  keys only,
+          move  the  cursor to the required position, and press RETURN. Now
+          you will see a prompt asking for the top left to be specified. As
+          before, move the cursor to the top left - note here that you  now
+          cannot  position  the  cursor  below  or  left of the bottom left
+          corner position. When the cursor is positioned,  press RETURN  to
+
+
+                                       77
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          mark  the  spot.  The  window is new defined, and the cursor will
+          move to the top left corner. If you wish to abandon setting up  a
+          window,  simply  press  ESCAPE  at any point. The previous window
+          will be re-instated.
+          
+          
+     CONTROL-SHIFT-F1 (Release Window)
+     
+          This key restores the setting of the current edit window so  that
+          it once more encompasses the entire screen.
+          
+          
+     CONTROL-SHIFT-F2 (Select window)
+     
+          This  key lets you select which of the 7 edit windows you wish to
+          use. You will be asked to specify the window,  and  should  reply
+          with  a number from 1 to 6 for windows 1 to 6, or press RETURN to
+          select the temporary window.
+          
+          
+     CONTROL-SHIFT-F3 (Release all windows)
+     
+          This key is similar  to CONTROL-SHIFT-F1,  but  releases all  the
+          seven  windows  instead  of  just the current window. You will be
+          asked to confirm this action before the windows are released.
+          
+          
+     CONTROL-SHIFT-F4
+     
+          This key is not used.
+          
+          
+     CONTROL-SHIFT-F5 (Store Block)
+     
+          This key lets you mark out a block on the screen  whose  contents
+          are  saved in the block buffer area, from where they can be saved
+          into a file or copied to other  parts  of  the  screen.  As  with
+          CONTROL-SHIFT-F0,  you  will  be asked to define tthe bottom left
+          and top right corners of the block. The editor will then copy the
+          exact contents of the block away for later use.  Note  that  only
+          one block can be stored at any time, and when first you enter the
+          editor no block is defined. If you subsequently alter the part of
+          the page that you stored, the stored block is not updated.
+          
+          
+     CONTROL-SHIFT-F6 (Copy Block)
+     
+          This  key  lets  you  copy  the  contents  of  a block saved with
+          CONTROL-SHIFT-F5 to another part of the screen.  When  you  press
+          the  key,  you  will  be  prompted to specify the position of the
+          bottom left corner of where you wish the block to be  copied  to.
+          Using  the  cursor  keys only,  position  the  cursor, then press
+          RETURN. The contents of the saved block will be  written  to  the
+          screen,  replacing anything already there. Note that if the block
+
+
+                                       78
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          overlaps the current  edit  window,  only  characters within  the
+          window   will  be  changed.  The exact  contents  of  the  block,
+          including spaces, are copied to the screen.
+          
+          
+     CONTROL-SHIFT-F7 (Overlay block)
+     
+          This key performs the same operation as CONTROL-SHIFT-F6, but now
+          only non-space characters in the block are copied to the  screen.
+          If  you  wish  to save a block with a character that appears as a
+          space but which is copied  by  this  operation,  create  it  with
+          CONTROL-O rather than the SPACE bar.
+          
+          
+     CONTROL-SHIFT-F8 (Save Block)
+     
+          This  key  lets  you  save  the  contents of a block defined with
+          CONTROL-SHIFT-F6 into a file on disc. When you press it, you will
+          be asked to supply a file name: you should type in the  name  and
+          press RETURN. If a file of the same name already exists, you will
+          be asked if you wish to abandon the operation or to replace it.
+          
+          
+     CONTROL-SHIFT-F9 (Load Block)
+     
+          This   key  lets  you  load  a  block  from  a  file  created  by
+          CONTROL-SHIFT-F8. When you press the key you will be asked for  a
+          filename:  you should type it in then press RETURN. The file will
+          be loaded into the block buffer area, and  you  can  subsequently
+          use CONTROL-SHIFT-F7 to copy it to the screen wherever required.
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       79
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          APPENDIX 2 : PAGE EDITOR CONTROL KEYS
+          
+          
+           When  within  the  page  editor you can place control codes (for
+          colour chages, etc) in the screen by  pressing  certain  keys  in
+          combination with the CONTROL and SHIFT keys. In this Appendix you
+          can see a complete list of the relevant keys. As with the rest of
+          the guide, the terminology CONTROL-A means that you press the "A"
+          keys  and  the CONTROL  key at the same time; and CONTROL-SHIFT-A
+          indicates that you should press the "A" key, the CONTROL  key and
+          the SHIFT key simultaneously.
+          
+           For  an  explanation  of the use of the various control codes in
+          producing Teletext pictures  you  should  consult  the  preceding
+          chapters of the guide.
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       80
+
+
+
+
+
+                           THE FANFARE DISPLAY SYSTEM
+
+
+
+          
+          
+               
+               Function                      Control key
+               
+               Alphanumeric blue             CONTROL-B
+                            cyan             CONTROL-C
+                            green            CONTROL-G
+                            magenta          CONTROL-M
+                            red              CONTROL-R
+                            yellow           CONTROL-Y
+                            white            CONTROL-W
+               
+               Graphics     blue             CONTROL-SHIFT-B
+                            cyan             CONTROL-SHIFT-C
+                            green            CONTROL-SHIFT-G
+                            magenta          CONTROL-SHIFT-M
+                            red              CONTROL-SHIFT-R
+                            yellow           CONTROL-SHIFT-Y
+                            white            CONTROL-SHIFT-W
+               
+               New background                CONTROL-X
+               Black background              CONTROL-Z
+               
+               Double height                 CONTROL-D
+               Normal height                 CONTROL-N
+               
+               Flash                         CONTROL-F
+               Steady                        CONTROL-S
+               
+               Contiguous graphics           CONTROL-K
+               Separate graphics             CONTROL-@
+               
+               Hold graphics                 CONTROL-H
+               Release graphics              CONTROL-U
+               
+               Null (see section 7.2.2)      CONTROL-O
+               
+               
+     The TAB key causes a block character to be written to the screen.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       81
+
+
+

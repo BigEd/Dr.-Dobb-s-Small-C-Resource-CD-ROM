@@ -1,0 +1,28 @@
+set delay 0
+set file suffix
+set file type ascii cr
+
+*drive 0
+
+get mkboot mkboot
+get sh_x sh_x
+get dehex_x dehex_x
+get shar_x shar_x
+
+*drive 1
+
+get unpack unpack
+get tcc1.sha tcc1
+get tcc2.sha tcc2
+
+*drive 2
+
+get READ_ME READ_ME
+
+*drive 3
+
+get tcc3.sha tcc3
+get tcc4.sha tcc4
+
+*drive 0
+

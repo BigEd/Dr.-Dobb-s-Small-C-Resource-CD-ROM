@@ -1,0 +1,799 @@
+ <HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>OPTIMIZING STRINGS IN C</H1> <p>
+
+by Edward McDermott<p>
+</CENTER>
+</B>
+
+
+<i>This article originally appeared in Dr. Dobb's Journal #90 
+(April 1984).</i><p>
+
+The C programming language offers many advantages: flexibility, 
+speed,
+and portability. Routines that would take months in assembler can 
+be written
+and tested much more easily in C. It supports true recursion and 
+allows users to
+optimize portions of code, since it produces assembly-language 
+source.<p>
+
+Optimization is the process of improving the efficiency of a
+program--getting more bang for your buck, whether the buck is 
+time or memory. In general,
+you can try to make the program smaller or faster, or both. 
+Sometimes you have
+to trade size for speed, or vice versa. Optimization can apply to 
+a particular
+program or to a group of programs. The problem with optimization 
+is that it
+takes time and effort.<p>
+
+What methods exist to optimize a program or programs? The 
+following
+approaches have advantages and disadvantages:<p>
+<UL>
+<LI> Improving the compiler output by improving the compiler, or 
+getting a
+    better one
+<LI> Improving compiler output by tinkering
+<LI> Improving the individual program's algorithm
+<LI> Rewriting entire routines in assembler
+</UL>
+
+To improve the compiler output, you must have the source for the 
+compiler and
+know enough to improve the code-generation logic. If you have 
+those skills,
+please try it and publish the results. As for the rest of us mere 
+mortals, this is a
+foolhardy exercise that can bring disaster. Besides, it takes a 
+lot of time. Buying
+a better compiler has one small problem: How do you know it's 
+really better?<p>
+
+For C programmers, another alternative is to recognize a commonly 
+used
+pattern of code that can be improved, and write a program that 
+tinkers with the
+compiler's output to improve it. This approach is similar to the 
+optimization
+portion of the Small-C compiler.<p>
+
+Improving a program by rewriting all or part of it is a perfectly 
+valid
+approach. The problem is that the payback doesn't go any further. 
+The rest of your
+programs are still the same.<p>
+
+The final approach is to write some commonly used routines in 
+assembler
+to speed things up. You can generalize this approach to all your 
+programs by
+recompiling them. It improves both execution speed and size (to 
+some extent).
+The problem is that these routines are no longer portable from 
+machine to
+machine.<p>
+
+If you choose this last approach, its success depends on which 
+functions
+you select for optimization. The ideal candidates would contain 
+tight loops, be
+used by almost every program, and be small enough to rework 
+easily.<p>
+
+C is an ideal language for editors, compilers, operating systems, 
+and so on.
+Indeed, that was what C was designed for. Although every one of 
+those
+applications involves a good deal of string handling, C has no 
+string manipulation
+verbs. All string handling is done on a character-by-character 
+basis, often by very
+small functions, which contain some very tight loops.<p>
+
+Another consideration is any special commands of the CPU you are 
+using.
+Can any functions built into the chip be taken advantage of by 
+any other
+means? The Z80 chip has a few commands that are unavailable on 
+the 8080,
+specifically LDIR, LDDR, LDI, LDD, CPIR, CPDR, CPI, and CPD. Each 
+of these
+instructions is the equivalent of several 8080 instructions and, 
+properly used,
+can be substituted for several instructions in C.<p>
+
+For example, the LDIR command takes the contents of the memory
+position pointed at by the HL register pair, transfers those 
+contents to the memory
+position specified by the DE register pair, increments HL and DE, 
+and
+decrements BC until the BC register pair is zero. That is a 
+mouthful. Perhaps this
+makes it a little clearer:<p>
+<pre>
+     WHILE (BC--) *DE++ = *HL++ ;<p>
+</pre>
+Does that seem familiar? It is, in fact, almost identical to the 
+the STRCPY
+function in <i>The C Programming Language</i> by Kernighan and 
+Ritchie. The principal
+difference lies in the delimitation of the loop.<p>
+
+If your computer runs on a Z80 chip, string manipulation is a 
+natural
+choice. But the question that haunts all optimization efforts 
+still remains: is the
+payback worth the effort? To try to answer that question, I chose 
+the following
+four functions to optimize:<p>
+<UL>
+
+<LI> STRCPY -- copy a string from one place to another
+<LI> STRINIT -- initialize a string to a specified value
+<LI> STRLEN -- find the length of a string
+<LI> CMATCH -- find a character within a string<p>
+</UL>
+
+Since the Small-C compiler produces assembler code, my first 
+approach was to
+review its output. In small loops the compiler produces code that 
+does not
+optimally use the registers, so I completely rewrote the 
+functions; most of the speed
+gained can be attributed to this rewrite. This optimization 
+should apply to
+8080-based machines as well.<p>
+
+<a href="#list15-1">Listing 15-1</a> gives the new routines in 
+Z80 code. I chose Z80 intentionally to
+take advantage of its special OP codes and to emphasize the major 
+disadvantage
+of this type of optimization--the loss of portability. Readers 
+can adapt these
+routines to the 8080 environment fairly easily, for use with C or 
+other languages.<p>
+
+Usually you judge an optimization by the following criteria:
+<UL>
+<LI> Is it faster? If so, how much?
+<LI> Is it smaller? If so, how much?
+<LI> Does it suggest other methods of improvement?
+<LI> Was it worth the time and effort to do?
+</UL
+
+<b>Faster<p>
+</b>
+
+The timings involved executing each command 10,000 times on a 
+string of 30
+characters. The first set of timings is for the driver program, 
+without any string
+manipulation at all, to see the impact of the code used in 
+handling the test. The
+second set is using C routines, compiled under the Small-C 
+compiler, version 2.
+The third set is for the same program, but using the assembler 
+routines.<p>
+<pre>
+     Test element              Time/10,000
+     Null test                   3 seconds
+     Small-C (v2)              195 seconds
+     Assembler                  16 seconds<p>
+</pre>
+I also compared the CMATCH routine to the rest, since this 
+routine was
+significantly longer and more involved in both languages.<p>
+<pre>
+     Test element              Time/10,000
+     Null test                  1 second
+     Small-C (v2)              90 seconds
+     Assembler                  6 seconds<p>
+</pre>
+If you remove the constant load of the code to drive the test 
+program, you find
+the new routines are 14.8 times faster. Skeptics can ignore the 
+impact of the
+loops, and still end up with new routines that are 12.2 times 
+faster.<p>
+
+<b>Smaller<p>
+</b>
+
+The memory savings were as follows:<p>
+<pre>
+     <b>Language                  Size in bytes</b>
+
+     Small-C (v2)              254
+     Assembler                 116<p>
+</pre>
+The assembler code for the four routines was less than half the 
+size of the
+comparable C code. However, saving 138 bytes is not going to make 
+anyone
+jump for joy. With fine tuning, this figure could be improved, 
+but once again it
+is a matter of cost versus gain.<p>
+
+<b>Other Improvements<p>
+</b>
+
+My first thought was to optimize other small routines for 
+handling strings. Part
+of the savings came from using all three register pairs and 
+keeping the values in
+the registers throughout the loop. Where the number of parameters 
+exceeds
+three (one for each of BC, DE, and HL register pairs), the 
+potential savings drop
+and the effort begins to increase.<p>
+
+Another improvement would be to use these optimized routines as 
+heavily
+as possible. That has some major implications to the style of C 
+code a
+programmer uses. You must build up your functions out of smaller 
+optimized functions
+instead of writing complex character-by-character processing.<p>
+
+Some other potential candidates for optimization are: convert to 
+uppercase
+and convert to lowercase; find string; compare string; extract 
+part of a string.<p>
+
+All string manipulation functions should not necessarily be 
+optimized. The
+gain in speed achieved by improving screen and printer routines 
+is hidden by
+the limited transmission speed to these devices for most small 
+systems; you
+won't see any improvement. Most likely, your disk I/0 routines 
+are already in
+assembler to interface the language to your particular operating 
+system.<p>
+
+By the way, the string copy and string init functions were 
+designed to
+return the address of the resulting string. This may seem an 
+unnecessary
+complication, but it does allow programmers to nest functions 
+within each other when
+writing the C code.<p>
+
+<b>Time and Effort<p>
+</b>
+
+Whether the optimization was worth the effort depends on how you 
+value your
+time and on your requirements for speed and/or memory. I expected 
+a speed
+improvement on the order of five times faster. The improvement, 
+however, was
+between 12 and 15 times faster. Since creating these routines, 
+testing them,
+correcting them, and correcting them again resulted in more speed 
+than I expected,
+the optimization proved successful. You have to decide if it's 
+worth your time
+to type these routines in, and use them in your code.<p>
+
+The improvement you can achieve by converting small routines into
+assembler is significant, if not startling. Leaving the original 
+C routine as a
+comment in the assembler code lets you combine the best of both 
+worlds: the most
+efficient routine and the original portable routine. Any small, 
+tight looping
+function that is concerned with three or fewer variables and that 
+is commonly used
+is an ideal candidate. However, to get the most out of such an 
+optimization, you
+must build more complex functions out of these smaller ones.<p>
+
+<b>Some Further Thoughts<p>
+</b>
+
+Rarely can an author or a programmer go back to reconsider what 
+he or she has
+unleashed on the world after a year has passed. I was a little 
+surprised to see that
+I had made almost no alterations in Optimizing Strings in C.<p>
+
+There was only one revision to the original four routines. 
+Originally,
+CMATCH requested a zero relative offset into the string it 
+searched, and
+returned a one relative position of the match it found. (A zero 
+meant no match.)
+In other words, to start the search at the first byte of the 
+string you specified 0,
+and if the first byte matched the desired character, it returned 
+a 1. That
+inconsistency confused even me. The new version of the routine 
+expects a 1 relative
+offset, so the offset and the returned value are now on the same 
+basis. (See
+<a href="#list15-2">Listing 15-2</a>.)<p>
+
+Assembler routines are like potato chips--you can't stop at one 
+or two. One
+set of candidates for conversion I had overlooked before were 
+routines used
+within tight loops. Tests to classify a character type were ideal 
+candidates
+because each was short, used almost everywhere, and often within 
+tight loops.
+Furthermore, since these tests made multiple comparisons to the 
+same value,
+they could benefit from optimization. ISDIGIT, ISALPHA, ISASCII, 
+and so forth
+could all benefit. Finally, since these routines were similar, 
+once one was
+converted properly the rest could be built in the same manner.<p>
+
+When I did find a library of functions for C in the public 
+domain, I found
+some of the functions to be distinctly similar to the ones I had 
+already
+developed. That created a problem. I didn't want two functions 
+that did the same
+thing on my system. I didn't want to change all my programs, and 
+I certainly
+didn't want to change what I didn't really understand. The 
+solution was simple:
+I just added one line of code to my assembler routine. By adding 
+PAD:: before
+my routine, I had two names for the same function. Later I 
+realized the DEFINE
+statement would achieve the same results.<p>
+
+Some functions in the public-domain library were almost identical 
+to my
+assembler functions. They differed either in their scope or the 
+construction of
+their pass parameters. Since my assembler routines were 
+significantly faster (10
+to 15 times faster) I wanted to get the most mileage out of them. 
+So I revised the
+new functions to call my assembler routines, where possible.<p>
+
+Upon reviewing some of the code I have written, I realized that 
+these
+optimized routines have had a significant impact on my 
+programming style. Instead
+of writing one complex character-by-character analysis of a 
+string, I use these
+optimized functions and subdivide the task. For instance, I wrote 
+a function to
+verify that a filename would be a valid CP/M filename FN_F_NAME. 
+The rules
+were as follows: it must be nonblank; it must not contain either 
+a * or a ?; it
+must contain at most one &quot;:&quot;; any &quot;:&quot; must be 
+the second character of the
+string; it must contain at most one &quot;.&quot;; the name 
+portion must have a length
+greater than 1 and less than 9; and the type portion of the name 
+must have a
+length greater than 1 and less than 4 (I impose this restriction 
+on myself even
+though CP/M doesn't insist on it). Writing such a routine is a 
+breeze using the
+CMATCH function. I admit my code isn't the most efficient or 
+elegant.
+However, it is a simple, straightforward function that works with 
+a minimum of
+effort. Furthermore, I won't improve it because such a routine is 
+executed only
+once or twice in a program.<p>
+
+My final suggestion is to leave the original C code in place as 
+comments.
+This acts as documentation and allows you the option of moving to 
+a new
+machine with a different assembler. Also, when you are debugging 
+you might want
+to put displays into your program. Adding a display to an 
+assembler routine can
+be time-consuming; I simply reinstall the original C code 
+temporarily, with
+whatever displays I want.<p>
+
+<b><a name="list15-1">LISTING 15-1</a><p></b>
+<pre>
+  /*
+   * Optimizing Strings in C
+   *
+   * Copyright 1983 by Edward McDermott
+   * 12 Manor Haven Road
+   * Toronto, Ontario M6A 2H9, Canada
+   *
+   */
+
+  #asm
+  ;/*
+  ;strcpy(s,t) char *s, *t;
+  ;{ int ret; ret = *s; while (*s++ = *t++); return(ret) ; }
+  STRCPY::
+          POP     BC       ; POP return ADDRESS
+          POP     HL       ; POP ADDRESS OF T
+          POP     DE       ; POP ADDRESS OF S
+          PUSH    DE       ; RESTORE STACK
+          PUSH    HL
+          PUSH    BC
+          PUSH    DE       ; SAVE ADDRESS OF START OF S
+
+  STRLP:  LD      A,(HL)   ; TRANSFER LOOP
+          OR      A        ; TEST FOR ZERO IN T
+          JR      Z,STREXT ; if SO EXIT
+          LDI              ; MOVE INCREMENTING
+                           ; S++ = T++
+          JR      STRLP    ; continue LOOP
+
+  STREXT: LD      A,00     ; ZERO FINAL BITE IN S
+          LD      (DE),A
+          POP     HL       ; return S
+          RET
+
+  ;
+  ;PAD(DEST, CH, N) char *DEST, *N; int CH;
+  ;{while(N--) *DEST++ = CH;}
+  ;
+  ;STRINIT(S,C,I ) char *S; char C ; int I ;
+  ;{ int RET; RET = *S;
+  ; while (I--) *S++=C;
+  ; return(RET) ; }
+
+  PAD::
+  STRINIT::
+          POP     IX      ; POP return ADDRESS
+          POP     BC      ; POP I (LEN for INIT)
+          POP     DE      ; POP C ( INIT charACTER
+          POP     HL      ; POP ADDRESS OF STRING
+          PUSH    HL      ; RESTORE STACK
+          PUSH    DE
+          PUSH    BC
+          PUSH    IX
+          PUSH    HL      ; SAVE ADDRESS OF START OF S
+          LD      A,B     ; if BC : 0 return(s);
+          OR      C       ;
+          JR      Z,STRIN2
+
+          LD      A,E     ; LOAD A WITH C charACTER
+          LD      (HL),A  ; STORE charACTER IN BEGIN OF S
+          POP     DE      ; SET DE TO BEGIN OF S
+          PUSH    DE
+          INC     DE      ; POint DE TO NEXT BYE
+          DEC     BC      ; REDUCE for char TAKEN
+          LD      A,B
+          OR      C       ; MAKE SURE BC &gt; 00
+          JR      Z,STRIN2
+          LDIR            ; while (BC--) DE++ = HL++
+  STRIN2: POP     HL      ; GET ADDRESS OF S TO return
+          RET
+
+  ;/* strlen -- return length of string s (page 98) */
+  ;STRLEN(S) char *S;
+  ;      { int P ; P =S;
+  ;      while (*S) ++S ;
+  ;      return(S-P);}
+
+  STRLEN::
+         POP      BC      ; POP return ADDRESS
+         POP      HL      ; POP ADDRESS OF S
+         PUSH     HL      ; RESTORE STACK
+         PUSH     BC
+         PUSH     HL        ; SAVE ADDRESS OF START OF S
+         LD       BC,0FFFFH ; BC IS BYTE COUNT (DECREMENTED)
+         XOR      A       ; SEARCHING FOR A 00
+         CPIR             ; EQUIVALENT OF while (HL++)
+         POP      DE      ; DE = S
+         SBC      HL,DE   ; HL = HL - DE
+         DEC      HL      ; CORRECTION FOR COUNT LAST char
+         RET              ; return(HL);
+
+  ;
+  ;/* revised version */
+  ;cmatch(S,P,FROM )
+  ; char S[] ; int P, FROM ;
+  ; { int ADV,I ;
+  ;   ADV = FROM; I= 0;
+  ;   while (--ADV &gt; 0) {if (S[I++] == 0) return(0);}
+  ;   while (S[I] != 0 ) {if (P == S[I++]) return(I);}
+  ; return 0; }
+  ;
+  CMATCH::
+         POP     IX       ; POP RETURN ADDRESS
+         POP     BC       ; POP I (INDENT FOR INIT)
+         POP     DE       ; POP P (SEARCH CHARACTER
+         POP     HL       ; POP ADDRESS OF STRING S
+         PUSH    HL       ; RESTORE STACK
+         PUSH    DE
+         PUSH    BC
+         PUSH    IX
+         DEC     BC       ; FROM 1 RELATIVE TO ZERO RELATIVE BASE
+         PUSH    BC       ; SAVE BC FOR COUNT OF BYTES
+         LD      A,B      ;
+         OR      C        ; IF BC == 0 THEN GO TO CMA1
+         JR      Z,CMA1
+         LD      A,O
+  CMAO:  CPIR             ; CHECK 00 BEFORE END OF BC
+         LD      A,B      ; IF (BC != 0 ) RETURN 0
+         OR      C
+         JR      NZ,CMAX1 ; ELSE CONTINUE
+  CMA1:  POP     BC       ; RESTOR BC = I FOR OFFEST COUNT
+                          ; I IS WITHIN THE STRING ?
+  CMA2:  INC     BC       ; COUNT BYTES
+         LD      A,(HL)
+         OR      A        ; END OF STRING?
+         JR      Z,CMAX
+         CP      E        ; CHECK SEARCH CHARACTER
+         JR      Z,CMAE   ; IF (HL = P) CONTIN
+         INC     HL       ; HL ++
+         JR      CMA2
+
+  CMAE:  LD      H,B      ; RETURN (HL = BC)
+         LD      L,C
+         RET
+
+         ; I IS BEYOND THE STRING END
+  CMAX1: POP     BC       ; RESTORE STACK
+  CMAX:  LD      HL,OOH   ;RETURN (NULL);
+         RET
+  #endasm
+  /* end of listing */<p>
+</pre>
+<b><a name="list15-2">LISTING 15-2</a><p></b>
+<pre>
+  /*
+   *
+   * Contributed by
+   * Edward McDermott, 12 Manor Haven Road,
+   * Toronto, Ontario M6A 2H9, Canada
+   *
+   */
+
+  /**************************************************/
+  /*   Various additional assembler routines for C   */
+  /**************************************************/
+
+  /*----- common C routines utilizing an assembler routine ----*/
+
+  /* return pointer to 1st occurrence of c in str, else 0 */
+  /* note this function is a special case of the CMATCH */
+  STRCHR(STR, C) char *STR, C;
+    {return(CMATCH(STR,C,1));}
+
+  /* convert the string to uppercase */
+  STRUPPER(S) char *S;
+  {int T; T = S;
+   while (*T) (*T=TOUPPER(*T); T++;}
+   return(S);}
+
+  /* convert the string to lowercase */
+  STRLOWER(S) char *S;
+  {int T; T = S;
+   while (*T) {*T=TOLOWER(*T); T++;}
+   return(S);}
+
+  /* Test File name conforms to valid cp/m structure */
+  /* returns YES on error and NO for a valid name */
+  /* also sends an error message to stderr */
+  FN_F_NAME(ST) char *ST;
+  { int K,J,I ;
+    if (CMATCH(ST,'?',1) || CMATCH(ST,'*',1))
+                                {ERR_MSG(&quot;Ambig. Ref.&quot;); return(YES);}
+    I = CMATCH(ST,':',1);
+    if (I ==1 || I &gt; 2)         {ERR_MSG(&quot;Bad Drive&quot;) ; return(YES);}
+    if (CMATCH(ST,':',I+1) &gt; 0) {ERR_MSG(&quot;Double ':'&quot;) ; return(YES);}
+    J = CMATCH(ST,'.',1) - I;
+    if (J &lt; 2 || J &gt; 9)         {ERR_MSG(&quot;Bad Name&quot;) ; return(YES);)
+    if (CMATCH(ST,'.',I+J+1)&gt; 0){ERR_MSG(&quot;Double '.'&quot;) ; return(YES);}
+    K = STRLEN(ST) - J - I;
+    if (K &lt; 1 || K &gt; 3)         {ERR_MSG(&quot;Bad Type&quot;) ; return(YES);}
+    return(NO);}
+
+  /* write error message to stderr with a carriage return */
+  ERR_MSG(ST) char *ST:
+  { fputs(st,stderr); fputc(st,'\n'); return;}
+  /*--------------- common assembler routine ----------*/
+  #asm
+  ;/* return c, converted to uppercase is appropriate */
+  ;TOUPPER(C) int C;
+  ;{if(C&lt;='z' &amp;&amp; C&gt;='a') return(C-32);
+  ; return(C);}
+
+  TOUPPER::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       123     ; if c &gt;='z'+1 then go to second range
+          JP       NC,NOUPPER          ;
+          CP       96      ; if c &lt;='a'-1 then go to second range
+          JP       C,NOUPPER
+          SUB      32    ; SUB 32 FROM Accumulator
+          LD       L,A     ; load up date accumultor to L of HL  NOUPPER:RET
+
+  ; revised version that uses a one offset
+  ;CMATCH(S,P, FROM) char S[] ; int P, FROM ;
+  ; { int ADV, I ;
+  ;   ADV = FROM; I= 0;
+  ;   while (--ADV != 0) {if (S[I++] == 0) return(0);}
+  ;   while (S[I] != 0 )  {if (P == S[I++]) return(I);}
+  ;  return 0; }
+  ;
+  CMATCH::
+          POP      IX      ; POP RETURN ADDRESS
+          POP      BC      ; POP I (INDENT FOR INIT)
+          POP      DE      ; POP P (SEARCH CHARACTER
+          POP      HL      ; POP ADDRESS OF STRING S
+          PUSH     HL      ; RESTORE STACK
+          PUSH     DE
+          PUSH     BC
+          PUSH     IX
+          DEC      BC      ; FROM 1 RELATIVE TO ZERO RELATIVE BASE
+          PUSH     BC      ; SAVE BC FOR COUNT OF BYTES
+          LD       A,B     ;
+          OR       C       ; IF BC == 0 THEN GO TO CMA1
+          JR       Z,CMA1
+          LD       A,O
+  CMAO:   CPIR             ; CHECK 00 BEFORE END OF BC
+          LD       A,B     ; IF (BC != 0 ) RETURN 0
+          OR       C
+          JR       NZ,CMAX  ; ELSE CONTINUE
+  CMA1:   POP      BC       ; RESTOR BC = I FOR OFFEST COUNT
+                            ; I IS WITHIN THE STRING ?
+  CMA2:   INC      BC       ; COUNT BYTES
+          LD        A,(HL)
+          CP        00      ; END OF STRING?
+          JR        Z,CMAX
+          CP        E       ; CHECK SEARCH CHARACTER
+          JR        Z,CMAE  ; IF (HL = P) CONTIN
+          INC       HL      ; HL ++
+          JR        CMA2
+
+  CMAE:   LD        H,B     ; RETURN (HL = BC)
+          LD        L,C
+          RET
+
+          ; I IS BEYOND THE STRING END
+  CMAX1:  POP       BC      ; RESTORE STACK
+  CMAX:   LD        HL,OOH  ;RETURN (NULL);
+         RET
+
+  ;/* return 'true' if c is a decimal digit */
+  ;ISDIGIT(C) int C;
+  ;{return (C&lt;='9' &amp;&amp; C&gt;='0');}
+  ;
+  ISDIGIT::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          JP       IS3     ; use part of ISALNUM test
+  ;/* return 'true' if c is alphabetic */
+  ;ISALPHA(C) INT C;
+  ;{return((C&lt;='z' &amp;&amp; C&gt;='a') || (C&lt;='Z' &amp;&amp; C&gt;='A'));}
+  ;
+  ISALPHA::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       123     ; if c &gt;='z'+1 then go to second range
+          JR       NC,ISA2 ;
+          CP       96      ; if c &lt;='a'-1 then go to second range
+          JR       C,ISA2  ;
+          JP       ISTRUE  ; GO to IS TRUE
+  ISA2:
+          CP       91      ; if c &gt;='Z'+1 then go to second range
+          JP       NC,ISNOT;
+          CP       64      ; if c &lt;='A'-1 then go to second range
+          JP       C,ISNOT ;
+          JP       ISTRUE  ; GO to IS TRUE
+  ;
+  ;/* return 'true' if c is alphanumeric */
+  ;ISALNUM(C) int C;
+  ;{return (
+  ;  (C&lt;='z' &amp;&amp; C&gt;='a') || (C&lt;='Z' &amp;&amp; C&gt;='A') || (C&lt;='9' &amp;&amp; C&gt;='O'));}
+  ;
+  ISALNUM::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       123     ; if c &gt;='z'+1 then go to second range
+          JR       NC,IS2  ;
+          CP       96      ; if c &lt;='a'-1 then go to second range
+          JR       C,IS2   ;
+          JR       ISTRUE  ; GO to IS TRUE
+  IS2:
+          CP       91      ; if c &gt;='Z'+1 then go to second range
+          JR       NC,IS3  ;
+          CP       64      ; if c &lt;='A'-1 then go to second range
+          JR       C,IS3   ;
+          JR       ISTRUE  ; GO to IS TRUE
+
+  IS3:    CP       58      ; if c &gt;='9'+1 then go to second range
+          JR       NC,ISNOT        ;
+          CP       47      ; if c &lt;='a'-1 then go to second range
+          JR       C,ISNOT ;
+          JR       ISTRUE  ; go to IS TRUE
+
+  ; Note, these two routine are used to exit all the IS tests.
+  ; A JR command is used with within 128 by of the test else a JP
+  ; command is used. That's why they're near the middle of the routine
+  ISNOT:  LD       HL,0000 ; ZERO FINAL BITE IN S
+          RET
+  ISTRUE: LD       HL,1    ; SET HL TO TRUE (non zero)
+          RET
+
+  ; /* return 'true' if c is an ASCII character (0-127) */
+  ;ISASCII(C) char *C;
+  ;{ return (C &lt;= 127);}
+  ;
+  ISASCII::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       128     ; if C &gt;=127+1 then go to IS NO
+          JR       NC,ISNOT
+          JR       ISTRUE
+
+  ;/* return 'true' if c is a control character (0-31 or 127) */
+  ;ISCNTRL(C) char *C;
+  ;{ return ((C &lt;= 31) || (C == 127));}
+  ;
+  ISCNTRL::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       127     ; if c =127 then go to IS TRUE
+          JR       Z,ISTRUE
+          CP       31
+          JR       NC,ISTRUE ; IF C &lt;= 31 THEN GO TO IS TRUE
+          JR       ISNOT
+
+  ;/* return 'true' if c is lower-case alphabetic */
+  ;ISLOWER(C) int C;
+  ;{return (C&lt;='z' &amp;&amp; C&gt;='a');}
+  ISLOWER::
+          POP      BC      ; POP return ADDRESS
+          POP      HL      ; POP C
+          PUSH     HL      ; RESTORE STACK
+          PUSH     BC      ;
+          LD       A,L     ; LOAD C INTO A-REG
+          CP       123     ; if c &gt;='z'+1 then go to second range
+          JP       NC,ISNOT        ;
+          CP       96      ; if c &lt;='a'-1 then go to second range
+          JP       C,ISNOT ;
+          JP       ISTRUE   ; GO to IS TRUE
+  #endasm
+
+  /* end of listing */<p>
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 
+
+

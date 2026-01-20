@@ -1,0 +1,62 @@
+Title:			KEYLOCK
+Author:			Rob Scott
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		
+Supplier:		Rob Scott
+			Newcastle University Medical Physics
+Date:			
+Keywords:		
+Shareware:		
+Machine:		BBC Master
+Operating system:	OS
+			BBC B (sideways RAM preferred)
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a11
+Date mounted/updated:	25/01/91
+File names:		a11ra.hex  -  "RAMKEY" ram version of program
+			a11ro.hex  -  "ROMKEY" rom version of program
+			a11sr.hex  -  "SRLOAD" sideways ram loader
+			a11man.doc -  "MANUAL" documentation
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+All Files with the .HEX suffix need to be converted into binary form using the
+converter online as micros/bbc/d99/d99deh.bas and saved using the filenames
+given above.  To load the rom image into sideways ram, build a !BOOT file
+thus:
+ 
+*BASIC
+*SRLOAD ROMKEY 8000 <rambank>
+*FX151,78,127
+CALL !-4
+ 
+where <rambank> is in the range 0-15 (banks 4-7 are used on the Master Series)
+
+Description:
+
+Key  lock  has  been designed to allow entry of key combinations such as
+SHIFT-ed  letters  and  CTRL-SHIFT-ed  function  keys  using  single  key
+sequences on the BBC and MASTER range of microcomputers.
+
+Two versions of Key lock are supplied. RAMKEY is the low ram version
+intended as a  demonstration  version  because  the area of memory used
+(page  &9  to  page  &C)  may be  overwritten  by  a  user  program,
+re-installation mey be required.
+
+The second version is called ROMKEY. This  is a true ROM image which may
+be either blown into EPROM and permanently installed  inside  the machine,
+or may be loaded into sideways ram if this is  available  (in  which case,
+follow  the  instructions  of the ram board manufacturer to load ROMKEY or
+use the loader file  "Srload"  supplied.  This  has the same syntax as the
+SRLOAD on the Master series).
+

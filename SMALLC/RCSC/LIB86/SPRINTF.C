@@ -1,0 +1,54 @@
+#include "stdio.h"
+/*
+** sprintf(buffer, ctlstring, arg, arg, ...) - Formatted print.
+** Operates as described by Kernighan & Ritchie.
+** b, c, d, o, s, u, and x specifications are supported.
+** Note: b (binary) is a non-standard extension.
+*/
+sprintf(argc) int argc; {
+  int *nxtarg;
+  int  arg, left, pad, cc, len, maxchr, width;
+  char *ctl, *sptr, str[17];
+  char *ptr;
+  cc = 0;                                         
+  nxtarg = CCARGC() + &argc - 1;
+  ptr = *nxtarg--;
+  ctl = *nxtarg--;                          
+  while(*ctl) {
+    if(*ctl!='%') {*ptr++ = *ctl++; ++cc; continue;}
+    else ++ctl;
+    if(*ctl=='%') {*ptr++ = *ctl++; ++cc; continue;}
+    if(*ctl=='-') {left = 1; ++ctl;} else left = 0;       
+    if(*ctl=='0') pad = '0'; else pad = ' ';           
+    if(isdigit(*ctl)) {
+      width = atoi(ctl++);
+      while(isdigit(*ctl)) ++ctl;
+      }
+    else width = 0;
+    if(*ctl=='.') {            
+      maxchr = atoi(++ctl);
+      while(isdigit(*ctl)) ++ctl;
+      }
+    else maxchr = 0;
+    arg = *nxtarg--;
+    sptr = str;
+    switch(*ctl++) {
+      case 'c': str[0] = arg; str[1] = NULL; break;
+      case 's': sptr = arg;        break;
+      case 'd': itoa(arg,str);     break;
+      case 'b': itoab(arg,str,2);  break;
+      case 'o': itoab(arg,str,8);  break;
+      case 'u': itoab(arg,str,10); break;
+      case 'x': itoab(arg,str,16); break;
+      default:  *ptr = 0; return (cc);
+      }
+    len = strlen(sptr);
+    if(maxchr && maxchr<len) len = maxchr;
+    if(width>len) width = width - len; else width = 0; 
+    if(!left) while(width--) {*ptr++ = pad; ++cc;}
+    while(len--) {*ptr++ = *sptr++; ++cc; }
+    if(left) while(width--) {*ptr++ = pad; ++cc;}  
+    }
+  *ptr = 0;
+  return(cc);
+  }

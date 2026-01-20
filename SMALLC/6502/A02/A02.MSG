@@ -1,0 +1,60 @@
+Title:			Small C compiler
+Author:			Dr A.J. Travis
+Version:		0.7
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Dr A. J. Travis
+Date:			01/05/89
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a02
+Date mounted/updated:	26/07/89
+File names:		a02getshar.exc		Kermit takefile for download
+			a02mkboot.exc		*EXEC file to unpack bootstrap
+			a02sh.hex		Hex encoded Small-C ROM
+			a02dehex.hex		Hex encoded dehex utility
+			a02shar.hex		Hex encoded shar utility
+			a02unpack.exc		*EXEC file to unpack files
+			a02tcc1.sha		Small-C in shar format
+			a02tcc2.sha
+			a02tcc3.sha
+			a02tcc4.sha
+			a02tcc.doc		Documentation
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		ibmpc/f49 for IBM PC cross-compiler
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+Download the files, then follow the instructions in a02tcc.doc to unpack the
+programs.
+
+The dehex utility can be found in micros/bbc/d99/d99deh.bas as a BASIC
+program source file
+
+Description:
+
+Small-C is a subset of the C programming language for which a number of
+public-domain compilers have been written.  The original compiler was
+written by Ron Cain and appeared in the May 1980 issue of Dr.Dobb's
+Journal.  More recently, James E.Hendrix has improved and extended the
+original Small-C compiler and published "The Small-C Handbook", ISBN
+0-8359-7012-4 (1984).  Both compilers produce 8080 assembly language,
+which is the most popular implementation of Small-C to-date.  My 6502
+Small-C compiler for the BBC Micro is based on "RatC", a version of the
+original Ron Cain compiler described by R.E.Berry and B.A.Meekings in "A
+Book on C", ISBN 0-333-36821-5 (1984).  The 6502 compiler is written in
+Small-C and was bootstrapped using Zorland C on an Amstrad PC1512 under
+MSDOS 3.2, then transferred onto a BBC Micro using Kermit.  The compiler
+can be used to cross-compile 6502 code from an MSDOS host, or as a
+'resident' Small-C compiler on a BBC Micro. 
+

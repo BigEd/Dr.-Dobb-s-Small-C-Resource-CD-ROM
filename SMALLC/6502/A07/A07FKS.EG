@@ -1,0 +1,11 @@
+VIEW
+Format,Block|Move,Block|Delete,Block
+Top,Of Text|Swap,Case|Next,Match
+Bottom,Of Text|Release,Margins|Format,Mode
+Delete To,End Of Line|Delete Up,To Character|Justify,Mode
+Beginning,OfLine|Highlight,1|Insert,Mode
+End,Of Line|Highlight,2|Default,Ruler
+Insert,Line|Go To,Marker|Split,Line
+Delete,Line|Set,Marker|Concatenate,Lines
+Insert,Character|Edit,Command|Mark,As Ruler
+Delete,Character|Delete,Command

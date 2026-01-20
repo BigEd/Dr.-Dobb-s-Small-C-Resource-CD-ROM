@@ -1,0 +1,373 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.
+-->
+<CENTER>
+<B>
+<H1>PUTTING C ON A MICROCOMPUTER: THE ORIGINAL SMALL-C <p>
+</H1>
+by Ron Cain<p>
+</CENTER>
+</B>
+
+<i>The article from which this excerpt is taken originally 
+appeared 
+in Dr. Dobb's Journal #45 (July 1980).</i><p> 
+
+
+I had to have a compiler for my home computer. There was no doubt 
+about it: 
+after programming nearly every day in BLISS and then reading 
+about C, Pascal, 
+LISP, and all the other various languages becoming available, it 
+made no sense 
+at all to continue programming in assembly language. <p>
+
+However, the question arose: Which language? <p>
+
+Surprisingly, the decision was not difficult. Since I do mostly 
+system 
+programming (editors, music-board drivers, modem talkers, faster 
+versions of Life, and 
+so on) rather than application programming (accounting programs, 
+solar eclipse 
+predictors, and so on), the choice boiled down to two: C or 
+BLISS. Besides 
+having the most esoteric names of the group, both possess the 
+strengths of system 
+programming languages-that is to say, they both have a slightly 
+better notion of 
+computer architectures than strictly application-oriented 
+languages in terms of 
+accessing bytes and words, and neither wastes time doing 
+&quot;garbage collection&quot; 
+or keeping track of legal array subscripting. Both are intended 
+to produce fairly 
+fast (usually inline) code to get the job done with the least 
+amount of overhead. <p>
+
+After looking around the marketplace, I decided C was the 
+appropriate 
+choice if I expected to produce code usable by others. However, 
+another thing 
+also became obvious: the C compilers available either cost a lot 
+of money, ran 
+only on CP/M, or both. Having neither a lot of money nor CP/M 
+(the second by 
+choice), I had to think of an alternate approach. <p>
+
+The first step came by way of the Tiny-C Interpreter offered by 
+Tiny-C 
+Associates. For a mere $40, I was able to buy the source code of 
+a working C 
+interpreter. I intended to use it to run the C programs I would 
+write until 
+something bigger and better came along. I sent off the money, got 
+the huge white 
+notebook in the mail, and after a couple weeks of typing, had it 
+up and running. 
+Let me be another of many praising the product. The 
+documentation, clarity of 
+print, and ease of implementation were all exceedingly good. <p>
+
+It gave me a few weeks to evaluate the C language as well as the 
+interpreter. 
+It became obvious after a short time that the language was very 
+easy to use and 
+to follow. It also became obvious that the interpreter, though an 
+excellent 
+implementation, was too slow for my needs. Modem to disk programs 
+like to think in 
+terms of microseconds, not milliseconds, and the former was not 
+to be had with 
+an interpreter. Clearly, a third approach was needed. <p>
+
+The solution was obvious: I had to write the compiler myself. (I 
+said 
+obvious, not easy.) <p>
+
+So, after gathering a thick stack of paper and getting ready to 
+produce the (I 
+hoped) last vast 8080 programming effort, I wrote a few lines, 
+and . . . 
+reconsidered. <p>
+
+What better use of a systems programming language could there be 
+than to 
+write a compiler? And what better language could be used than the 
+one the 
+compiler would ultimately support? Ideas began to gel, and pieces 
+began to fit 
+together. I already had the interpreter. Even though it was slow, 
+it might be just 
+the ticket to bootstrap my way onto the machine. And so it began. 
+<p>
+
+Considering I had never even seen a compiler before, and had not 
+done 
+any lengthy programs in C, everything came together in a 
+remarkably short 
+period of time. Chalk that up to the ease of use of the language. 
+The ability 
+to have variables local to individual routines made the 
+recursive-descent 
+expression parser fit together literally in hours. A few weeks of 
+a couple of 
+hours per night saw the compiler begin to take shape. A few 
+obstacles 
+appeared along the way; probably the worst was when I discovered 
+I didn't 
+have enough memory for the entire compiler to reside in the 
+memory along 
+with the interpreter. One demonic session with the editor, 
+deleting all 
+comments (gulp) and shortening all names, brought it to size and 
+solved that 
+problem. The compiler's still recovering from that early trauma. 
+Eventually, 
+there came an evening when all such little problems were solved, 
+and the 
+compiler, running under the interpreter, accepted a small C 
+program and 
+produced an 8080 program. <p>
+
+At that point, I refined the compiler, removed subtle errors, and 
+discovered 
+I still didn't have enough memory for the compiler, the 
+interpreter, and the 
+symbol table that a program as large as the compiler itself 
+required. So I asked 
+around, eventually got access to a Unix system, and spent a 
+couple more weeks 
+refining the compiler without regard to memory or interpreters. 
+This exercise 
+helped remove some of the less obvious syntax errors not caught 
+by the 
+interpreter and necessitated modifying the compiler to accept the 
+true C syntax 
+rather than the slightly modified syntax used by the interpreter. 
+After this 
+upgrade, the compiler was beginning to look like a true C 
+compiler, and there 
+came a time it ran under Unix and accepted as input itself. <p>
+
+So, finally, I was able to take the equivalent 8080 code for the 
+compiler back 
+to my machine at home to complete it. The generated code was 
+assembled, run, 
+and once again the compiler was submitted to itself. The results 
+of this 
+inbreeding highlighted errors in the generated 8080 code that had 
+thus far been hidden. 
+I set those aright, compiled the compiler once again, then used 
+the output to 
+compile the compiler again, and then one more time (sounds like 
+an infinite 
+loop?) compiled the compiler. When the code generated by this 
+great-grandson 
+was byte-for-byte identical to the code generated by Unix way 
+back when, and 
+all subsequent offspring produced such twins, I decided the 
+language could be 
+considered working.<p> 
+
+Once it was working, I decided it would save people in a similar 
+situation a 
+lot of parallel effort if I made it available. <p>
+
+For those of you who are interested in getting a compiler for a 
+structured 
+language on your home machines, I'd feel flattered if you'd 
+consider the one 
+published here. And if you are the sort who is looking for a 
+systems 
+programming language, you are undoubtedly the sort who would 
+modify this to fit your 
+own needs. Therefore, a few vital statistics are in order. <p>
+
+In a nutshell, the compiler: <p>
+<UL> 
+<LI> Is written in C 
+<LI> Accepts as input a text file written in C 
+<LI>Produces as output a text file of 8080 mnemonics 
+</UL> 
+The syntax it accepts is a subset of the standard C language. 
+Within this subset, 
+it does not depart from the standard syntax, which means the 
+listing shown 
+here can compile and run under Unix. Although the subset is 
+limited to make 
+the compiler simpler and therefore does not accept just any 
+pre-existing C 
+program, the programs you can write with it are authentic and 
+will be compatible 
+with more complete compilers. <p>
+
+The features of standard C this compiler does not support are:<p> 
+
+<UL> 
+<LI> Floating-point data types 
+<LI> Structures (or unions) 
+<LI> Multiple dimension arrays 
+</UL>
+The aim was not to support the full C language, but rather to 
+support enough of 
+a subset to be able to create C programs that would be compatible 
+with standard 
+C. Then, as the compiler expanded, more and more features could 
+be added to 
+bring it closer in compatibility with other systems.<p>
+ 
+Currently, the allowable data types are <i>char </i>(8-bit data 
+element) and <i>int </i>
+(16-bit data element). Obviously, this means the compiler is an 
+integer-only 
+subset of the language--that means it will not handle 
+floating-point numbers. 
+Actually, all internal arithmetic operations assume 16-bit 
+integers, meaning 8-bit 
+character elements are sign-extended prior to use. <p>
+
+Allowable modifiers of the two basic types are; <p>
+<OL> 
+<LI> type *name--declares name to be a pointer to an element of 
+the specified type 
+<LI> type name[]-syntactically identical to the above pointer 
+declaration. 
+<LI> type name[constant]--declares an array of 
+&quot;constant&quot; size where each array 
+        element is of the specified type. <p>
+</OL> 
+If you've worked with C before, you know just about everything is 
+done with 
+pointers. It lets you exploit the architecture of the CPU by 
+giving access to all 
+addressable memory. Unlike standard C, you can't use more than 
+one modifier 
+per declaration, meaning, it will not accept something like <i>
+int (*name)[]</i>. This 
+does not present a terrible restriction, but it must be 
+mentioned. Since no 
+run-time checking is made on the legality of pointer usage, it is 
+a trivial matter to 
+access any byte in memory, and a not-at-all-trivial problem 
+finding which 
+routine is clobbering some random location. You can see why 
+pointers have been 
+lumped with goto's as the bane of the code maintainers and 
+modifiers. <p>
+
+Already, a couple of distributors or private parties have the C 
+programming 
+language working on other machines or are planning it....<p>
+ 
+This brings up interesting points. If you haven't already made 
+the intuitive 
+leap to the power behind writing the compiler in the same 
+language it supports, 
+it lies in the ability to compile itself. This means users with 
+extra memory can 
+add additional features to the basic compiler, compile it with 
+the old compiler, 
+and a new and more powerful version will exist. <p>
+
+If you have a working compiler on one CPU and want to bootstrap 
+your 
+way to another kind of processor, you need only change the 
+code-generating 
+portions of the compiler (all grouped into the final sections of 
+the listing) to 
+make code for the new machine, compile that compiler, and once 
+again, you 
+have a new language. Sort of like cloning. <p>
+
+Personally, I've developed the language about as far as I needed 
+it for the 
+things I originally intended. However, I am still interested in 
+hearing what 
+modifications are found useful, what machines it eventually 
+wanders onto, and any 
+other interesting paths this language takes. <p>
+
+If you get the language running on your home system, make mods to 
+it, 
+make it run on another CPU, or are in a position to make copies 
+of your work 
+for others with similar CPUs, I would appreciate hearing about it 
+in <i>Dr. Dobb's</i>. <p>
+
+I think it's an excellent opportunity to learn how a compiler 
+works and at 
+the same time establish the necessary groundwork for a C 
+community.<p> 
+ 
+The following letter from Ron Cain appeared in <i>Dr. Dobb's 
+Journal</i> # 76 (February 1983).<p> 
+ 
+The December [1982] issue of <i>Dr. Dobb's Journal</i> [#74] 
+containing the 
+first installment of version 2 of Small-C was definitely a 
+welcome sight. With all 
+the bug corrections and improvements for version 1.0 that have 
+been dribbling 
+in these last couple years, it was becoming cleat that someone 
+would just have 
+to sit down and pull together all the pieces. <p>
+
+Marlin Ouverson [then <i>DDJ</i> editor] approached me with the 
+idea of an 
+official rewrite of the little compiler. Though I was eager to 
+give it a try, there 
+was simply no way to find all the spare time required to do it 
+right. At the same 
+time, it was clear (at least to me) that there were some pretty 
+respectable 
+Small C experts emerging from the readership of <i>Dr. Dobb's</i> 
+who were quite possibly 
+more familiar with the original compiler than I (odd thought, 
+that). <p>
+
+So Marlin and I pondered the problem and soon realized there was 
+one 
+name that had appeared more than once in regard to Small-C: J. E. 
+Hendrix. But 
+could we ask him to do it? Marlin contacted him and, well, you 
+can see the 
+results. <p>
+
+I want to make it quite clear that my only role in this was 
+sending to Jim a 
+rather open-ended wish list. From my suggestions (most of which 
+he had already 
+anticipated or even implemented), and from those of Neal Block 
+and Dr. James 
+Van Zandt, Jim somehow found the time necessary to fix the old 
+bugs, check 
+our improvement wish lists, and toss in some compile-time options 
+of his own. I 
+consider the finished product excellent. <p>
+
+Some readers may wish for features not yet implemented 
+(naturally, any 
+programmer wants all the language features possible). Jim is as 
+aware of those as 
+anyone. However, my own feeling is that he chose exactly the 
+right place to stop 
+development, chase out the bugs, and get the language into print. 
+It is the same 
+decision I made many months (and features) ago. <p>
+
+I have no doubt that this new version represents far more work 
+than the 
+original (which was less than a month of spare time in the 
+doing). And because 
+of that, it is a much more generous gift. <p>
+<P>
+<CENTER>Return to <a href="../toc.htm">Table of Contents</a>
+
+</CENTER>
+<P>
+</HTML> 
+

@@ -1,0 +1,376 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>CP/M BDOS AND BIOS CALLS FOR C</H1> <p>
+
+by Terje Bolstad<p>
+</CENTER>
+</B>
+
+<i>This article originally appeared in Dr. Dobb's Journal #80 
+(June 1983).<p></i>
+
+If you want to write CP/M utilities in C, you will probably need 
+facilities to
+access the BDOS (Basic Disk Operating System) and/or the BIOS 
+(Basic
+Input/Output System). Many C compilers for CP/M do not include 
+such
+functions, and several that exist have severe limitations, in 
+that they may not return
+proper values in all cases.<p>
+
+The two functions <i>bdos()</i> and <i>bios()</i> described here 
+will enable you to
+incorporate direct BDOS and/or BIOS calls in programs written in 
+C. Please note
+that programs that call <i>bdos()</i> or <i>bios()</i> are not 
+portable beyond CP/M and the
+8080 and Z80 series CPUs.<p>
+
+Originally, <i>bdos()</i> and <i>bios()</i> were written for the 
+C/80 compiler from The
+Software Toolworks, but they also work with other compilers that 
+push
+arguments on the stack in a nonreversed order before calling a 
+function. Such C
+compilers include Small-C and most of its derivatives. <i>bdos()
+</i> and <i>bios()</i> have
+been tested to work properly with both C/80 from The Software 
+Toolworks and
+the CW/C compiler from The Code Works.<p>
+
+<b>bdos()<p>
+</b>
+
+The <i>bdos()</i> function sets machine register C to the 
+function number specified
+in <i>funct</i> and sets the register pair DE to the value given 
+in <i>arg</i>, and initiates a
+call to BDOS. The function number may be specified numerically or
+symbolically. No checking of the arguments is done.<p>
+
+If <i>funct</i> is RETVN (12), RETLV (24), GETAA (27), GETROV 
+(29) or
+GETDPA (31), <i>bdos()</i> returns the value remaining in 
+register pair HL on return
+from BDOS. For all other BDOS functions, <i>bdos()</i> returns 
+the value in A, with
+sign extension. In this way, BDOS error (255 or FF(hex)) is 
+returned as -1.<p>
+
+<b>bios()<p>
+</b>
+The <i>bios()</i> function sets machine register pair BC to the 
+value given in <i>arg1</i>, and
+the register pair DE to the value given in <i>arg2</i>, and 
+initiates the appropriate BIOS
+call by transferring control to the BIOS jump vector entry point 
+specified in
+<i>funct</i>. This entry point may be specified numerically or 
+symbolically. No
+checking of the arguments is done.<p>
+
+If <i>funct</i> is either SELDSK (9) or SECTRAN (16), <i>bios()
+</i> returns the value
+remaining in the HL register after execution of the BIOS call; 
+otherwise it
+returns the value remaining in register A on return from BIOS, 
+with sign
+extension.<p>
+
+Note that you must specify all three arguments in the <i>bios()
+</i> function. If
+you do not need the last one, you must set it to 0 or any other 
+value.<p>
+
+<b>Installation<p>
+</b>
+
+You may type the source code in <a href="#list12-1">Listing 12-1
+</a> into a file called CPMCALL. C. To
+use <i>bdos()</i> or <i>bios()</i> in a C source file, you must 
+<i>#include &quot;CPMCALL.C&quot;</i> in
+that file.<p>
+
+A simple example of how to use <i>bdos()</i> and <i>bios()</i> is 
+shown in <a href="#list12-2">Listing 12-2</a>.
+In this example, <i>bdos()</i> is used to get the current disk, 
+and <i>bios()</i> is used to print
+it on the console. You may use this example to test that you have 
+installed
+<i>bdos()</i> and <i>bios()</i> correctly on your system. When 
+run, the program should
+write the uppercase character corresponding to the current 
+(logged) disk drive
+on the console. Log onto different drives and check that the 
+program writes out
+the correct letter.<p>
+
+Normally it is not advisable to do input/output via <i>bios()</i> 
+or <i>bdos()</i> (as
+done with <i>bios()</i> in the example), if this can be done via 
+other conventional C
+functions, such as <i>putchar()</i>.
+
+To make sure your program is compatible with code for other 
+compilers
+that do offer the same functions (for example, SuperSoft's C 
+compiler), you
+should refer symbolically to the <i>bdos()</i> and <i>bios()</i> 
+function numbers (as shown
+in the example), and never use numbers directly. The reason for 
+this is that
+other compilers may not use the same numerical values for <i>
+bios()</i> function
+numbers as used in this version of <b>bios()</b>.<p>
+
+You may want to delete (or comment out) all the <i>#define</i> 
+macros that you
+will not use, so that they will not occupy unnecessary space in 
+the compiler's
+macro substitution table.<p>
+
+After compilation, <i>bdos()</i> and <i>bios()</i> will assemble 
+under CP/M's ASM,
+The Software Toolworks's AS, and most other 8080 assemblers. You 
+may
+assemble both functions for nonstandard versions of CP/M by 
+changing the CPBASE
+equate from 0 to the required value.<p>
+
+If you should want to delete the <i>bdos()</i> function and make 
+a separate
+function of <i>bios()</i> only, you need to include the CPBASE 
+equate in front of the
+<i>bios()</i> assembly code.
+
+To use <i>bdos()</i> and <i>bios()</i>, refer to the <i>CP/M 
+Interface Guide</i> and the <i>CP/M
+Alteration Guide</i>.<p>
+
+A final warning: You should avoid direct CP/M calls whenever 
+possible.
+Even though they enable you to do wonderful things in CP/M, they 
+limit the
+portability of your programs.<p>
+
+The following code may be copied, used and distributed by anyone,
+commercially or otherwise, provided the contribution notice is 
+included.<p>
+
+<b><a name="list12-1">LISTING 12-1</a><p>
+</b>
+<pre>
+
+  /************************************************
+  *                                               *
+  *  CP/M BDOS- AND BIOS- CALLS FOR C/80          *
+  *                                               *
+  *  Contributed by T. Bolstad, ELEKTROKONSULT AS *
+  *  Konnerudgaten. 3, N-3000 Drammen, NORWAY.    *
+  *                                               *
+  *  Date: January 17, 1983.                      *
+  *                                               *
+  *************************************************/
+
+  /* DEFINITION OF BDOS FUNCTIONS                 */
+
+  #define RESET    0  /*  SYSTEM RESET            */
+  #define CONSIN   1  /*  CONSOLE INPUT           */
+  #define CONSOUT  2  /*  CONSOLE OUTPUT          */
+  #define READIN   3  /*  READER INPUT            */
+  #define PUNOUT   4  /*  PUNCH OUTPUT            */
+  #define LISTOUT  5  /*  LIST OUTPUT             */
+  #define DIRCON   6  /*  DIRECT CONSOLE I/O      */
+  #define GETIOB   7  /*  GET I/O BYTE            */
+  #define SETIOB   8  /*  SET I/O BYTE            */
+  #define PRNTST   9  /*  PRINT STRING            */
+  #define READCB  10  /*  READ CONSOLE BUFFER     */
+  #define GETCST  11  /*  GET CONSOLE STATUS      */
+  #define RETVN   12  /*  RETURN VERSION NUMBER   */
+  #define RESDSK  13  /*  RESET DISK SYSTEM       */
+  #define SELDISK 14  /*  SELECT DISK             */
+  #define OPENF   15  /*  OPEN FILE               */
+  #define CLOSEF  16  /*  CLOSE FILE              */
+  #define SRCHFF  17  /*  SEARCH FOR FIRST        */
+  #define SRCHFN  18  /*  SEARCH FOR NEXT         */
+  #define DELF    19  /*  DELETE FILE             */
+  #define RDSEQ   20  /*  READ SEQUENTIAL         */
+  #define WRSEQ   21  /*  WRITE SEQUENTIAL        */
+  #define MAKEF   22  /*  MAKE FILE               */
+  #define RENF    23  /*  RENAME FILE             */
+  #define RETLV   24  /*  RETURN LOGIN VECTOR     */
+  #define RETCD   25  /*  RETURN CURRENT DISK     */
+  #define STDMA   26  /*  SET DMA ADDRESS         */
+  #define GETAA   27  /*  GET ALLOCATION ADDRESS  */
+  #define WPDSK   28  /*  WRITE PROTECT DISK      */
+  #define GETROV  29  /*  GET READ/ONLY VECTOR    */
+  #define SETFAT  30  /*  SET FILE ATTRIBUTES     */
+  #define GETDPA  31  /*  GET DISK PARAMETERS ADDRESS  */
+  #define SGUC    32  /*  SET/GET USER CODE       */
+  #define RDRAN   33  /*  READ RANDOM             */
+  #define WRRAN   34  /*  WRITE RANDOM            */
+  #define COMFS   35  /*  COMPUTE FILE SIZE       */
+  #define SETRRC  36  /*  SET RANDOM RECORD       */
+  #define RESDRV  37  /*  RESET DRIVE             */
+  #define WRRZF   38  /*  WRITE RANDOM WITH ZERO FILL  */
+
+  bdos(funct,arg)     /* corresponds to bdos((BC),(DE)) */
+  int     funct,arg;
+
+  /*  CALL EXAMPLE:   bdos(RETVN,0)
+      BOTH ARGUMENTS MUST BE SPECIFIED !
+      Values are returned IN HL. BDOS errors
+      are returned as -1.                         */
+
+  {
+  #asm
+  CPBASE  EQU     0        ;NORMAL 0-ORG'ED CP/M
+  CPNTRY  EQU     CPBASE+5 ;BDOS ENTRY
+
+          POP     H        ;GET RETURN ADDRESS
+          POP     D        ;GET ARG (INFORMATION ADDRESS)
+          POP     B        ;GET FUNCTION NO.
+          PUSH    B        ;RESTORE STACK
+          PUSH    D
+          PUSH    H
+
+          PUSH    B        ;SAVE FUNCTION NO. ON STACK
+          CALL    CPNTRY   ;BDOS CALL
+          XCHG             ;SAVE HL IN DE
+          MOV     L,A      ;SAVE A IN L
+                           ;SIGN EXTENSION TO H:
+          RLC              ; GET SIGN BIT INTO CY
+          SBB     A        ; IF CY:0, RESULT AFTER SBB IS ZERO
+                           ; IF CY=1, RESULT AFTER SBB IS -1 (IE ALL ONES)
+          MOV     H,A      ; NOW A IS MOVED TO HL WITH SIGN EXTENSION
+          POP     B        ;GET FUNCTION NO IN BC
+          MOV     A,C      ;GET FUNCTION NO IN A
+
+          CPI     12       ;WAS IT 'RETURN VERSION NUMBER' ?
+          JZ      RETHL1
+          CPI     24       ;RETURN LOGIN VECTOR ?
+          JZ      RETHL1
+          CPI     27       ;GET ALLOCATION ADDRESS ?
+          JZ      RETHL1
+          CPI     29       ;GET READ/ONLY VECTOR ?
+          JZ      RETHL1
+          CPI     31       ;GET DISK PARAMETER ADDRESS?
+          JZ      RETHL1
+          JMP     BDOSRET
+  RETHL1: XCHG
+  BDOSRET: RET             ;WITH RETURNED VALUE IN HL
+
+  #endasm
+  }
+
+  /*     DEFINITION OF BIOS FUNCTIONS     */
+
+  #define BOOT     0   /* COLD-BOOT               */
+  #define WBOOT    1   /* WARM-BOOT               */
+  #define CONST    2   /* CONSOLE STATUS          */
+  #define CONIN    3   /* CONSOLE INPUT           */
+  #define CONOUT   4   /* CONSOLE OUTPUT          */
+  #define LIST     5   /* LIST DEVICE             */
+  #define PUNCH    6   /* PUNCH                   */
+  #define READER   7   /* READER                  */
+  #define HOME     8   /* HOME DISK DRIVE HEAD    */
+  #define SELDSK   9   /* SELECT DISK DRIVE       */
+  #define SETTRK  10   /* SET TRACK               */
+  #define SETSEC  11   /* SET SECTOR              */
+  #define SETDMA  12   /* SET DMA ADDRESS         */
+  #define READ    13   /* READ ONE SECTOR         */
+  #define WRITE   14   /* WRITE ONE SECTOR        */
+  #define LISTST  15   /* LIST STATUS             */
+  #define SECTRAN 16   /* SECTOR TRANSLATION      */
+
+  bios(funct,arg1,arg2) /* corresponds to bios(function,(BC),(DE)) */
+  int funct,arg1,arg2;
+
+  /* CALL EXAMPLE: bios(SETTRK, 5,0)
+  ALL 3 ARGUMENTS MUST BE SPECIFIED, even though
+  the last one is only used by SELDSK and SECTRAN. */
+
+  {
+  #asm
+
+          POP     D       ;RETURN ADDRESS
+          POP     H       ;ARGUMENT 2
+          SHLD    ARG2S   ;SAVE IT
+          POP     B       ;ARGUMENT 1
+          XCHG            ;GET RETURN ADDRESS INTO HL
+
+          POP     D       ;FUNCTION NO.
+
+          PUSH    D       ;RESTORE SP
+          PUSH    B
+          PUSH    B
+          PUSH    H       ;RESTORE RETURN ADDRESS
+          PUSH    D       ;SAVE FUNCTION NO. ON STACK
+
+          LXI     H,0     ;CALCULATE OFFSET ADDRESS FROM FUNCTION:
+          DAD     D       ; GET FUNCTION NO. (OFFSET) IN HL
+          DAD     H       ; 2*OFFSET
+          DAD     D       ; 3*OFFSET
+          XCHG            ; SAVE OFFSET ADDRESS IN DE
+
+          LHLD    CPBASE+1 ;GET POINTER TO BIOS WBOOT ENTRY
+          DCX     H      ;DECREMENT TO
+          DCX     H      ;  POINT TO
+          DCX     H      ;    START OF BIOS ENTRY JUMP TABLE
+
+          DAD     D      ;ADD OFFSET (RESULT IN HL)
+          XCHG           ;GET RESULT IN DE
+          LXI     H,RET1
+          PUSH    H      ;SAVE RETURN ADDRESS ON STACK
+
+          LHLD    ARG2S  ;GET ARGUMENT 2
+          XCHG           ;GET ARGUMENT 2 INTO DE
+                         ; AND BIOS FUNCTION ENTRY ADDRESS INTO HL
+
+          PCHL           ;GO TO BIOS
+
+  RET1:   XCHG           ;SAVE HL IN DE
+          MOV     L,A
+
+          RLC            ;GET SIGN BIT INTO CY
+          SBB     A      ;IF CY=0, RESULT AFTER SUBB IS ZERO
+                         ;IF CY=1, RESULT AFTER SUBB IS -1 (IE ALL ONES)
+          MOV     H,A
+          POP     B      ;GET BIOS FUNCTION NO. IN BC
+          MOV     A,C
+          CPI     9      ;SELECT DISK FUNCTION ?
+          JZ      RETHL2
+          CPI     16     ;SECTOR TRANSLATION FUNCTION ?
+          JZ      RETHL2
+
+          JMP     RETBIOS
+  RETHL2: XCHG           ;RETURN VALUE IN HL
+  RETBIOS: RET
+  ARG2S:  DS      2
+
+  #endasm
+  }<p>
+
+</pre>
+
+<b><a name="list12-2">LISTING 12-2</a><p>
+</b>
+<pre>
+  #include &quot;cpmcall.c&quot;
+  main()
+  {
+          bios(CONOUT,bdos(RETCD,0)+'A',0);      /* print current disk */
+  }
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 

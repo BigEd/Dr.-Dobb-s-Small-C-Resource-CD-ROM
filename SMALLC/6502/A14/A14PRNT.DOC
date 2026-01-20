@@ -1,0 +1,74 @@
+                        Print controller
+
+As  we  all  know,  printer  control codes are rather confusing and rather
+cumbersome  to  sure;  some word processors (eg. View) go some way to
+help you by using a  printer driver, but it is usually not a very
+user-friendly method ! (eg. 2 highlights  for  bold  or suchlike). What 
+is required is a simple  to use yet powerfull program; this should  let
+you  control  yourprinter by  using plain English commands, & should be 
+adjustable by you touse any printer  codes  or  command names. 
+
+Interested ? (Hopefully!) - Then read on !
+
+The program lets you change fonts and styles by getting you to send to
+the printer the font or style required,  eg.  by placing the command
+[BOLD ON] before a heading in Wordwise, and (of course)  [BOLD  OFF]
+after  it.  To enter the command, all you have to do is quite literally
+type "[BOLD ON]" into  your  document;  when the document is printed,
+the command [BOLD ON] will appear on the  screen,  but instead of coming
+out on the printer, the control codes (to turn on the  bold  style)  are
+sent  instead. This is far easier to show with an example :
+
+In the Document: normal type [BOLD ON]bold type[BOLD OFF] normal type
+On the screen  : normal type [BOLD ON]bold type[BOLD OFF] normal type
+On the printer : normal type [EMPHAS ON]bold type[EMPHAS OFF] normal type
+
+                     The Program
+
+One advantage of the approach that  I have used in  writing the program
+is that : The program will work in ANY ENVIRONMENT THAT USES THE
+PRINTER !!! This may not seem immediately apparent, but this means that
+you could send the message "[BOLD ON]" to the printer  from  BASIC, & the
+bold style will be selected ... This is possible by the program
+re-directing the INSV (INSert into buffer) vector to itself. It keeps
+reading in data, until  it  meets  a  character that  is  bound  for the
+printer; if the character is an "[", then it will check all incoming
+characters  to  see  if  they  form  a  known  command. Otherwise,  the
+characters are just sent to printer as if the routine was not even there.
+If  it  meets  an  "["  &  it  isn't  a command, then the characters  are
+sent  straight out to the printer (unadulterated). If, on the other hand,
+the  characters  form  a  know  commands, then the routine sends  out the
+appropriate control characters to the printer,  instead  of the command.
+The commands  are  all  listed  at  the  end of the program; the "Start
+Of Command" & "End Of Command" characters, the start address for the
+machine code, maximum length of coammnds, etc. are all defined at the
+start of the program. The program is fairly well documented, so  if  you
+need to change anything (eg. "[" "]" to "{" "}" in case of  any  clashes 
+with some other software,  or  preference  !)  just  look  at the source 
+code & all should become clear (I hope !).
+
+Usual disclaimer : I make no responsibility for any malfunction,  damage,
+nuclear explosion,etc. that this program may (directly or indirectly)
+cause (I'm a poor stude, so no claims for money will be accepted).
+
+This  code  is put into the Public Domain in good faith; if any errors
+occur, then please contact  me,  or  if  you  have any ideas
+(or solutions to errors !). This program may be copied in  whole  free
+of  charge,  as  long  as I am properly credited (or bribed).
+
+Let me know (via email) what you think ! Long live the beeb - let's see
+some more PD for it ! (Ok, so I  own an A440 as well, but I might as well
+still use it). Has anyone got any routines for connecting up a beeb to
+an  archi  ?  I'm interested in a routine that lets the archi use the
+beeb's peripherals; an Opus  Challenger  has a nice 5.25" disc drive, but
+is not worth ripping to pieces to connect to an archi; any ideas for
+using the drive via the archi? (eg. for  an  IBM disc reader ...). How
+about using the printer I've got connected the beeb as well as the one
+I've got linked to the arc - a choieof printers, depending on quality
+ / speed. (Why only 1 parallel, 1 serial & 4 expansion slots Acorn ??? 
+PC's  have  (eg)  2 serials, 1 parallel & 8expansion slots; I'm 
+listening ... )
+
+Written by Ian "the Grim" Grimstead;
+JANET email: ijg@uk.ac.cf.cm (ijg@uk.ac.cardiff.computing-maths)
+

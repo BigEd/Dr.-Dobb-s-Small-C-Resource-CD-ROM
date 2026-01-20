@@ -1,0 +1,39 @@
+Title:			Archiver
+Author:			Stephen M. Goldthorpe
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		
+Supplier:		Stephen M. Goldthorpe
+Date:			
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a09
+Date mounted/updated:	02/09/89
+File names:		a09unarc.bas
+			a09arc.hex
+			a09read.me
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+Follow the download instructions in the file a09read.me
+
+Description:
+
+Archiver stores several files in one archive file for extraction after
+distribution.  It stores binary files in boo(ascii) format.  Each file is stored
+with it's old filename, size in bytes, number of text lines in the archive and
+a checksum on the data.  Binary files also contain their load and execution
+addresses.
+

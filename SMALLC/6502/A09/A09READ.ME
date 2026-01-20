@@ -1,0 +1,32 @@
+Archiver stores several files in one archive file for extraction after
+distribution.  It stores binary files in boo(ascii) format.  Each file is stored
+with it's old filename, size in bytes, number of text lines in the archive and
+a checksum on the data.  Binary files also contain their load and execution
+addresses.
+
+
+HOW TO DOWNLOAD:
+
+    Download the file 'a09unarc.bas' using KERMIT, storing it as a file named
+UNARC_E.  Then type the following from within BASIC:
+
+        *EXEC UNARC_E <return>
+
+        <after the program has finished being loaded press escape>
+
+    You now have a working copy of 'UNARC_B' which you can use to unarcive
+other files.
+
+    Set KERMIT's end-of-line character to be a CR with the command
+
+	SET FILE TYPE ASCII CR
+
+    The Archiver will not process any other end-of-line character correctly.
+
+    Download the file 'a09arc.hex' using KERMIT, storing it as ARC_ARC, and the
+use 'UNARC_B' to unarchive the files.  You may feel it is unnecessary to
+unarchive 'UNARC_B' since you already have a copy, but it is better to
+unarchive it because several checks are done on extracted files (format, no
+lines, file length, checksum etc.). 
+
+

@@ -1,0 +1,49 @@
+Title:			Newcastle Handirom
+Author:			Rob Scott
+			Andy Winston
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		
+Supplier:		Rob Scott
+			Newcastle University Medical Physics
+Date:			
+Keywords:		
+Shareware:		No
+Machine:		BBC B with 16K s/w RAM or BBC Master
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a10
+Date mounted/updated:	25/01/91
+File names:		a10hi.bas  -  "HI" introductory BASIC program
+			a10ed.bas  -  "EDIT" BASIC wordlist editor
+			a10hr.hex  -  "HROMV2" sideways rom image
+			a10sr.hex  -  "SRLOAD" m/c program
+			a10wd1.hex -  "W.WORDS1" wordlist
+			a10wd2.hex -  "W.WORDS2" wordlist
+			a10man.doc -  "MANUAL" documentation
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+All files with the .BAS suffix need to be *EXECed and then saved using the
+filenames given above.  Files with .HEX suffix need to be converted into
+binary form using the converter online as micros/bbc/d99/d99deh.bas.
+Wordlist files should appear in a directory named W on the final disc.
+
+Description:
+
+The Handirom was developed to enable a person with limited motor control to
+operate a microcomputer.  The  control  over  the  computer,  although
+limited,  will  present  the  user  with full control over wordprocessing
+utilities such as View 3.0 and  Wordwise  Plus,  various spreadsheets and
+databases  or  even to write and run their own  programs  in  a  language
+environment such as Basic, Comal, Pascal or Lisp etc.
+

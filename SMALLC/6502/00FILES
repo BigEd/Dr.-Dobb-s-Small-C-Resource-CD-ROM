@@ -1,0 +1,158 @@
+
+Directory : micros/bbc
+
+00contents               <CONTENTS>
+00files                  <CONTENTS>
+index                      2069 bytes  20 Aug 91 13:54
+
+Directory : micros/bbc/a01
+
+00contents               <CONTENTS>
+a01.msg                    3762 bytes   8 Oct 91 13:43
+a01a1.wwh                  4190 bytes   5 Oct 88 15:38
+a01a2a.wwh                17686 bytes   5 Oct 88 15:38
+a01a2b.wwh                14250 bytes   5 Oct 88 15:38
+a01a2c.wwh                 9764 bytes   5 Oct 88 15:38
+a01a3.wwh                  4518 bytes   5 Oct 88 15:38
+a01a4.wwh                  5992 bytes   5 Oct 88 15:38
+a01a5.wwh                 12146 bytes   5 Oct 88 15:38
+a01asm.dc1                97271 bytes   5 Oct 88 15:38
+a01asm.dc2                89199 bytes   5 Oct 88 15:38
+a01asm.hex                38816 bytes   5 Oct 88 15:38
+a01c10a.wwh               35798 bytes   5 Oct 88 15:38
+a01c10b.wwh               26510 bytes   5 Oct 88 15:38
+a01c1a.wwh                34790 bytes   5 Oct 88 15:38
+a01c1b.wwh                15572 bytes   5 Oct 88 15:38
+a01c2.wwh                 19386 bytes   5 Oct 88 15:38
+a01c3.wwh                 33598 bytes   5 Oct 88 15:38
+a01c4.wwh                 20198 bytes   5 Oct 88 15:38
+a01c5.wwh                 20928 bytes   5 Oct 88 15:38
+a01c6.wwh                  4908 bytes   5 Oct 88 15:38
+a01c7.wwh                  7904 bytes   5 Oct 88 15:38
+a01c8.wwh                  9188 bytes   5 Oct 88 15:38
+a01c9.wwh                 12540 bytes   5 Oct 88 15:38
+a01print.wwh               1712 bytes   5 Oct 88 15:38
+a01rps.wwh                  138 bytes   5 Oct 88 15:38
+a01spool.wwh                586 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a02
+
+00contents               <CONTENTS>
+a02.msg                    2133 bytes   8 Oct 91 13:43
+a02dehex.hex               4321 bytes  26 Jul 89 16:55
+a02getshar.exc              286 bytes  26 Jul 89 16:55
+a02mkboot.exc              4208 bytes  26 Jul 89 16:55
+a02sh.hex                 28311 bytes  26 Jul 89 16:55
+a02shar.hex                7895 bytes  26 Jul 89 16:55
+a02tcc.001                96552 bytes  26 Jul 89 16:55
+a02tcc.002                92475 bytes  26 Jul 89 16:55
+a02tcc.003                71901 bytes  26 Jul 89 16:55
+a02tcc.004                86289 bytes  26 Jul 89 16:55
+a02tcc.doc                38091 bytes  26 Jul 89 16:55
+a02unpack.exc               567 bytes  26 Jul 89 16:55
+
+Directory : micros/bbc/a03
+
+00contents               <CONTENTS>
+a03.msg                    1011 bytes   8 Oct 91 13:43
+a03cha.bas                 6651 bytes   5 Oct 88 15:38
+a03cha.doc                13136 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a04
+
+00contents               <CONTENTS>
+a04.msg                    1214 bytes   8 Oct 91 13:43
+a04fan.doc               155000 bytes   5 Oct 88 15:38
+a04fan.hex                38924 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a05
+
+00contents               <CONTENTS>
+a05.msg                    7308 bytes   8 Oct 91 13:43
+a05acc.bas                11059 bytes   5 Oct 88 15:38
+a05acc.hex                12442 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a06
+
+00contents               <CONTENTS>
+a06.msg                    3777 bytes   8 Oct 91 13:43
+a06prt.bas                 6661 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a07
+
+00contents               <CONTENTS>
+a07.msg                    3963 bytes   8 Oct 91 13:43
+a07fks.bas                 7689 bytes   5 Oct 88 15:38
+a07fks.eg                   408 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a08
+
+00contents               <CONTENTS>
+a08.msg                    4046 bytes   8 Oct 91 13:43
+a08bmc.bas                 2013 bytes   5 Oct 88 15:38
+a08bpz.bas                 8550 bytes   5 Oct 88 15:38
+a08bpz.hex                10138 bytes   5 Oct 88 15:38
+
+Directory : micros/bbc/a09
+
+00contents               <CONTENTS>
+a09.msg                     977 bytes   8 Oct 91 13:43
+a09arc.hex                17489 bytes   2 Sep 89 12:40
+a09read.me                 1169 bytes   2 Sep 89 12:59
+a09unarc.bas               6155 bytes   2 Sep 89 12:39
+
+Directory : micros/bbc/a10
+
+00contents               <CONTENTS>
+a10.msg                    1631 bytes   8 Oct 91 13:43
+a10ed.bas                  3117 bytes  25 Jan 91 16:38
+a10hi.bas                  9376 bytes  25 Jan 91 16:38
+a10hr.hex                 16045 bytes  25 Jan 91 16:38
+a10man.doc                16118 bytes  25 Jan 91 16:38
+a10sr.bas                  1471 bytes  25 Jan 91 16:38
+a10wd1.bas                 7021 bytes  25 Jan 91 16:38
+a10wd2.bas                 4875 bytes  25 Jan 91 16:38
+
+Directory : micros/bbc/a11
+
+00contents               <CONTENTS>
+a11.msg                    2021 bytes   8 Oct 91 13:43
+a11man.doc                 6421 bytes  25 Jan 91 16:51
+a11ra.hex                  1417 bytes  25 Jan 91 16:51
+a11ro.hex                 21115 bytes  25 Jan 91 16:51
+a11sr.hex                  1471 bytes  25 Jan 91 16:51
+
+Directory : micros/bbc/a12
+
+00contents               <CONTENTS>
+a12.msg                    1093 bytes   8 Oct 91 13:43
+a12rev.bas                 1306 bytes  25 Jan 91 17:00
+a12rv.hex                 11327 bytes  25 Jan 91 17:00
+a12scrn.hex                7733 bytes  25 Jan 91 17:00
+
+Directory : micros/bbc/a13
+
+00contents               <CONTENTS>
+a13.msg                    1181 bytes   8 Oct 91 13:43
+a13bp.bas                  5034 bytes  25 Jan 91 17:05
+a13cr.hex                 20338 bytes  25 Jan 91 17:05
+a13man.txt                 4723 bytes  25 Jan 91 17:05
+
+Directory : micros/bbc/a14
+
+00contents               <CONTENTS>
+a14.msg                    1872 bytes   8 Oct 91 13:43
+a14prnt.bas                9603 bytes  20 Aug 91 13:47
+a14prnt.doc                4240 bytes  20 Aug 91 13:46
+
+Directory : micros/bbc/d99
+
+00contents               <CONTENTS>
+d99deh.bas                 1943 bytes   5 Oct 88 15:38
+d99deh.msg                 1094 bytes   5 Oct 88 15:38
+d99hex.bas                 1786 bytes   5 Oct 88 15:38
+d99hex.msg                 1062 bytes  11 Oct 88 12:45
+
+Directory : micros/bbc/news
+
+00contents               <CONTENTS>

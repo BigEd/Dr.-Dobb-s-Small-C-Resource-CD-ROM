@@ -1,0 +1,55 @@
+# 
+# Makefile for the example program
+#
+
+RCSCDIR  = \rcsc
+BINPATH  = $(RCSCDIR)\bin
+CC       = $(BINPATH)\rcsc
+ASM	 = $(BINPATH)\cas
+LINK	 = $(BINPATH)\cas
+AWK	 = $(BINPATH)\awk
+M4	 = $(BINPATH)\m4
+OBJECTS  = philos.o mchopstk.o mconsole.o asyn8051.o kernel.o
+M4SRC    = philos.m4 mchopstk.m4 mconsole.m4 asyn8051.m4 kernel.m4
+ASMSRC	 = philos.s mchopstk.s mconsole.s asyn8051.s kernel.s
+LITINFO  = philos mchopstk mconsole asyn8051 kernel
+HEADER	 = memmap.i
+LIB	 = libc
+CFG	 = rcsc.cfg
+#SCFLAGS  = -m -a -p
+
+all: philos.hex
+
+clean:
+	-rm $(LITINFO) $(HEADER) $(LIB).*
+	-rm $(M4SRC) 
+	-rm $(ASMSRC) 
+	-rm $(OBJECTS)
+
+$(HEADER): $(ASMSRC)
+    cat $(CFG) > $(HEADER)
+    cat $(LITINFO) | $(AWK) -v file=$(CFG) -f $(BINPATH)\header.awk >> $(HEADER)
+    $(BINPATH)\mklibc $(RCSCDIR) $(LIB)
+
+
+philos.hex: $(OBJECTS)
+    $(LINK) -o $@ $(OBJECTS) $(LIB).o
+
+$(OBJECTS): $(HEADER)
+
+.SUFFIXES
+.s.o:
+    $(ASM) -c $<
+
+.m4.s:
+    echo include "$(CFG)" > $*.s
+    echo include "$(HEADER)" >> $*.s
+    $(M4) $(BINPATH)\8051.m4 $< >> $*.s
+    -grep extern $*.s >> $(LIB)
+
+.c.m4:
+    $(CC) $< $(SCFLAGS)
+    $(AWK) -f $(BINPATH)\preproc.awk $*.m4 > $*.m4p
+    del $*.m4
+    ren $*.m4p $*.m4
+

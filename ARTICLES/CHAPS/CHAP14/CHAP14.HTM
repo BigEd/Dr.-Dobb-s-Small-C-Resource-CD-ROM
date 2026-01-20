@@ -1,0 +1,2212 @@
+ <HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>GREP.C: A GENERALIZED, REGULAR EXPRESSION PARSER IN C</H1> 
+<p>
+
+by Allen Holub<p>
+</CENTER>
+</B>
+
+
+<i>This article originally appeared in Dr. Dobb's Journal #96 
+(October 1984)</i>.<p>
+
+Grep is the Unix pattern finder: it goes into a file or group of 
+files and finds
+text patterns matching a symbolic regular expression. Grep is 
+surprisingly
+useful. With it you can find a subroutine lost in one of the 50 
+modules making up
+the giant program that you're working on. You can find the 
+misspelled name
+that your linker says is an undeclared function. Grep can number 
+all the lines
+in a file or list all procedure declarations in a C program, as 
+well as performing
+innumerable other things.<p>
+
+A good example of grep's utility is the history of this version, 
+grep.c (<a href="#list14-3">Listing 14-3</a>). At
+first, I wanted to expand the pattern-searching capabilities of 
+Ed Ream's editor,
+RED (&quot;RED: A Better C Screen Editor,&quot; <i>Dr. Dobb's 
+Journal</i> #81). I wanted to add a
+pattern-searching capability similar to that of the Berkeley Unix 
+editor, vi. So I set about
+converting into C the pattern-matching algorithms in <i>Software 
+Tools in Pascal</i>
+by B.W. Kernighan and P.L. Plauger (Addison-Wesley, 1981, Chapter 
+5).<p>
+
+Along the way I ran into difficulties. My version of RED was 
+written in BDS
+C, which has a nonstandard I/O library. I wanted to translate the 
+editor to
+standard C so I could port it between different compilers and 
+different machines. To
+do the translation, I needed to find all calls to the nonstandard 
+library routines.
+So I turned my pattern matcher into a real program, linked the 
+BDS version of
+RED without linking the library modules (to get a list of the 
+library routines
+that RED used), then used grep to search all the modules of RED 
+for procedure
+calls to the library functions.<p>
+
+The program presented here is most of the Unix grep. The only 
+omissions
+are those command line switches that are Unix dependent, the -x 
+switch (that
+performs an exact line match), and the +, ?, and ( ) regular 
+expression operators
+(that are not essential).<p>
+
+The power of grep lies in its use of regular expressions as 
+pattern templates
+rather than explicit strings. For example, the grep command line
+<p>
+<pre>
+   grep^[a - z][a - z]*[\s\t]*.*([^;]*)[^;]*$ mod1.c mod2.c mod3.c<p>
+</pre>
+
+creates a cross-reference of a large C program. The three files 
+mod1.c, mod2.c,
+and mod3.c are searched. Grep's output shows all subroutine 
+declarations along
+with the name of the file in which the subroutine is declared. 
+The regular
+expression is interpreted as follows: beginning of line (^), 
+followed by one or more
+occurrences of any character in the range a to z ([a - z][a - 
+z]*), followed by
+either a space or a tab repeated zero or more times ([\s\t]*), 
+followed by any
+character repeated zero or more times (.*), followed by an open 
+parenthesis ( (),
+followed by any character except a semicolon repeated zero or 
+more times
+([^; ]*), followed by a close parenthesis ( ) ), followed by any 
+character except a
+semicolon repeated zero or more times ([^;]*), followed by end of 
+line ($).<p>
+
+You could also use grep to get a count of the number of 
+procedures found
+and either have the matching lines printed out with line numbers 
+or have all
+the lines not matching the pattern printed by including various 
+command line
+switches in the program invocation.<p>
+
+<b>Regular Expressions<p>
+</b>
+
+Regular expressions are a way of representing text patterns in a 
+symbolic
+shorthand. The * and ? that CP/M uses are examples of a crude 
+regular expression
+syntax. The symbols grep uses to define regular expressions fall 
+into five
+categories:<p>
+<UL>
+<LI>Symbols that match a specific character
+<LI>Symbols that match any character
+<LI>Symbols that match a character's position on the line
+<LI>Symbols (called character classes) that match any of a set of characters or
+    anything except a set of characters
+<LI>Symbols that let you match the previous symbol any number of times
+    (called closure)<p>
+</UL>
+The rules for constructing regular expressions are given on the 
+excerpted
+manual page (see Table 14-1). Some examples follow.<p>
+<pre>
+   a.d                          matches any word containing an a, followed by any
+                                character, followed by a d. This expression will
+                                match the substrings &quot;and&quot; in and and &quot;ard&quot; in
+                                aardvark; this means that grep will print any line
+                                containing either word, along with any other match.
+
+   ^a.d                         matches the same strings but only if they occur at
+                                the beginning of the line. No characters, including
+                                spaces and tabs, are allowed in front of the a.
+
+   a.d$                         matches the same strings if they occur at the end of
+                                the line. No character, including spaces and tabs,
+                                can follow the d.
+
+   ^$                           matches a beginning of line, followed by an end of
+                                line; this means it matches all lines containing
+                                nothing but a newline character.
+
+   an*d                         matches any word containing an a, followed by an n
+                                repeated zero or more times. This expression will
+                                match add as well as and.
+
+   *                            matches any character repeated any number of times.
+                                This expression will always succeed. For example, an
+                                invocation of grep with the line
+
+                                                 grep -n.* filename
+
+                                outputs every line in the file preceded by its line
+                                number.
+
+   aa*                          matches one (rather than zero) or more occurrences
+                                of the letter a.
+
+   [abc]                        defines a character class. A character class matches
+                                any one of the characters surrounded by the square
+                                brackets. This particular character class matches an
+                                a, b, or c in the corresponding position on the line.
+
+   who[ms]e                     matches who, followed immediately by either an m
+                                or an s, followed by an e. That is, the words
+                                whomever and whose will be matched, but the
+                                word whole will not. Character class definitions may
+                                be abbreviated by using a dash. For example, [a - k]
+                                will be treated as if you had said [abcdefghijk].
+                                Similarly, [0-9A-Fa-f] will be expanded to
+                                [0123456789ABCDEFabcdef]. This last character
+                                class will match any single hexadecimal digit. That
+                                is, any digit or any letter between a and f will be
+                                matched. Note that you have to say &quot;A - Fa - f&quot; to
+                                match both uppercase and lowercase.
+
+   0x[0 - 9a - fA - F][0 - 9 a  matches all lines in a C program that contain
+   - fA - F]*                   hexadecimal numbers. This regular expression
+                                matches the characters 0x, followed by any of the
+                                characters 0123456789abcdefABCDEF repeated one
+                                or more times.
+
+   [^]                          defines a negative character class (one that matches
+                                any character except those listed). For example,
+                                f[^o] finds all occurrences of an f not followed by
+                                an o. Be careful here with patterns at the end of
+                                line. Although [^o] matches any character that is
+                                not an o, a lone f at the end of line will not match
+                                the pattern because the end of line is not a
+                                character-it is a position. To find an f at the end of
+                                line position, use f[^o]*$ or f$|f[^o].
+
+   [a - zA - Z]f\s|[A - Z][A    matches all lines containing words ending in f or all
+   - Z]*\s                      lines containing words composed only of uppercase
+                                characters. That is, if either of the regular
+                                expressions separated by the | are satisfied, a match
+                                is returned.<p>
+</pre>
+
+If you need to match a character that is used as a symbol in the 
+regular
+expression, precede it with a backslash (\). For example, \* 
+matches an asterisk, and
+\\ matches the backslash itself. Certain escape sequences (as 
+these backslash
+sequences are called) are predefined; in particular, \s matches a 
+space, and \t
+matches a tab (control-I). These are needed because of the 
+irregularities of
+certain compilers and operating systems. A space in the command 
+line makes
+many command-line interpreters break up the expression into two 
+arguments.
+A tab in the command line confuses CP/M utterly; it won't execute 
+your
+program at all. Other escape sequences are defined on the manual 
+page (Table
+14-1).<p>
+
+<b>Technical Description<p>
+</b>
+
+The routines in tools.c (<a href="#list14-1">Listing 14-1</a> and
+ <a href="#list14-2">Listing 14-2</a>) differ from those in 
+Software Tools in three important
+ways. First, the routines were translated into C. Second, all 
+references to array
+indexes were replaced with pointers in the interest of increased 
+execution
+speed. Finally, the data structure used for the pattern template 
+was changed
+significantly.<p>
+
+The reasons for this last change are somewhat complex. Grep 
+breaks up the
+input expression into a pattern template, where each element of 
+the template
+represents a single logical portion of the expression. For 
+example, the expression
+[a - z]x.* requires four elements in the pattern template. One 
+element is
+required for the character class ([a - z]), one element for the 
+literal character
+match (x), one element to match any character (.), and one 
+element for the
+closure (*). Processing the expression is much easier once it has 
+been
+functionally divided in this way.<p>
+
+Kernighan and Plauger use a single ASCII string as their pattern 
+template,
+and this data structure causes several problems. Varying numbers 
+of characters
+are required to represent different types of elements in the 
+template. To
+advance through the template, you need a subroutine that analyzes 
+the current
+element and then advances the appropriate number of characters; 
+this
+subroutine adds unnecessary overhead to the pattern-recognizing 
+parts of grep. By
+replacing the ASCII string with a linked list of structures 
+(which is how the
+templates are represented in my version of grep; <a 
+href="#list14-3">Listing 14-3</a>), you can advance to the next
+pattern with a single assignment operation.<p>
+
+Grep can be broken up into three distinct parts:<p>
+<UL>
+<LI>Get the regular expression(s), the file list, and any 
+switches from the
+    command line.
+<LI>Translate the expression(s) into a pattern template.
+<LI>Go through the input files one line at a time, calling the 
+routine <i>matchs()</i>,
+    and produce the appropriate output on finding a match.<p>
+</UL>
+<b>
+Getting the Expressions<p>
+</b>
+
+Grep is divided into two main modules: grep.c and tools.c. Grep.c 
+does all of the
+I/O, and tools.c contains the pattern-matching routines. Grep 
+translates the
+pattern strings into a special template representing the pattern 
+(more about this
+later), and the routine <i>matchs()</i> does the actual pattern 
+matching; it processes
+all symbols except the OR (|) operator, that separates the 
+regular expressions.<p>
+
+Grep creates a template for every regular expression input and 
+organizes
+these templates using an array of pointers to templates (similar 
+to <i>argv</i>) called
+<i>exprv[]</i>; a count of the number of separate expressions in 
+the array, <i>exprc</i>, is
+also available. Grep then calls <i>matchs(</i>), once for each 
+template in <i>exprv[]</i>,
+before getting the next input line.<p>
+
+<b>The Pattern Template<p>
+</b>
+
+The templates are a linked list of structures called TOKENs (<a 
+href="fig14-1.gif">Figure 14-1</a>).
+<i>Matchs()</i> is passed a pointer to this linked list. A string 
+holding a regular
+expression is converted to a template by the procedure <i>
+makepat()</i>. Since <i>alloc()</i> is used
+to allocate the (main) memory needed to contain the template, the 
+expression
+can be any length, within reason. Using the routine <i>
+unmakepat()</i>, you can
+return the memory used by a template to the free list. <i>
+Unmakepat()</i> is not used by
+grep, but it may be useful for other applications (such as 
+editors).<p>
+
+Some of the fields in a TOKEN are not always used; although using 
+a union
+would have saved a small amount of (main) memory space, this 
+would have
+added additional complexity to the program as a whole. The tok 
+field identifies
+the type of symbol represented by this node (closure, character 
+class, and so on).
+If the node is a literal character, 1char holds the character 
+itself, and if the node
+is a character class, string points at a string holding all the 
+characters in the
+class. Classes defined with the dash notation (a - z) are 
+expanded.<p>
+
+Note that a CLOSURE token is put into the chain in front of the 
+node on
+which it operates (even though the closure symbol is put after 
+the character in
+the expression itself). This transposition eliminates the need 
+for any sort of
+look-ahead in the searching routines. When you encounter the 
+CLOSURE
+token, you know the next token should be repeated zero or more 
+times. If the
+CLOSURE token did not come first, you would process the character 
+on which
+the CLOSURE operates as if it were a literal match; that is, you 
+would match a
+single occurrence of the character. Since closure represents zero 
+or more
+matches, this first match would be incorrect. So, if the CLOSURE 
+token did not
+come first, you could not process a token without having looked 
+for a token
+following it.<p>
+
+<b>Matchs()<p>
+</b>
+
+The core of grep is the routine <i>matchs()</i> and the 
+procedures that<i> matchs()</i> calls.
+This routine looks for a regular expression match in a string. It 
+takes the string
+and a pointer to a pattern template as input and returns a 
+pointer into the string
+upon success (or zero if no match is found). This pointer can 
+point at either the
+beginning or the end of the matched string, depending on the 
+value of the
+<i>ret_endp</i> parameter to <i>matchs()</i>. If <i>ret_endp</i> 
+is zero, a pointer to the beginning
+of the matched string is returned; if <i>ret_endp</i> is nonzero, 
+then a pointer to the
+end of the matched string is returned. For example, given the 
+string
+<i>abcdefghijklm</i> and the pattern <i>a.*j</i>, <i>matchs()</i> 
+can return a pointer to either the a
+or the j. This is a useful feature in an editor.<p>
+
+You must be careful with the $ symbol if you want to use the 
+pointers
+returned by <i>matchs()</i>. Usually $ means at the end of line, 
+not the
+end-of-line character itself; for example, if you are searching 
+for <i>f$</i>, a pointer is
+returned to the <i>f</i>. However, if you are searching for $ 
+itself, a pointer to the
+actual end-of-line character is returned. This takes care of the 
+^$ case.
+<i>Matchs()</i> must return a pointer to something, and the only 
+character on
+the line is the newline character. A search for \n always returns 
+a pointer
+to the newline. This last feature is nonstandard but, again, is 
+useful in an
+editor application.<p>
+
+<i>Matchs()</i> advances through the input string, one character 
+at a time, until
+it reaches the end of the string and failure is returned. It 
+calls <i>amatch()</i> to do
+the comparisons, and when <i>amatch()</i> returns success, so 
+does <i>matchs()</i>.<p>
+
+<i>Amatch()</i> goes through the pattern template, one element at 
+a time,
+comparing it with the text string. It advances to the next 
+element of the template
+with each successful comparison, also advancing the text string 
+as appropriate. If
+<i>amatch()</i> reaches the end of the template, the match is 
+successful.<i> Omatch()</i> is
+called to do the simple comparisons: single characters against 
+single elements in
+the pattern template.<p>
+
+<i>Amatch()</i> returns immediately on failure, so the 
+performance of <i>matchs()</i>
+is not too slow in the general case (execution time is directly 
+proportional to the
+length of the input stream). The worst-case performance, however, 
+is an
+exponential function of the matched string's length. Given an 
+input string of the
+form:<p>
+
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab<p>
+
+along with a match string <i>a*c</i>, <i>amatch()</i> will be 
+called <i>n</i> times, where <i>n</i> is the
+length of the input string. Each call to <i>amatch()</i> will 
+look at the entire input
+string on the order of n^2 times; this means the total worst-case 
+execution time is
+O(n^3).<p>
+
+Most of this is the fault of closure processing, which is done by 
+brute force.
+<i>Amatch()</i> first eliminates all the characters defined by 
+the closure by scanning
+along the text string and calling <i>omatch()</i>, until a 
+mismatch is found. It then
+tries to match the rest of the template against the rest of the 
+text string. If
+<i>amatch() </i>fails to match the tail, it goes backwards 
+through the characters it just
+processed, while trying to match the trailing string against the 
+rest of the pattern
+template. This is necessary because the character following the 
+closure could
+have been included in the closure itself.<p>
+
+For example, in the pattern <i>[a-z]*t</i> (which matches any 
+lowercase word
+ending in <i>a t</i>), the final <i>t</i> will be absorbed by the 
+first scan (t is included in the
+character class <i>[a-z]</i>). Since <i>amatch()</i> has scanned 
+too far, an attempt to match
+the t will now fail. So it backs up a notch in the input string 
+and then tries to
+match the rest of the pattern template again, repeating this 
+process recursively
+until it gets back to the beginning of the closure. The recursion 
+only goes one
+level deep.<p>
+
+Examples:<p>
+
+<i>Makepat()</i> takes two arguments. The first argument is an 
+ASCII string holding
+the regular expression; the second argument is a character to use 
+as a terminator
+in the expression string. That is, processing of the expression 
+string will be
+terminated when the character specified by the second argument is 
+encountered.<p>
+
+The template returned by <i>makepat()</i> when called with<p>
+<pre>
+     makepat(&quot;^The qui&quot;,'\0')<p>
+</pre>
+
+is shown in <a href="fig14-2.gif">Figure 14-2</a>. If you had 
+called <i>makepat()</i> with<p>
+<pre>
+     makepat(&quot;^The quick&quot;,' ')<p>
+</pre>
+a template would again be returned; however, this time
+the template would stop with the <i>e</i> LITCHAR because <i>
+makepat()</i> was passed a
+space as the input string terminator. A call to<p>
+<pre>
+     makepat(&quot;a[0 - 9].*[^v]$&quot;,'\0')<p>
+</pre>
+returns a pointer to the template shownin <a href="fig14-3.gif">
+Figure 14-3</a>.<p>
+
+<i>Matchs()</i> looks for an expression on only one input line. 
+Consequently, it
+has to be called several times, once for each line in the input 
+file. Three
+arguments are required: the first is a pointer to the line being 
+searched, the second is
+a pointer to a pattern template (returned by a previous call to 
+<i>makepat()</i>), and
+the third determines whether <i>matchs()</i> will return a 
+pointer to the beginning or
+to the end of the matched pattern (0 for a pointer to the 
+beginning, 1 for the
+end).<p>
+
+Consider the program fragment:<p>
+<pre>
+     #include &quot;tools.h&quot;
+     TOKEN *template; char *ptr;
+     template = makepat(&quot;456&quot;,'\0');
+     ptr = matchs(&quot;1234567890&quot;, template, 0);
+     ptr = matchs(&quot;1234567890&quot;, template, 1);
+     ptr = matchs(&quot;abcdefghij&quot;, template, 1);<p>
+</pre>
+The call to <i>makepat()</i> returns a pointer to a pattern 
+template representing the
+string 456. This template will be three elements long, one 
+element for each
+character in the string, and all three elements will be of type 
+LITCHAR. The first call
+to <i>matchs()</i> will return a pointer to the 4 (because its 
+third parameter is 0). The
+second call to <i>matchs()</i> will return a pointer to the 6 
+(because the third
+parameter is 1). The third call to <i>matchs()</i> returns 0 
+because the string 456 does not
+exist in the string <i>abcdefghij</i>.<p>
+
+A simplistic version of grep--using only<i> gets()</i>, <i>
+makepat()</i>, and <i>matchs()</i>--is
+shown in Figure 14-4. This version prints all input lines that 
+match a pattern
+found on the command line. No attempt at any sort of error 
+checking is made
+in this example, so it's not a very practical program. It does, 
+however, illustrate
+how <i>makepat()</i> and <i>matchs()</i> may be used in a real 
+program.<p>
+<center>
+<b>Figure 14-4. A simplistic version of grep that uses only <i>
+gets()</i>, <i>makepat()</i>, and <i>matchs()</i>
+<p></b>
+</center>
+<pre>
+    # include&quot;stdio.h&quot;
+    # include&quot;tools.h&quot;
+
+    main(argc,argv)
+    int argc;
+    char *argv[];
+    {
+        TOKEN *template;
+        char str[132];
+        template = makepat(argv[1],'\0');
+        while(gets(str) !=NULL)
+             if(matches(str, template,0))
+                  printf(&quot;%s\n&quot;,str);
+    }<p>
+</pre>
+
+<b>Debugging Aids<p>
+</b>
+
+Four routines are included here for debugging: <i>pr_tok()</i>, 
+<i>pr_line()</i>, <i>insert()</i>, and
+<i>delete()</i>; all are in tools.c.<p>
+
+<i>Pr_tok</i>, when passed by a pointer to a linked list of 
+TOKENs, prints out the
+list to stdout. You can use <i>pr_tok</i> to monitor the progress 
+of <i>amatch()</i> as it
+works and to see if the expression is translated correctly to 
+begin with.<p>
+
+<i>Pr_line()</i> prints out one line of text to stdout; however, 
+any nonprintable
+characters are represented as numbers in the form:<p>
+<pre>
+     \0x&lt;two hex digits&gt;<p>
+</pre>
+<i>Insert()</i> puts a character into a string at a place pointed 
+to by its str parameter.
+<i>Delete()</i> takes the character out again.<p>
+
+<b>Some Implementation Notes<p>
+</b>
+
+While bringing up grep on my system, I ran into a few problems 
+worth
+mentioning. First, depending on which compiler you use, getting 
+the expression from the
+command line may be unexpectedly difficult. The command-line 
+parser for
+Aztec C II (the compiler I used on this version) doesn't allow 
+quoted strings; that
+is, an argument of the form<p>
+<pre>
+     grep &quot;this is a single argument&quot; foo.bar<p>
+</pre>
+will be broken up into seven (rather than three) arguments by the 
+compiler. So I
+modified the command-line parser in the module croot.c to accept 
+quoted
+strings (See &quot;C-Chest,&quot; <i>Dr. Dobb's Journal</i>, 
+March 1985, #101).<p>
+
+The BDS C compiler does give you quoted strings, but there are 
+pitfalls
+here, too. As it parses the command line, BDS strips off the 
+quotes. Because BDS
+wildcard expansion is done with a call to <i>wildexp()</i> inside 
+the program proper
+(instead of inside the command-line parser where it belongs); <i>
+wildexp()</i> cannot
+differentiate between the quoted argument and the normal 
+arguments: it does
+not have any quotes to work with. Consequently, it tries to 
+expand the regular
+expression if the expression has a * or ? in it.<p>
+
+I got around this problem in a BDS version of grep by getting the 
+regular
+expression from the command line before calling <i>wildexp()</i>. 
+I then replaced the
+argv entry, that pointed at the expression, with a pointer to a 
+null string and
+called <i>wildexp()</i>. You could also try to call <i>wildexp()
+</i> from inside the
+command-line parser itself. Since the parser is written in 
+assembly language and <i>wildexp()</i>
+is in C, I didn't try this (though it would be a permanent 
+solution to the
+problem).<p>
+
+A similar problem can be found in microshell which supports 
+quoted
+strings, but still treats a backslash inside a quoted string as a 
+special character.
+You need to double the backslash to pass it through to grep (that 
+is, use \\
+instead of \; and \\\\ instead of \\). One saving grace is that 
+microshell lets
+you pass tabs through unmolested.<p>
+
+One final difficulty: you can use grep as a filter if you like. 
+That is, if you
+are running microshell or some other environment that supports 
+pipes, you may
+use grep as a general purpose filter, stripping out unwanted 
+material from the
+input stream, and then passing the modified stream to another 
+program. The
+problem is what happens to end-of-line terminators on their way 
+through the
+pipe.<p>
+
+CP/M requires a carriage-return, line-feed (CR-LF) combination at 
+the
+end of line. C, however, wants a single newline character (\n).
+Consequently, when <i>getc()</i> sees a CR, it echoes it as a 
+CR-LF (so the screen looks
+nice) and then turns it into a \n. On output,<i> putc()</i> turns 
+the \n back into
+a CR-LF.<p>
+
+This is fine until you use the output of one program as the input 
+of
+another. The next program will see the CR-LF, echo it as 
+CR-LF-LF, and map it to a
+\n\n (one \n for the CR, another for the LF). The output from the 
+second
+program will have a CR-LF-CR-LF at the end of every line-instant 
+double
+spacing. If you go through another layer of pipe you will get
+CR-LF-CR-LF-CR-LF-CR-LF at the end of each line, and so on.<p>
+
+A solution would be to have getchar() work as described above, 
+and
+have g<i>etc()</i> ignore the LF character entirely (not pass it 
+through to the
+program). The BDS C compiler doesn't lend itself to this change 
+because its I/O
+library has the two input routines functionally reversed (that 
+is, <i>getc()</i> calls
+<i>getchar()</i>, which is the reverse of Unix). You could also 
+use the BDS version
+1.5 raw I/O routines, but then your code would be even more 
+nonstandard.
+Alternately, you could enter all the characters from the console 
+with direct
+<i>bdos()</i> calls.<p>
+
+<center>
+<b>Table 14-1. Grep Manual Page<p></b>
+</center>
+<pre>
+NAME
+   grep -- search a file for a pattern
+
+SYNOPSIS
+   grep [-options] ... [expression] [file list] ...
+
+DESCRIPTION
+   The algorithm used here is essentially that presented in Software Tools in Pascal by 
+   Kernighan and Plauger (Addison-Wesley, 1981, pp. 145f).
+   This program is a healthy subset of the Unix program of the same name. The
+   differences are as follows:
+<UL>
+<LI>The -s, -x, and -b options are not supported.
+<LI>The metacharacters ( ) + ? are not supported.
+<LI>The -y option causes all lowercase characters in the file being searched to be mapped
+   to uppercase before the match (as compared to &quot;lowercase letters in the pattern will
+   also match uppercase letters in the input&quot;).<p>
+</UL>
+   The program will find a string specified by a regular expression in a file or group of
+   files. The following options are recognized:
+
+   -v                   All lines except those matching are printed.
+   -c                   Only a count of the matching lines is printed.
+   -l                   The names of the files with matching lines are listed 
+                         (once) separated by newlines.
+   -n                   Each line is preceded by its line number in the file.
+   -h                   Do not print filename headers with output lines.
+   -y                   All characters in the file are mapped to uppercase before
+                        matching. This is the default if the regular expression is
+                        given on the command line (because CP/M maps
+                        everything on the command line to uppercase). Use the -f
+                        option if you need both lowercase and uppercase.
+   -e&lt;expression&gt;       Same as a simple expression argument, but useful when the
+                        expression begins with &quot;-&quot;.
+   -ffile&gt;              The regular expression is taken from the file. If several
+                        regular expressions are listed (separated by newlines or |s),
+                        then a match will be flagged if any of the regular
+                        expressions are satisfied. -e and -f are mutually exclusive. If -
+                        f is given, any regular expression on the command line is
+                        taken to be a filename.
+
+   Regular expressions are composed of the following:
+
+   ^      matches the beginning of a line
+   $      matches the end of a line
+   .      matches any character
+   \      followed by a single character matches that character. However, the
+          following sequences are special:
+   \b     backspace (^H)
+   \n     linefeed (^J; this is not the same as $)
+   \r     carriage return (^M)
+   \s     space
+   \t     tab (^I)
+   \\     backslash
+
+   A single character not otherwise endowed with special meaning matches that
+   character.
+
+   A string enclosed in brackets [] specifies a character class. Any single character in the
+   string will be matched. For example, [abc] will match an a, b, or c. Ranges of ASCII
+   character codes may be abbreviated, as in [a-z 0-9]. If the first symbol following the [ is a
+   ^ then a negative character class is specified. In this case, the string matches all
+   characters except those enclosed in the brackets (that is, [^a-z] matches everything except
+   lowercase letters). Note that a negative character class must match something, even
+   though that something cannot be any of the characters listed. For example, ^$ is not the
+   same as ^ [^z]$. The first example matches an empty line (beginning of line followed by
+   end of line); the second example matches a beginning of line followed by any character
+   except a z followed by end of line. In the second example, a character must be present
+   on the line, but that character cannot be a z. Note that the characters * ^ $ are not
+   special characters when inside a character class.
+
+   A regular expression followed by * matches zero or more matches of the regular
+   expression.
+
+   Two regular expressions concatenated match a match of the first, followed by a
+   match of the second.
+
+   Two regular expressions separated by | or a newline match either a match for the
+   first, or a match for the second.
+
+   The order of precedence is [ ] then * then concatenation then | then newline.
+
+Example:
+
+   The command line<p>
+
+                 grep -n ^ [a - z][a - z]*[\s\t]*.*([^ ;]*)[^ ;]*$&lt;file list&gt;
+
+   creates a cross-reference of a large C program. The &lt;file list:&gt; should be replaced with a
+   list of the modules to be searched. Grep's output will show all subroutine declarations in
+   all the listed files. In addition, every output line will be preceded by both the name of
+   the file in which the line was found (this is automatic if more than one file is searched)
+   and by the appropriate line number (the -n causes line numbers to be shown).
+
+   The regular expression is interpreted as follows: beginning of line (^), followed by
+   one or more occurrences of any character in the range a to z ([a - z][a - z]*),
+   followed by either a space or a tab repeated zero or more times ([\s\t]*), followed by
+   any character repeated zero or more times (.*), followed by an open parenthesis ((),
+   followed by any character except a semicolon repeated zero or more times ([;]*),
+   followed by a close parenthesis ()), followed by any character except a semicolon
+   repeated zero or more times ([;]*), followed by end of line ($).
+
+Bugs:
+
+   Arguments, if present, must be grouped together in the second position on the
+   command line. The first character of the group must be a -. Unless the -f option is given,
+   the next argument is always taken to be the expression. If -f is present, then the third
+   argument is the name of the file containing the expression.
+
+   Beware of spaces or tabs in the expression, even if your compiler supports quoted
+   arguments. CP/M will object to ^I anywhere on the command line. To be safe, use
+   \s for spaces and \t for tabs.
+
+   Some of the command-line switches do mutually exclusive things (-ef and -lh). If
+   you try to trick grep into doing something it is not supposed to do, the output will be
+   undefined.
+
+   Grep's execution speed varies as a function of the type of expression being parsed.
+   The speed will vary as follows (listed fastest to slowest):
+     <UL>
+     <LI> Simple expressions anchored to beginning of line (^ &lt;expression&gt;).
+     <LI> Expressions matching literal strings.
+     <LI> Expressions including character classes ([]).
+     <LI> Expressions including closure (*).
+     </UL>
+PC-DOS Update:
+
+   In the CP/M version of grep the command line is automatically mapped to
+   uppercase by the operating system. Consequently, the -y switch is automatically turned on
+   in the CP/M version of grep. This switch causes case to be ignored. Since PC-DOS
+   does not map the command line to uppercase, this automatic invocation of the -y
+   flag is not performed in the PC-DOS version of grep.<p>
+</pre>
+<b>Conclusion<p>
+</b>
+
+Despite the few implementation problems I encountered, grep remains an
+extremely useful program. It has saved me hours of rooting around in modular C
+programs looking for misspelled subroutine names. Its cross-referencing ability
+has also proved invaluable. When I get a new C compiler, the first thing I do is
+use grep to make a cross-reference of the runtime library sources. Using this
+cross-reference, it's easy to find the source code for the particular library
+subroutine that doesn't seem to be working correctly. The addition of <i>matchs()</i> to the
+RED editor has made it a much nicer editor, giving RED not only an extended
+search ability but also a powerful global substitution ability. Once you've used
+regular expressions in an editor, you won't settle for anything else. I hope you
+find this program as useful as I have.<p>
+
+<b><a name="list14-1">LISTING 14-1</a><p></b>
+<pre>
+  /*----------------------------------------------------------*
+   *      TOOLS.H: Various #defines and typedefs for GREP     *
+   *                                                          *
+   *      Copyright (c) 1984 by Allen Holub. All rights       *
+   *      reserved.                                           *
+   *----------------------------------------------------------*
+   */
+
+  /*
+   *      #defines for non-printing ASCII characters
+   */
+
+  #define NUL     0x00    /* ^@   */
+  #define CR      0x0d    /* ^M   */
+  #define SUB     0x1a    /* ^Z   */
+  #define CPMEOF  SUB
+
+  #define islower(c)      ( 'a' &lt;= (c) &amp;&amp; (c) &lt;= 'z' )
+  #define toupper(c)      ( islower(c) ? (c) - ('a' - 'A') : (c))
+
+  /*      Definitions of meta-characters used in pattern matching routines.
+   *      LITCHAR &amp; NCCL are only used as token identifiers; all the others
+   *      are also both token identifiers and the actual symbol used in
+   *      the regular expression
+   */
+
+  #define BOL     '^'
+  #define EOL     '$'
+  #define ANY     '.'
+  #define LITCHAR 'L'
+  #define ESCAPE  '\\'
+  #define CCL     '['             /* Character class:    [...]          */
+  #define CCLEND  ']'
+  #define NEGATE  '^'
+  #define NCCL    '!'             /* Negative character class [^...]    */
+  #define CLOSURE '*'
+  #define OR_SYM  '|'
+
+  /*
+   *      Tokens are used to hold pattern templates. (see makepat() in
+   *      tools.h
+   */
+
+  typedef struct token
+  {
+          char            tok;
+          char            lchar;
+          char            *bitmap;
+          struct token    *next;
+  }TOKEN;
+
+  #define TOKSIZE sizeof(TOKEN)
+
+  /*
+   *      An absolute maximum for strings.
+   */
+
+  #define MAXSTR          132             /* Maximum number of characters in  a line.  */
+
+  extern  char    *matchs         ();
+  extern  char    *amatch         ();
+  extern  char    *index          ();
+  extern  TOKEN   *getpat         ();
+  extern  int     esc             ();
+  extern  char    *dodash         ();
+  extern  TOKEN   *makepat        ();
+  extern  int     unmakepat       ();
+  extern  int     insert          ();
+  extern  int     delete          ();
+  extern  int     isalphanum      ();
+  extern  char    *stoupper       ();
+  extern  int     pr_tok          ();
+  extern  int     pr_line         ();
+</pre>
+
+<b><a name="list14-2">LISTING 14-2</a><p></b>
+<pre>
+  
+/*-----------------------------------------------------------------
+   *
+   *     TOOLS.C: The expression parser used by GREP
+   *
+   *
+   *                 Copyright (c) 1984 Allen Holub
+   *                      All rights reserved.
+   *
+   *      Permission to copy this program or any part of this program
+   *      is granted in the case of personal, non-commercial use only.
+   *      Any use for profit or other commercial gain without written
+   *      permission of the author is prohibited.
+   *
+   *      If you've been give this program by a friend, and you find
+   *      it worthwhile, I'd appreciate your sending $35 to me for the
+   *      program.
+   *
+   * Software Engineering Consultants, P.O. Box 5679, Berkeley CA, 94705
+   *
+   *-----------------------------------------------------------------
+   */
+
+  /*
+   *      This module contains the various routines needed by grep
+   *      to match regular expressions. Routines are ordered
+   *      alphabeticaly.
+   */
+
+  #include &lt;stdio.h&gt;
+  #include &quot;tools.h&quot;
+
+  char    *amatch( lin, pat, boln )
+  char    *lin, *boln;
+  TOKEN   *pat;
+  {
+          /*    Scans through the pattern template looking for a match
+           * with lin. Each element of lin is compared with the template
+           * until either a mis-match is found or the end of the template
+           * is reached. In the former case a 0 is returned; in the latter,
+           * a pointer into lin (pointing to the last character in the
+           * matched pattern) is returned.
+           *
+           *      &quot;lin&quot;   is a pointer to the line being searched.
+           *      &quot;pat&quot;   is a pointer to a template made by makepat().
+           *      &quot;boln&quot;  is a pointer into &quot;lin&quot; which points at the
+           *                      character at the beginning of line.
+           */
+
+          register char  *bocl, *rval, *strstart;
+
+          if (pat == O)
+                  return( (char *)0 );
+
+          strstart = lin;
+
+          while ( pat )
+          {
+                  if (pat-&gt;tok == CLOSURE &amp;&amp; pat-&gt;next)
+                  {
+                          /*
+                           *      Process a closure:
+                           *      First skip over the closure token to the
+                           *      object to be repeated. This object can be
+                           *      a character class.
+                           */
+                          pat = pat-&gt;next;
+
+                          /*      How match as many occurrences of the
+                           *      closure pattern as possible.
+                           */
+
+                          bocl = lin;
+
+                          while ( *lin &amp;&amp; omatch(&amp;lin, pat, boln) )
+                                  ;
+                          /*     'Lin' now points to the character that made
+                           *      made us fail. Now go on to process the
+                           *      rest of the string. A problem here is
+                           *      a character following the closure which
+                           *      could have been in the closure.
+                           *      For example, in the pattern &quot;[a-z]*t&quot; (which
+                           *      matches any lower-case word ending in a t),
+                           *      the final 't' will be sucked up in the while
+                           *      loop. So, if the match fails, we back up a
+                           *      notch and try to match the rest of the
+                           *      string again, repeating this process
+                           *      recursively until we get back to the
+                           *      beginning of the closure. The recursion
+                           *      goes, at most, two levels deep.
+                           */
+
+                          if (pat = pat-&gt;next)
+                          {
+                                  while ( bocl &lt;= lin )
+                                  {
+                                          if (rval = amatch(lin, pat, boln) )
+                                          {
+                                                  /* success */
+                                                  return(rval);
+                                          }
+                                          else
+                                                  --lin;
+                                  }
+                                  return (0);     /* match failed */
+                          }
+                  }
+                  else if ( omatch(&amp;lin, pat, boln) )
+                  {
+                          pat = pat-&gt;next;
+                  }
+                  else
+                  {
+                          return (0);
+                  }
+          }
+
+          /*
+           *      Note that omatch() advances lin to point at the next
+           *      character to be matched. Consequently, when we reach
+           *      the end of the template, lin will be pointing at the
+           *      character following the last character matched.
+           *      The exceptions are templates containing only a
+           *      BOLN or EOLN token. In these cases omatch doesn't
+           *      advance.
+           *
+           *      So, decrement lin to make it point at the end of the
+           *      matched string. Then, check to make sure that we haven't
+           *      decremented past the beginning of the string.
+           *
+           *      A philosophical point should be mentioned here. Is $
+           *      a position or a character? (i.e., does $ mean the EOL
+           *      character itself or does it mean the character at the end of
+           *      the line.) I decided here to make it mean the former, in
+           *      order to make the behavior of amatch() consistent. If you
+           *      give amatch the pattern ^$ (match all lines consisting only
+           *      of an end of line) then, since something has to be returned,
+           *      a pointer to the end of line character itself is returned.
+           *
+           *      The --lin is done outside the return statement because max()
+           *      is often a macro (which has side-effects).
+           */
+
+          --lin;
+          return ( max(strstart, lin) );
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  #ifdef DEBUG
+
+  delete( ch, str )
+  int             ch;
+  register char   *str;
+  {
+          /*      Delete the first occurrence of character from string
+           *      moving everything else over a notch to fill the hole.
+           */
+
+          ch &amp;= Oxff;
+
+          while ( *str &amp;&amp; *str != ch)
+                  str++;
+          while ( *str )
+          {
+                  *str = *(str+1);
+                  str++;
+          }
+  }
+
+  #endif
+
+  /* ---------------------------------------------------------------------- */
+
+  setbit( c, field )
+  int     c;
+  char    field[];
+  {
+          /*      Set a bit in the bit ASCII bit map corresponding to the
+           *      character c. Field must be at least 16 bytes long.
+           */
+
+          field[ (c &amp; Ox7f) &gt;&gt; 3 ] |= 1 &lt;&lt; (c &amp; 0x07);
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  testbit( c, field )
+  int     c;
+  char    *field;
+  {
+          /*      See if the bit corresponding to c in field is set.
+           */
+
+          return (   field[ (c &amp; 0x7f)&gt;&gt;3 ] &amp; (1 &lt;&lt; (c &amp; 0x07)) );
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  char    *dodash( delim, src, map )
+  int     delim;
+  char    *src, *map;
+  {
+          /*      Expand the set pointed to by &quot;*src&quot; into the bitmap &quot;map.&quot;
+           *      Stop at delim or end of string. Update *src to point
+           *      at terminator. A set can have one element {x} or several
+           *      elements ( {abcdefghijklmnopqrstuvwxyz} and {a-z}
+           *      are equivalent ). Note that the dash notation is expanded
+           *      as sequential numbers. This means (since we are using the
+           *      ASCII character set) that a-Z will contain the entire alphabet
+           *      plus the symbols: [\]^_`
+           *
+           *      The character classes are stored in a 16 byte wide bit field
+           *      where each bit corresponds to an ASCII character.
+           */
+
+          register int    first, last;
+          char            *start;
+
+          start = src;
+
+          while( *src &amp;&amp; *src != delim )
+          {
+                  if( *src != '-')
+                          setbit( esc( &amp;src ), map );
+
+                  else if( src == start || *(src+1) == delim )
+                          setbit( '-', map );
+
+                  else
+                  {
+                          src++;
+
+                          if( *src &lt; *(src - 2) )
+                          {
+                                  first = *src;
+                                  last = *(src-2);
+                          }
+                          else
+                          {
+                                  first = *(src - 2);
+                                  last = *src;
+                          }
+
+                          while( ++first &lt;= last )
+                                  setbit( first, map );
+
+                          src++;
+                  }
+          }
+
+          return( src );
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  int     esc(s)
+  char    **s;
+  {
+          /* Map escape sequences into their equivalent symbols. Returns the
+           * Correct ASCII character. c is the character following the \.
+           */
+
+          register int rval;
+
+          if( **s != ESCAPE )
+                  rval = *( (*s)++ );
+          else
+          {
+                  (*s)++;
+
+                  switch( toupper(**s) )
+                  {
+                  case '\0':      rval = ESCAPE;       break;
+                  case 'B':       rvaL = '\b' ;        break;
+                  case 'F':       rval = '\f' ;        break;
+                  case 'N':       rval = '\n' ;        break;
+                  case 'R':       rval = '\r' ;        break;
+                  case 'S':       rval = ' '  ;        break;
+                  case 'T':       rval = '\t' ;        break;
+                  default:        rval = **s  ;        break;
+                  }
+
+                  (*s)++;
+          }
+
+          return (rval);
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  TOKEN   *getpat( arg )
+  char    *arg;
+  {
+          /*      Translate arg into a TOKEN string           */
+
+          return ( makepat(arg, '\000' ) );
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  #ifdef DEBUG
+
+  insert( ch, str )
+  int             ch;
+  register char   *str;
+  {
+          /*      Insert ch into str at the place pointed to by str. Move
+           *      everything else over a notch
+           */
+
+          register char  *bp;
+
+          bp = str;
+
+          while (*str)                    /* Find the end of string       */
+                  str++;
+          do                              /* Move the tail over one notch */
+          {
+                  *(str+1) = *str;
+                  str--;
+
+          } while (str &gt;= bp);
+
+          *bp = ch;                        /* Put the char in the hole.   */
+  }
+
+  #endif
+  /* ---------------------------------------------------------------------- */
+
+  int isalphanum(c)
+  int     c;
+  {
+          /*   Return true if c is an alphabetic character or digit,
+           *      false otherwise.
+           */
+
+          return( ('a' &lt;= c &amp;&amp; c &lt;= 'z') ||
+                  ('A' &lt;= c &amp;&amp; c &lt;= 'Z') ||
+                  ('0' &lt;= c &amp;g c &lt;= '9')
+                );
+  }
+
+  /* ---------------------------------------------------------------------- */
+
+  TOKEN   *makepat(arg, delim)
+  char    *arg;
+  int     delim;
+  {
+          /*      Make a pattern template from the string pointed to by arg.
+           *      Stop when delim or '\000' or '\n' is found in arg.
+           *      Return a pointer to the pattern template.
+           *
+           *      The pattern templates used here are somewhat different
+           *      than those used in the book; each token is a structure
+           *      of the form TOKEN (see tools.h). A token consists of
+           *      an identifier, a pointer to a string, a literal
+           *      character and a pointer to another token. This last is 0 if
+           *      there is no subsequent token.
+           *
+           *      The one strangeness here is caused (again) by CLOSURE which
+           *      has to be put in front of the previous token. To make this
+           *      insertion a little easier, the 'next' field of the last
+           *      token in the chain (the one pointed to by 'tail') is made
+           *      to point at the previous node. When we are finished,
+           *      tail-&gt;next is set to 0.
+           */
+
+          TOKEN   *head, *tail;
+          TOKEN   *ntok;
+          int     error, i ;
+
+          /*      Check for characters that aren't legal at the beginning
+           *      of a template.
+           */
+
+          if (*arg=='\0' | *arg==delim || *arg=='\n' || *arg==CLOSURE)
+                  return(0);
+
+          error = 0;
+          head  = 0;
+          tail  = 0;
+
+          for(; *arg &amp;&amp; *arg != delim &amp;&amp; *arg != '\n' &amp;&amp; !error; arg++)
+          {
+                  ntok = (TOKEN *) malloc(TOKSIZE) ;
+
+                  if( error = !ntok )
+                  {
+                          fprintf(stderr,
+                                  &quot;Not enough memory for pattern template\n&quot;);
+                          break;
+                  }
+
+                  switch(*arg)
+                  {
+                  case ANY:
+                          ntok-&gt;tok = ANY;
+                          break;
+
+                  case BOL:
+
+                          if (head==0) /* then this is the first symbol */
+
+                                  ntok-&gt;tok = BOL;
+                          else
+                                  error = 1;
+                          break;
+
+                  case EOL:
+
+                          if (*(arg+1) == delim   || *(arg+1) == '\0'
+                                                  || *(arg+l) == '\n' )
+                                  ntok-&gt;tok = EOL;
+                          else
+                                  error = 1;
+                          break;
+
+                  case CCL:
+
+                          if (*(arg+1) == NEGATE)
+                          {
+                                  ntok-&gt;tok = NCCL;
+                                  arg += 2;
+                          }
+                          else
+                          {
+                                  ntok-&gt;tok = CCL;
+                                  arg++;
+                          }
+
+                          if( ntok-&gt;bitmap = (char *) calloc( 16, 1 ) )
+                          {
+                                  arg = dodash(CCLEND, arg, ntok-&gt;bitmap );
+                          }
+                          else
+                          {
+                                  fprintf(stderr,&quot;Not enough memory for pat\n&quot;);
+                                  error = 1;
+                          }
+
+                          break;
+
+                  case CLOSURE:
+
+                          switch ( tail-&gt;tok )
+                          {
+                          case BOL:
+                          case EOL:
+                          case CLOSURE:
+                                  return(0);
+                          default:
+                                  ntok-&gt;tok = CLOSURE;
+                          }
+                          break;
+
+                  default:
+                          ntok-&gt;tok = LITCHAR;
+                          ntok-&gt;lchar = esc( &amp;arg );
+                          --arg; /* esc advances us past the character */
+                  }
+
+                  if( error )
+                  {
+                          unmakepat(head);
+                          return (0);
+                  }
+                  else if (head == 0)
+                  {
+                          /* This is the first node in the chain.
+                           */
+
+                          ntok-&gt;next = 0;
+                          head = tail = ntok;
+                  }
+                  else if( ntok-&gt;tok != CLOSURE)
+                  {
+                          /* Insert at end of list (after tail) */
+
+                          tail-&gt;next = nto;
+                          ntok-&gt;next = tail;
+                          tail = ntok;
+                  }
+                  else if( head != tail )
+                  {
+                          /* More than one node in the chain. Insert the
+                           * CLOSURE node immediately in front of tail.
+                           */
+
+                          (tail-&gt;next)-&gt;next = ntok;
+                          ntok-&gt;next = tail;
+                  }
+                  else
+                  {
+                          /* Only one node in the chain, Insert the CLOSURE
+                           * node at the head of the linked list.
+                           */
+
+                          ntok-&gt;next = head;
+                          tail-&gt;next = ntok;
+                          head = ntok;
+                  }
+          }
+          tail-&gt;next = 0;
+          return (head);
+  }
+
+  /* --------------------------------------------------------------*/
+
+  char    *matchs(line, pat, ret_endp)
+  char    *line;
+  TOKEN   *pat;
+  int     ret_endp;
+  {
+          /*
+           *      Compares line and pattern. Line is a character string while
+           *      pat is a pattern template made by getpat().
+           *      Returns:
+           *              1. A zero if no match was found.
+           *              2. A pointer the last character
+           *                 satisfying the match if ret_endp is non-zero.
+           *              3. A pointer to the beginning of the matched string
+           *                 if ret_endp is 0;
+           *
+           *      For example:
+           *
+           *              matchs (&quot;1234567890&quot;, getpat(&quot;4[0-9]*7&quot;), 0);
+           *
+           *      will return a pointer to the '4', while
+           *
+           *              matchs (&quot;1234567890&quot;, getpat(&quot;4[0-9]*7&quot;), 1);
+           *
+           *      will return a pointer to the '7'.
+           */
+
+          char *rval, *bptr;
+
+          bptr = line;
+
+          while (*line)
+          {
+                  if ( (rval = amatch(line, pat, bptr)) == 0 )
+                  {
+                          line++;
+                  }
+                  else
+                  {
+                          rval = ret_endp ? rval : line;
+                          break;
+                  }
+          }
+          return (rval);
+  }
+
+  /* --------------------------------------------------------------*/
+
+  char    *stoupper(str)
+  char    *str;
+  {
+          /*
+           *      Map the entire string pointed to by str to upper case
+           *      Return str.
+           */
+
+          char *rval;
+
+          rval = str;
+
+          while (*str)
+          {
+                  if ( 'a' &lt;= *str &amp;&amp; *str &lt;= 'z' )
+                          *str -= ('a' - 'A');
+
+                  str++;
+          }
+
+          return(rval );
+  }
+
+  /* --------------------------------------------------------------*/
+
+  int     omatch (linp, pat, boln)
+  char    **linp, *boln;
+  TOKEN   *pat;
+  {
+          /*      Match one pattern element, pointed at by pat, with the
+           *      character at **linp. Return non-zero on match.
+           *      Otherwise, return 0. *Linp is advanced to skip over the
+           *      matched character; it is not advanced on failure. The
+           *      amount of the advance is 0 for patterns that match null
+           *      strings, 1 otherwise. &quot;boln&quot; should point at the position
+           *      that will match a BOL token.
+           */
+
+          register int advance;
+
+          advance = -1;
+
+          if ( **linp )
+          {
+                  switch ( pat-&gt;tok )
+                  {
+                  case LITCHAR:
+                          if ( **linp == pat-&gt;lchar )
+                                  advance = 1;
+                          break;
+
+                  case BOL:
+                          if ( *linp == boln )
+                                  advance = 0;
+                          break;
+
+                  case ANY:
+                          if ( **linp != '\n' )
+                                  advance = 1;
+                          break;
+
+                  case EOL:
+                          if ( **linp == '\n' )
+                                  advance = 0;
+                          break;
+
+                  case CCL:
+                          if( testbit( **linp, pat-&gt;bitmap ) )
+                                  advance = 1;
+                          break;
+
+                  case NCCL:
+                          if( !testbit( **linp, pat-&gt;bitmap) )
+                                  advance = 1;
+                          break;
+
+                  default:
+                          printf(&quot;omatch: can't happen\n&quot;);
+                  }
+          }
+
+          if (advance &gt;= 0)
+                  *linp += advance;
+
+          return( ++advance );
+  }
+
+  /* --------------------------------------------------------------*/
+
+  #ifdef DEBUG
+
+  pr_line(ln)
+  register char *ln;
+  {
+
+          /*      Print out ln, if a non-printing character is found, print
+           *      out its numerical value in the form &quot;\0x&lt;hex number&gt;&quot;.
+           *      Again, this is a debugging aid. It lets you see what's
+           *      really on the line.
+           */
+
+          for ( ; *ln; ln++ )
+          {
+                  if ( (' ' &lt;= *ln) &amp;&amp; (*ln &lt;= '~') )
+                          putchar(*ln);
+                  else
+                  {
+                          printf(&quot;\\0x%02x&quot;, *ln);
+
+                          if (*ln == '\n')
+                                  putchar('\n');
+                  }
+          }
+  }
+
+  /* --------------------------------------------------------------*/
+
+  pr_tok( head )
+  TOKEN *head;
+  {
+          /*      Print out the pattern template (linked list of TOKENs)
+           *      pointed to by head. This is a useful debugging aid. Note
+           *      that pr_tok() just scans along the linked list, terminating
+           *      on a null pointer; so, you can't use pr_tok from inside
+           *      makepat() because tail-&gt;next points to the previous
+           *      node instead of being null. Note that NEGATE and OR_SYM
+           *      are not listed because they won't occur in a template.
+           */
+
+          register char *str;
+          register int i;
+
+          for (; head; head = head-&gt;next )
+          {
+                  switch (head-&gt;tok)
+                  {
+                  case BOL:
+                          str = &quot;BOL&quot;;
+                          break;
+
+                  case EOL:
+                          str = &quot;EOL&quot;;
+                          break;
+
+                  case ANY:
+                          str = &quot;ANY&quot;;
+                          break;
+
+                  case LITCHAR:
+                          str= &quot;LITCHAR&quot;;
+                          break;
+
+                  case ESCAPE:
+                          str = &quot;ESCAPE&quot;;
+                          break;
+
+                  case CCL:
+                          str: &quot;CCL&quot;;
+                          break;
+
+                  case CCLEND:
+                          str = &quot;CCLEND&quot;;
+                          break;
+
+                  case NCCL:
+                          str = &quot;NCCL&quot;;
+                          break;
+
+                  case CLOSURE:
+                          str = &quot;CLOSURE&quot;;
+                          break;
+
+                  default:
+                          str = &quot;**** unknown ****&quot;;
+                  }
+
+                  printf(&quot;%-8s at: 0x%x, &quot;, str, head);
+
+                  if (head-&gt;tok == CCL || head-&gt;tok == NCCL)
+                  {
+                          printf(&quot;string (at 0x%x) =&lt;&quot;, head-&gt;bitmap );
+
+                          for( i = 0; i &lt; 0x7f; i++)
+                                  if( testbit(i, head-&gt;bitmap) )
+                                          putchar(i);
+
+                          printf(&quot;&gt;, &quot;);
+                  }
+
+                  else if (head-&gt;tok == LITCHAR)
+                          printf(&quot;lchar = %c, &quot;, head-&gt;lchar);
+
+                  printf(&quot;next = 0x%x\n&quot;, head-&gt;next);
+          }
+
+          putchar('\n');
+  }
+
+  #endif
+
+  /* ----------------------------------------------------------- */
+
+  unmakepat(head)
+  TOKEN   *head;
+  {
+          /*      Free up the memory used for the token string */
+
+          register TOKEN *old_head;
+
+          while (head)
+          {
+                  switch (head-&gt;tok)
+                  {
+                  case CCL:
+                  case NCCL:
+                          free(head-&gt;bitmap);
+                          /* no break, fall through to default */
+
+                  default:
+                          old_head = head;
+                          head = head-&gt;next;
+                          free(old_head);
+                          break;
+                  }
+          }
+  }
+
+  /* ----------------------------------------------------------- */
+
+  char    *index( c, str )
+  char    *str;
+  {
+          /*      Return true if c is in str.           */
+
+          while( *str )
+                  if( *str++ == c )
+                          return str;
+          return 0;
+  }<p>
+</pre>
+<b><a name="list14-3">LISTING 14-3</a><p></b>
+<pre>
+  
+/*---------------------------------------------------------------
+   *
+   *     GREP.C: A generalized regular expression parser
+   *
+   *
+   *                 Copyright (c) 1984 Allen Holub
+   *                      All rights reserved.
+   *
+   *      Permission to copy this program or any part of this 
+   *      is granted in the case of personal, non-commercial use only.
+   *      Any use for profit or other commercial gain without written
+   *      permission of the author is prohibited.
+   *
+   *      If you've been give this program by a friend, and you find
+   *      it worthwhile, I'd appreciate your sending $35 to me for the
+   *      program.
+   *
+   * Software Engineering Consultants, P.O. Box 5679, Berkeley, CA 94705
+   *
+   *--------------------------------------------------------------
+   */
+
+  #include &lt;stdio.h&gt;
+  #include &quot;tools.h&quot;
+
+  /*
+   *      GREP
+   *
+   *      Search a file for a pattern.
+   *
+   *      The algorithm used here is essentially the algorithm in
+   *      Software Tools in Pascal (pp 145f.). Though the routines have
+   *      been changed somewhat to put them into good 'C'. See tools1.c
+   *      for details.
+   *
+   *      This program is a healthy subset of the UNIX program of the same
+   *      name. The differences are as follows:
+   *
+   *              - the -s, -x and -b options are not supported.
+   *              - the meta-characters ()+? are not supported.
+   *              - the -y option cause case to be ignored.
+   *
+   *      usage is:
+   *              grep [-vclnhyef] [expression] files ...
+   *
+   *      For more details see grep.doc
+   */
+  #define MAXLINE 128           /*        Maximum size of an input line          */
+
+  #define MAX_EXPR 64           /*        The maximum number of regular
+                                 *        expressions separated by
+                                 *        newlines or | allowed.
+                                 */
+
+  /*      The following global flags are true if a switch was set
+   *      in the command line, false otherwise.
+   */
+
+  int     vflag, yflag, cflag, lflag, nflag, hflag, fflag;
+
+  
+/*-----------------------------------------------------------------*/
+
+  main(argc, argv)
+  int     argc;
+  char    **argv;
+  {
+          int     i, j, linenum, count;
+
+          int     line[MAXLINE];
+          int     numfiles;
+          FILE    *stream;
+          int     exprc;
+          TOKEN   *exprv[MAX_EXPR];
+
+          fprintf(stderr, &quot;GREP - Copyright (C) 1984, Allen I. Holub,&quot;);
+          fprintf(stderr, &quot; all rights reserved\n&quot;);
+
+          i = 1;
+
+          if (argc &lt; 2)
+                  abort(pr_usage(1) );
+
+          if ( *argv[i] == '-')
+          {
+
+                  /*
+                   *      Expand the switches on the command line
+                   */
+
+                  expand_sw( argv[i++] );
+
+                  if ( i == argc )
+                          abort(pr_usage(1) );
+          }
+
+          /*      Get the pattern string.
+           */
+
+          if ( (exprc = get_expr( exprv, MAX_EXPR, &amp;argv[i++])) == 0 )
+                  abort(pr_usage(2) );
+
+          numfiles = argc - i;            /*  Get number of files left to
+                                           *  process on the command line
+                                           */
+          do
+          {
+                  if ( numfiles)
+                  {
+                          stream = fopen( argv[i], &quot;r&quot;);
+                          if (stream == NULL)
+                          {
+                                  fprintf(stderr, &quot;Can't open %s\n&quot;, argv[i]);
+                                  continue;
+                          }
+                  }
+                  else
+                  {
+                          stream = stdin;
+                  }
+
+                  count = 0;
+                  linenum = 1;
+
+                  while ( fgets(line, MAXLINE, stream) )
+                  {
+  #ifdef CPM
+                          if (!fflag || yflag )
+                                  stoupper(line);
+  #else
+                          if ( yflag )
+                                  stoupper(line);
+  #endif
+
+                          for( j = exprc ; --j &gt;= 0; )
+                          {
+                                  if ( matchs(line , exprv[j]) )
+                                  {
+                                          count++;
+                                          pr_match(linenum, line, argv[i], 1,  numfiles);
+                                  }
+                                  else
+                                  {
+                                          pr_match(linenum, line, argv[i], 0, numfiles);
+                                  }
+
+                                  linenum++;
+                                  cntrl_c();
+                          }
+                          if( lflag &amp;&amp; count )
+                                  break;
+                  }
+                  pr_count( numfiles, argv[i], count );
+                  fclose (stream);
+
+          } while (++i &lt;argc);
+
+          abort();
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  pr_count( fcount, fname, count)
+  int     fcount, count;
+  char    *fname;
+  {
+          /*      Process the -c flag by printing out a count and,
+           *      if more than one file was listed on the command line,
+           *      the file name too.
+           */
+
+          if (!cflag)
+                  return;
+
+          if (fcount &gt; 1)
+                   printf(&quot;%-12s: &quot;, fname );
+
+          printf( &quot;%d\n&quot;, count );
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  pr_match(linenum, line, fname, match, numfiles)
+  int     linenum, match;
+  char    *line, *fname;
+  {
+          /*      If a match is found print the correct thing
+           *      as specified by the command line switches.
+           */
+
+          char buf[80];
+
+          if (cflag)
+                  return;
+
+          if ( (vflag &amp;&amp; !match) || (!vflag &amp;&amp; match) )
+          {
+                  if (!hflag &amp;&amp; ( (numfiles &gt; 1) || lflag) )
+                          printf(&quot;%s%s&quot;, fname, lflag ? &quot;\n&quot; : &quot;:&quot; );
+
+                  if (nflag)
+                          printf(&quot;%03d:&quot;, linenum );
+
+                  if (!lflag)
+                          printf(&quot;%s&quot;, line );
+          }
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  pr_usage(num)
+  int     num;
+  {
+
+  #ifdef DEBUG
+          fprintf(stderr,&quot;%d &quot;, num);
+  #endif
+          fprintf(stderr,&quot;usage: grep [-cefhlnvy] [expression] &lt;files ...&gt;\n&quot;);
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  abort()
+  {
+          exit();
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  expand_sw( str )
+  char    *str;
+  {
+          /*      Set global flags corresponding to specific switches
+           *      if those switches are set
+           */
+
+          vflag = 0;
+          cflag = 0;
+          lflag = 0;
+          nflag = 0;
+          hflag = 0;
+          fflag = 0;
+          yflag = 0;
+
+          while (*str)
+          {
+                  switch (toupper(*str))
+                  {
+                  case '-':
+                  case 'E':
+                          break;
+
+                  case 'C':
+                          cflag = 1;
+                          break;
+
+                  case 'F':
+                          fflag = 1;
+                          break;
+
+                  case 'H':
+                          hflag = 1;
+                          break;
+
+                  case 'L':
+                          lflag = 1;
+                          break;
+
+                  case 'N':
+                          nflag = 1;
+                          break;
+
+                  case 'V':
+                          vflag = 1;
+                          break;
+
+                  case 'Y':
+                          yflag = 1;
+                          break;
+
+                  default:
+                          pr_usage(3);
+                          abort();
+                          break;
+                  }
+
+                  str++;
+          }
+  }
+
+  
+/*---------------------------------------------------------------*/
+
+  int do_or( lp, expr, maxexpr )
+  char    *lp;
+  TOKEN   **expr;
+  int     maxexpr;
+  {
+          int     found;
+          TOKEN   *pat;
+          char    *op;
+
+          found = 0;
+
+          /*
+           *      Extract regular expressions separated by OR_SYMs from
+           *      lp and put them into expr. Extract only up to
+           *      maxexpr expressions. If yflag is true map string to upper
+           *      case first.
+           */
+
+          if( yflag )
+                  stoupper( lp );
+
+          while ( op = index(OR_SYM, lp) )
+          {
+                  if(found &lt;= maxexpr &amp;&amp; (pat = makepat(lp, OR_SYM)) )
+                  {
+                          *expr++ = pat;
+                          found++;
+                  }
+                  lp = ++op;
+
+                  if ( pat == 0 )
+                          goto fatal_err;
+          }
+
+          if (found &lt;= maxexpr &amp;&amp; (pat = makepat( lp, OR_SYM)) )
+          {
+                  found++;
+                  *expr = pat;
+          }
+
+          if ( pat == 0 )
+          {
+  fatal_err:
+                  printf(&quot;Illegal expression: %s\n&quot;, lp);
+                  exit();
+          }
+
+          return (found);
+  }
+
+  
+/*-------------------------------------------------------------------*/
+
+  get_expr( expr, maxexpr, defexpr )
+  TOKEN   *expr[];
+  int     maxexpr;
+  char    **defexpr;
+  {
+          FILE    *stream;
+          int     count;
+          char    line[MAXLINE];
+
+  #ifdef DEBUG
+          int     i;
+  #endif
+
+          /*      Get regular expressions separated by | or newlines
+           *      either out of a file or off the command line depending
+           *      on whether the -f flag is set. The expressions are           
+           *      converted into pattern templates (see tools.c) and
+           *      pointers to the templates are put into the array expr[]
+           *      (which works similar to argv).
+           *
+           *      Return the number of expressions found (which can be used
+           *      in a similar fashion to argc).
+           */
+
+          count = 0;
+
+          if ( fflag )
+          {
+                  /*
+                   *      Then *defexpr is the file name and expressions should
+                   *      be taken from that file.
+                   */
+
+                  if ( (stream = fopen(*defexpr, &quot;r&quot;)) == NULL )
+                  {
+                          fprintf(stderr, &quot;Can't open %s\n&quot;, *defexpr);
+                          abort();
+                  }
+
+                  while ( (maxexpr - count) &amp;&amp; fgets(line, MAXLINE, stream) )
+                  {
+                          count += do_or(line, &amp;expr[count], maxexpr - count );
+                  }
+
+                  fclose (stream);
+          }
+          else
+          {
+                  /*
+                   *      *defexpr is the expression itself.
+                   */
+
+                  if ( count += do_or( *defexpr, &amp;expr[count], maxexpr - count))
+                  *defexpr =&quot; &quot;;
+          }
+
+  #ifdef DEBUG
+
+          /*      Print out all the regular expressions after they have been
+           *      converted into pattern templates (see tools.c).
+           */
+
+          for (i = count; --i &gt;= 0; )
+          {
+                  pr_tok( expr[i] );
+                  
+printf(&quot;--------------------------------------------\n&quot;);
+          }
+
+  #endif
+          return(count);
+  }
+
+  
+/*-------------------------------------------------------------------*/
+
+  cntrl_c()
+  {
+
+  #ifdef CPM
+
+          /*     If any character was hit, and that character is a
+           *     ^C, then abort.
+           */
+
+          if (bdos(11) &amp;&amp; ((bdos(1,0) &amp; Ox7f) == 0x03) )
+                 abort();
+  #endif
+
+  }<p>
+</pre>
+<b><a name="list14-4">LISTING 14-4</a><p></b>
+<pre>
+  lc -ms -i\lc\ -i\lc\s\ grep tools &gt;err
+  linkgrep
+
+Revisions to Listings
+
+Revisions and changes made to grep.c and tools.c since publication in the
+October 1984 Dr. Dobb's Journal.
+
+10/20/84 amatch in tools.c
+
+   change: while( *sptr &amp;&amp; (*sptr != delim) &amp;&amp; (dstart-dest &lt; maxccl ))
+   to:     while( *sptr &amp;&amp; (*sptr != delim) &amp;&amp; (dest-dstart &lt; maxccl ))
+
+10/29/84 dodash in tools.c
+
+   change: while( *lin &amp;&amp; omatch( &amp;lin, pat ))
+   to:     while( *lin &amp;&amp; omatch( &amp;lin, pat, boln ))
+
+11/3/84 stoupper in tools.c
+
+   explicitly declared stoupper() as returning a character pointer
+
+11/21/84 dodash and makepat in tools.c
+
+   - added tests for error returns from the two calls to malloc().
+   - changed dodash to use a bit map rather than a string of 
+characters.<p>
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 

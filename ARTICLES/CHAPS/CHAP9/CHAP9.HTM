@@ -1,0 +1,684 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>GETARGS: A COMMAND-LINE ARGUMENT PROCESSOR</H1> <p>
+
+by Allen Holub<p>
+</CENTER>
+</B>
+
+
+<i>This article originally appeared in Dr. Dobb's Journal # 103 
+(May 1985) as a &quot;C Chest&quot;
+column.<p></i>
+
+
+A command-line switch is an argument, usually preceded by a dash 
+(-),
+that modifies the way that a program works. Just about every C 
+program I write
+uses command-line switches, and all these programs have to 
+process these
+switches one way or another. For a long time, I wrote a different 
+little
+subroutine for each program, modifying the routine to deal with 
+the idiosyncrasies of a
+particular program. After writing the same subroutine about a 
+million times
+(and making the same off-by-one error with argc every time), I 
+thought that
+there had to be a better way. All my processing routines were 
+essentially the
+same in structure; only the names of the command-line switches 
+were different.
+A general-purpose command-line processor was clearly what I 
+needed.<p>
+
+Looking around in the literature for something that did the job, 
+I found the
+Argum package, which appeared in Anthony Skjellum's C/Unix column 
+in <i>Dr. Dobb's Journal</i>
+# 70 (August 1982). The program was well-written and did what I 
+needed, but it
+had several problems. First of all, it did a lot more than I 
+needed, and the extra
+functions added extra code. Because this package was going to be 
+included in
+every program I wrote, a reduction in scope seemed to be a good 
+idea. Another
+related problem was the internal tables used by Argum. They were 
+created at
+run time (as compared to compile time). This added both extra 
+code and extra
+execution time to any program that used Argum. Finally, Argum had 
+no
+convenient way to deal with errors on the command line. In view 
+of these problems, I
+decided to write my own processor, a description of which 
+follows. This is by
+far the most frequently used subroutine in my standard library.<p>
+
+
+<b>Getargs()<p>
+</b>
+The command-line processor is actually a package of subroutines. 
+Access to
+these routines is through a single procedure, called <i>getargs()
+</i>. The routines are
+table driven. In every program, you have to declare a table in 
+which the various
+command-line switches are described. <i>Getargs()</i> removes the 
+switches from the
+command line as it works. This means that position-sensitive 
+arguments (for
+example, a switch that applies to all files that follow it on the 
+command line, but
+not to any files that precede it) are not supported. I don't use 
+this sort of switch
+very often and I got tired of having to skip past arguments that 
+had already been
+processed to get to a filename. The arguments are evaluated left 
+to right, so
+interaction between PROC type switches (see below) is possible.<p>
+
+
+When <i>getargs()</i> finds an error on the command line, it 
+prints a list of all
+legal switches to stderr, along with a brief description of what 
+those switches do
+and their default values. After it prints the error message, <i>
+getargs()</i> terminates
+the program with an <i>exit(1)</i> call. This closes any open 
+files and returns to the
+operating system.<p>
+
+<b>Command-Line Switch Formats<p>
+</b>
+Command line switches all must take the form:<p>
+<pre>
+     -&lt;character&gt;[&lt;number&gt;|&lt;string&gt;]<p>
+</pre>
+That is, all arguments start with a minus sign; each switch is 
+identified by a
+single letter that follows the minus sign immediately (no 
+intervening spaces);
+the letter may be followed by an optional number or string, again 
+with no spaces
+between the character that serves as the switch identifier and 
+the corresponding
+number or string. Switches may be combined, provided that the 
+argument types
+allow this combination. For example, the command line<p>
+<pre>
+     program -a -b123 -c<p>
+</pre>
+can also be written as<p>
+<pre>
+     program -ab123c
+</pre>
+However, if <i>getargs()</i> expects a string to follow the 
+switch identifier character,
+then it assumes that the rest of the argument is part of the 
+string. You have to be
+careful when combining string-type command-line switches with 
+other types.<p>
+
+<b>Using Getargs()<p>
+</b>
+To use <i>getargs()</i> you must do two things: (1) set up a 
+table to tell the routine
+what kind of command line switches to expect and (2) call the 
+routine itself
+somewhere early in the <i>main()</i> module. The file getargs.h (
+<a href="#list9-1">Listing 9-1</a>) contains
+the <i>#define</i>s and <i>typedef</i>s needed to create the 
+command switch descriptor
+table. This table is an array of structures:<p>
+<pre>
+     typedef struct
+     {
+           unsigned arg : 7  ;
+           unsigned type : 4 ;
+           int *variable ;
+           char *errmsg ;
+     }
+
+     ARG;
+</pre>
+The arg field is a single character that identifies the switch on 
+the command
+line. In the following descriptions this character is represented 
+as &lt;switch&gt;.
+The type field may take any one of five values, all of which are 
+<i>#define</i>d in
+getargs.h. The behavior of <i>getargs()</i> varies according to 
+the value.<p>
+
+INTEGER switches take the form:<p>
+<pre>
+      -&lt;switch&gt; &lt;number&gt;<p>
+</pre>
+Numbers preceded by 0x are hex; by 0 without the x, octal. All 
+others are
+decimal. The number is terminated by any character not legal in 
+the indicated
+radix. Any characters that follow are assumed to be additional 
+switches. The <i>int</i>
+sized variable pointed to by the variable field of the ARG 
+structure is set to the
+value of &lt;number&gt;. If &lt;number&gt; isn't typed on the 
+command line,
+*variable is set to 0.<p>
+
+BOOLEAN switches cause some action based on the presence or 
+absence of
+the indicated switch on the command line. If the switch is 
+present, then the int
+pointed to by the variable field is set to 1, otherwise <i>
+*variable </i>is not modified.<p>
+
+CHARACTER switches take the form:<p>
+<pre>
+          -&lt;switch&gt; &lt;character&gt;<p>
+</pre>
+When the switch is found on the command line, then <i>*variable
+</i> is set to
+&lt;character&gt;.<p>
+
+STRING switches take the form:<p>
+<pre>
+          -&lt;switch&gt; &lt;string&gt;<p>
+</pre>
+When the switch is found on the command line, the character 
+pointer pointed
+to by the variable field is set to point at a string consisting 
+of all characters
+following (but not including) the &lt;switch&gt; character up to 
+the end of the
+current argument (not to the end of the command line). In the 
+case of
+combined switches in a single argument, the STRING argument must 
+be the last one
+because all following characters will be considered part of 
+&lt;string&gt;. When
+defining a STRING switch in the table, be sure to cast the 
+variable into an integer
+pointer. See <a href="#list9-3">Listing 9-3</a>, line 15, for an 
+example.<p>
+
+PROC switches take the form:<p>
+<pre>
+          -&lt;switch&gt; &lt;anything&gt;<p>
+</pre>
+They work like the STRING switch in that all characters following 
+&lt;switch&gt;
+up to the end of the current argument are part of the 
+&lt;anything&gt;. However,
+the variable field is a pointer to a subroutine that is called 
+indirectly as soon as
+the switch is encountered on the command line. A pointer to 
+&lt;anything&gt; is
+passed to this subroutine as a single argument. An example of 
+such a subroutine
+is given in <a href="#list9-3">Listing 9-3</a>, line 19. It is 
+the responsibility of the called subroutine to
+parse &lt;anything&gt; as appropriate.<p>
+
+The <i>errmsg</i> field of the ARG structure is used to print an 
+error message if
+an undefined switch is found. An example of the format is shown 
+in Figure 9-1.
+This message was generated when the command line &quot;argtest 
+-x&quot; was given to
+<i>argtest</i>.<p>
+
+<a href="#list9-3">Listing 9-3</a> is an example of how to use <i>
+getargs()</i>. Lines 5-9 are declarations
+of the objects that are used in the variable fields of the switch 
+descriptor table.
+The initial values of these variables remain unchanged if the 
+switch is not
+encountered on the command line at run time. The table itself, <i>
+Argtab</i>, is declared
+on lines 10-17. The <i>main()</i> routine calls <i>getargs()</i> 
+on line 35. The rest of main()
+just prints the command line, both before and after the getargs() 
+call, so you can
+see how <i>getargs()</i> strips processed switches out of <i>argv
+</i>.<p>
+
+<i>Getargs()</i> itself starts on line 98 of <a href="#list9-2">
+Listing 9-2</a>. It is passed four arguments:
+argv, argc, a pointer to the switch descriptor table (<i>tabp</i>
+), and the size of this
+table in elements (not bytes). The routine returns a new value of 
+<i>argc</i>, and <i>argv</i>
+is compressed (that is, all entries containing command-line 
+switches are
+removed from it). The for loop on line 112 processes <i>argv</i> 
+one element at a time.
+<i>Nargv</i> points into <i>argv</i> and strips processed 
+switches. <i>Nargv</i> is initialized to
+point at <i>argv[1]</i> because <i>argv[0]</i> cannot possibly 
+contain a command-line
+switch (it holds the program name). If no leading minus sign is 
+found in the
+argument, <i>*argv</i> is copied to <i>*nargv</i> and both 
+pointers are advanced. In addition,
+<i>nargc</i> (new <i>argc</i>) is incremented. If the argument 
+does begin with a minus sign,
+it is processed as a command-line switch. In this case <i>*argv
+</i> is not copied to
+<i>*nargv</i>, and <i>argv</i>, but not <i>nargv</i>, is 
+advanced. This effectively eliminates the
+argument containing the switch from the <i>argv</i> array.<p>
+
+<i>Findarg()</i> (<a href="#list9-2">Listing 9-2</a>, line 44) is 
+used by <i>getargs()</i> to see if an argument is
+in the table. It performs a linear search. Because the table is 
+usually fairly small,
+it seemed as if the extra code needed for a binary search wasn't 
+justified.
+<i>Findarg()</i> takes three arguments: c is the switch 
+identifier character being
+searched for; <i>tabp</i> and <i>tabsize</i> are the same 
+parameters as were passed to
+<i>getargs()</i>.<p>
+
+<i>Setarg()</i> (<a href="#list9-2">Listing 9-2</a>, line 9) is 
+called when a command-line switch is found
+in the table. <i>Argp</i> is a pointer into the table, as 
+returned from <i>findarg()</i>. <i>Linep</i> is
+a pointer into the <i>argv</i> entry that is being processed. 
+Casts were used to make
+this routine as transportable as possible.<p>
+
+<i>Pr_usage()</i> (<a href="#list9-2">Listing 9-2</a>, line 57) 
+is used to print the error message shown in
+Figure 9-1 when an illegal command-line switch is found. It spins 
+through the
+table, printing the current contents of the object pointed to by 
+the variable field
+as well as the message given in the errmsg field.<p>
+<center>
+      <b>Figure 9-1. Error output from program in <a 
+href="#list9-3">Listing 9-3</a></b>.<p>
+</center>
+<pre>
+     Illegal argument &lt;x&gt;. Legal arguments are:
+     -b        boolean argument    (value is FALSE)
+     -c&lt;c&gt;     character argument  (value is .)
+     -n&lt;num&gt;   integer argument    (value is O)
+     -s&lt;str&gt;   string argument     (value is &lt;doo wha&gt;)
+     -p&lt;str&gt;   procedure argument<p>
+</pre>
+The final routine in the package is <i>stoi() </i>(for string to 
+integer, <a href="#list9-4">Listing 9-4</a>),
+which is used to process INTEGER switches. <i>Stoi()</i> is a 
+fancy version of the
+standard library routine <i>atoi()</i> (described in B.W. 
+Kernighan and D.W. Ritchie,
+<i>The C Programming Language</i> [Prentice-Hall, 1978], p. 58). 
+<i>Stoi()</i> can handle
+numbers in base 8, 10, or 16. If code size is a real issue, you 
+may want to remove
+the code that processes octal numbers (<a href="#list9-4">Listing 
+9-4</a>, lines 45-53). Another major
+difference between <i>stoi()</i> and <i>atoi()</i> is that <i>
+stoi()</i> is passed a pointer to a
+character pointer. That is, it is passed the address of the 
+pointer, which in turn points
+into the string to be processed. This extra level of indirection 
+lets you modify
+the character pointer itself to point past the end of the number 
+being processed.
+If you use <i>atoi()</i>, you have to go through the string 
+twice, once to extract the
+number and once more to skip past the characters that represent 
+that number.<p>
+
+<b>Conclusion<p>
+</b>
+Several additions could be made to <i>getargs()</i>, at the cost 
+of an increase in
+complexity and code size.<p>
+
+A common command-line function is to open or close a file in a 
+particular
+mode and to abort if the file cannot be opened. At present I'm 
+doing this with a
+PROC type command-line switch, but you could add another argument 
+type,
+whose variable field points to a FILE pointer. Alternately, 
+variable could point to
+a structure that included the FILE pointer, an open mode, a 
+pointer to an error
+processing routine, and a default filename.<p>
+
+Another nice feature would be to mark an argument if its presence 
+is
+required on the command line. You could accomplish this by adding 
+additional
+types (that is, REQ_INTEGER), or by adding another field to the 
+structure. An
+error message would be printed if the argument wasn't found on 
+the command
+line.<p>
+<i>
+Getargs()</i> depends on initializers to set default argument 
+values. If your
+compiler doesn't support initializers, you can add a default 
+value field to the
+structure.<p>
+
+I have violated my smallness rule by using <i>stoi()</i> to 
+process numeric
+arguments. If you expect only decimal numbers, you may want to 
+replace<i> stoi()</i> with
+<i>atoi()</i>. However, <i>stoi()</i> is a useful routine in its 
+own right.<p>
+
+I'm sure you can think of other bells and whistles. I've been 
+using<i> getargs()</i>
+for a couple years now and am satisfied with it in its existing 
+state. Defining the
+way the command line looks and then getting switches from it is 
+now a painless
+process.<p>
+
+<b><a name="list9-1">LISTING 9-1</a><p></b>
+<pre>
+   1: /*       Getargs.h      Typedefs and defines needed for getargs
+   2: */
+
+   3: #define INTEGER        0
+   4: #define BOOLEAN        1
+   5: #define CHARACTER      2
+   6: #define STRING         3
+   7: #define PROC           4
+
+   8: typedef struct
+   9: {
+   10:        unsigned       arg : 7 ;         /* Command line switch       */
+   11:        unsigned       type: 4   ;       /* variable type             */
+   12:        int            *variable ;       /* pointer to variable       */
+   13:        char           *errmsg ;         /* pointer to error message  */
+   14: }
+   15: ARG;<p>
+</pre>
+
+<b><a name="list9-2">LISTING 9-2</a><p></b>
+<pre>
+-------------------------------------------------------------FILE:GETARGS.C
+    1: /*     GETARGS.C      Command line argument processor for C programs
+    2: *
+    3: *         (C) Copyright 1985, Allen I. Holub. All rights reserved.
+    4: *        This program may be copied for personal, non-profit use only.
+    5: */
+    6: #include &lt;stdio.h&gt;
+    7: #include &lt;getargs.h&gt;
+    8: typedef int     (*PFI)();
+    9: static char     *setarg( argp, linep )
+   10: ARG             *argp;
+   11: char            *linep;
+   12: {
+   13:         /*      Set an argument. argp points at the argument table entry
+   14:          *      corresponding to *linep. Return linep, updated to point
+   15:          *      past the argument being set.
+   16:          */
+   17:         ++linep;
+   18:         switch( argp-&gt;type )
+   19:         {
+   20:         case INTEGER:
+   21:                 *argp-&gt;variable = stoi( &amp;linep );
+   22:                 break;
+   23:         case BOOLEAN:
+   24:                 *argp-&gt;variable = 1;
+   25:                 break;
+   26:         case CHARACTER:
+   27:                 *argp-&gt;variable = *linep++;
+   28:                 break;
+   29:         case STRING:
+   30:                 *(char **)argp-&gt;variable = linep ;
+   31:                 linep = &quot;&quot;;
+   32:                 break;
+   33:         case PROC:
+   34:                 (* (PFI)(argp-&gt;variable) )( linep );
+   35:                 linep = &quot;&quot;;
+   36:                 break;
+   37:         default:
+   38:                 fprintf(stdout,&quot;INTERNAL ERROR: BAD ARGUMENT TYPE\n&quot;);
+   39:                 break;
+   40:         }
+   41:         return( linep );
+   42: }
+   43: /*-----------------------------------------------------------*
+   44: static ARG      *findarg( c, tabp, tabsize )
+   45: int             c, tabsize;
+   46: ARG             *tabp;
+   47: {
+   48:         /*      Return pointer to argument table entry corresponding
+   49:          *      to c (or 0 if c isn't in table).
+   50:          */
+   51:
+   52:          for(; --tabsize &gt;= 0 ; tabp++ )
+   53:                 if( tabp-&gt;arg == c )
+   54:                         return tabp;
+   55:          return 0;
+   56: }
+   57: static pr_usage( tabp, tabsize )
+   58: ARG    *tabp;
+   59: int    tabsize;
+   60: {
+   61:        /*      Print the argtab in the form:
+   62:         *              -&lt;arg&gt; &lt;errmsg&gt;      (value is &lt;*variable&gt;)
+   63:         */
+   64:        for(; --tabsize &gt;= 0 ; tabp++ )
+   65:        {
+   66:                switch( tabp-&gt;type )
+   67:                {
+   68:                case INTEGER:
+   69:                        fprintf(stdout, &quot;-%c&lt;num&gt; %-40s (value is &quot;,
+   70:                                                tabp-&gt;arg, tabp-&gt;errmsg);
+   71:                        fprintf(stdout, &quot;%-5d)\n&quot;, *(tabp-&gt;variable) );
+   72:                        break;
+   73:                case BOOLEAN:
+   74:                        fprintf(stdout,&quot;-%c     %-40s (value is &quot;,
+   75:                                                tabp-&gt;arg, tabp-&gt;errmsg);
+   76:                        fprintf(stdout, &quot;%-5s)\n&quot;, *(tabp-&gt;variable)
+   77:                                                 ? &quot;TRUE&quot;: &quot;FALSE&quot;);
+   78:                        break;
+   79:                case CHARACTER:
+   80:                        fprintf(stdout, &quot;-%c&lt;c&gt;     %-40s (value is &quot;,
+   81:                                                 tabp-&gt;arg, tabp-&gt;errmsg);
+   82:                        fprintf(stdout, &quot;%-5c)\n&quot;, *(tabp-&gt;variable) );
+   83:                        break;
+   84:                case STRING:
+   85:                        fprintf(stdout, &quot;-%c&lt;str&gt; %-40s (value is &quot;,
+   86:                                                tabp-&gt;arg, tabp-&gt;errmsg);
+   87:                        fprintf(stdout, &quot;&lt;%s&gt;)\n&quot;,
+   88:                                                *(char **)tabp-&gt;variable);
+   89:                        break;
+   90:                 case PROC:
+   91:                        fprintf(stdout, &quot;-%c&lt;str&gt; %-40s\n&quot;,
+   92:                                                 tabp-&gt;arg, tabp-&gt;errmsg);
+   93:                        break;
+   94:                 }
+   95:        }
+   96: }
+   97:  #define ERRMSG &quot;Illegal argument &lt;%c&gt;. Legal arguments are:\n\n&quot;
+   98:  int     getargs(argc, argv, tabp, tabsize )
+   99:  int     argc, tabsize ;
+   100: char    **argv ;
+   101: ARG     *tabp ;
+   102: {
+   103:         /* Process command line arguments. Stripping all command line
+   104:          * switches out of argv. Return a new argc. If an error is found
+   105:          * exit(1) is called (getargs won't return) and a usage message
+   106:          * is printed showing all arguments in the table.
+   107:          */
+   108:          register int nargc       ;
+   109:          register char **nargv, *p;
+   110:          register ARG *argp       ;
+   111:          nargc = 1 ;
+   112:          for(nargv = ++argv ; --argc &gt; 0 ; argv++ )
+   113:          {
+   114:                  if( **argv != '-' )
+   115:                  {
+   116:                          *nargv++ = *argv ;
+   117:                          nargc++;
+   118:                  }
+   119:                 else
+   120:                 {
+   121:                          p = (*argv) + 1 ;
+   122:                          while( *p )
+   123:                          {
+   124:                                  if(argp = findarg(*p, tabp, tabsize))
+   125:                                          p = setarg( argp, p );
+   126:                                  else
+   127:                                 {
+   128:                                          fprintf(stdout, ERRMSG, *p );
+   129:                                          pr_usage( tabp, tabsize );
+   130:                                          exit( 1 );
+   131:                                 }
+   132:                         }
+   133:                 }
+   134:          }
+   135:          return nargc ;
+   136: }<p>
+</pre>
+
+<b><a name="list9-3">LISTING 9-3</a><p></b>
+<pre>
+-----------------------------------------------------FILE:ARGTEST.C
+    1: /*    ARGTEST.C      Test program for getargs.
+    2: /*
+    3: #include &lt;stdio.h&gt;
+    4: #include &quot;getargs.h&quot;
+    5: int     boolarg= 0;         /* Variables used by argtab */
+    6: int     chararg= '.';
+    7: int     intarg = 0;
+    8: char    *strarg = &quot;doo wha&quot;;
+    9: extern  proc();
+   10: ARG     Argtab[]=
+   11: {
+   12:         { 'b',  BOOLEAN,   &amp;boolarg,       &quot;boolean argument&quot;      },
+   13:         { 'c',  CHARACTER, &amp;chararg,       &quot;character argument&quot;    },
+   14:         { 'n',  INTEGER,   &amp;intarg,        &quot;integer argument&quot;      },
+   15:         { 's',  STRING,    (int *)&amp;strarg, &quot;string argument&quot;       },
+   16:         { 'p',  PROC,      (int *)&amp;proc,   &quot;procedure argument&quot;    }
+   17: };
+   18: #define TABSIZE (sizeof(Argtab) / sizeof(ARG) )
+   19: proc( str )
+   20: char    *str;
+   21: {
+   22:         printf(&quot;Inside procedure called by -p command line switch, &quot;);
+   23:         printf(&quot;string = &lt;%s&gt;\n&quot;, str );
+   24: }
+   25: main(argc, argv)
+   26: int     argc;
+   27: char    **argv;
+   28: {
+   29:         register int i;
+   30:         printf(&quot;Argc == %d. &quot;, argc);
+   31:         printf(&quot;Cmd line: argtest &quot;);
+   32:         for( i = 1 ; i &lt; argc; printf(&quot;%s &quot;, argv[i++]) )
+   33:                 ;
+   34:         printf(&quot;\n&quot;);
+   35:         argc: getargs( argc, argv, Argtab, TABSIZE) ;
+   36:         printf(&quot;Argc == %d. &quot;, argc);
+   37:         printf(&quot;Cmd line: argtest &quot;);
+   38:         for( i = 1 ; i &lt; argc; printf(&quot;%s &quot;, argv[i++]) )
+   39:                   ;
+   40:         printf(&quot;\n&quot;);
+   41: }<p>
+</pre>
+
+<b><a name="list9-4">LISTING 9-4</a><p></b>
+<pre>
+----------------------------------------------------FILE:STOI.C
+
+    1  /* STOI.C  More powerful version of atoi.
+    2   *
+    3   *      Copyright (C) 1985 by Allen Holub. All rights reserved.
+    4   *      This program may be copied for personal, non-profit use only.
+    5   */
+    6
+    7  #define islower(c)      ( 'a' &lt;= (c) &amp;&amp; (c) &lt;= 'z' )
+    8  #define toupper(c)      (islower(c) ? (c) - ('a' - 'A') : (c))
+    9
+   10 int              stoi(instr)
+   11 register char    **instr;
+   12 {
+   13         /* Convert string to integer. If string starts with Ox it is
+   14          * interpreted as a hex number, else if it starts with a 0 it
+   15          * is octal, else it is decimal. Conversion stops on encountering
+   16          * the first character which is not a digit in the indicated
+   17          * radix. *instr is updated to point past the end of the number.
+   18          */
+   19
+   20         register int  num = 0;
+   21         register char *str ;
+   22         int           sign = 1 ;
+   23
+   24         str= *instr;
+   25
+   26         while(*str == ' ' || *str == '\t' || *str == '\n' )
+   27                 str++;
+   28
+   29         if( *str == '-' )
+   3O         {
+   31                 sign = -1 ;
+   32                 str++;
+   33         }
+   34
+   35         if(*str == '0')
+   36         {
+   37                 ++str;
+   38                 if (*str == 'x' || *str == 'X')
+   39                 {
+   40                         str++;
+   41                         while( ('0'&lt;= *str &amp;&amp;*str &lt;= '9') ||
+   42                                ('a'&lt;= *str &amp;&amp; *str &lt;= 'f') ||
+   43                                ('A'&lt;= *str &amp;&amp; *str &lt;= 'F') )
+   44                         {
+   45                                num *= 16;
+   46                                num += ('0'&lt;= *str &amp;&amp; *str &lt;= '9') ?
+   47                                        *str - '0'                 :
+   48                                        toupper(*str) - 'A' + 10 ;
+   49                                str++;
+   5O                         }
+   51                 }
+   52                 else
+   53                 {
+   54                          while( '0' &lt;= *str &amp;&amp; *str &lt;= '7' )
+   55                          {
+   56                                  num *= 8;
+   57                                  num += *str++ - '0' ;
+   58                          }
+   59                 }
+   60        }
+   61        else
+   62        {
+   63                 while( '0' &lt;= *str &amp;&amp; *str &lt;= '9' )
+   64                 {
+   65                         num *= 10;
+   66                         num += *str++ - '0' ;
+   67                 }
+   68        }
+   69
+   70        *instr = str;
+   71        return( num * sign );
+   72 }<p>
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 
+

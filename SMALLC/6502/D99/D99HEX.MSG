@@ -1,0 +1,26 @@
+PROGRAM NAME     : BBC Micro Binary-to-Hex converter
+
+MACHINE REQUIRED : BBC Micro with BASIC 2 or later
+
+FILES NEEDED     : [.tools]bbchex.bas
+
+WRITTEN BY       : Alan Phillips,
+                   Department of Computing,
+                   Lancaster University
+
+CONTRIBUTED BY   : The author
+
+DATE MOUNTED     : 13/11/86 (permanently available)
+
+DESCRIPTION      : This is a short BASIC program that can be used to convert
+                   binary files into the Intel hex form that they are stored
+                   in on this VAX.
+
+NOTES            : Once you have the file on your machine, *EXEC it to form
+                   a runnable BASIC program. The program asks you for the name
+                   of the input file (which will be the binary file you want
+                   to convert). It then asks for the name of the output
+                   file, which will be in Intel hex format. 
+
+                   You can use this utility to convert any binary programs that
+                   you want to submit to the distribution service over JANET.

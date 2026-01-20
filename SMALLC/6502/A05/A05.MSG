@@ -1,0 +1,222 @@
+Title:			ACCOUNT
+Author:			Mike Brudenell
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		Documentation
+Supplier:		Mike_Brudenell@UK.AC.NCL.MTS
+Date:			13/09/87
+Keywords:		
+Shareware:		No
+Machine:		BBC Micro
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a05
+Date mounted/updated:	13/09/87
+File names:		a05acc.bas or
+			a05acc.hex
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+      There are two versions of ACCOUNT available.  You will only need to
+      obtain one of them:
+ 
+      1.  The file "a05acc.bas" is the original uncompressed Basic source
+          code, and as such should be fairly readable.  This can be obtained
+          and *EXEC-ed as normal.  However it will not run on a standard
+          Model B because of lack of memory.
+ 
+      2.  The file "a05acc.hex" is the same program, but compressed and then
+          'hexified'.  Transfer the file and use the Lancaster 'dehexing'
+          program.  This will produce a file containing a 'SAVE-d' Basic
+          program (LOAD and RUN it, don't *EXEC it!).  This will run on a
+          standard Model B.
+ 
+Description:
+
+
+                         ACCOUNT :: An Accounting Program
+                         ================================
+ 
+                               September 2nd, 1987
+ 
+ 
+ 
+      INTRODUCTION
+      ------------
+      This BBC Basic accounting program allows you to keep track of, and
+      print statements for, a current bank account.
+ 
+ 
+ 
+      AUTHOR: Mike Brudenell, University of Newcastle upon Tyne.
+      ------
+      e-mail: Mike_Brudenell@UK.AC.NCL.MTS
+ 
+ 
+ 
+      MACHINE
+      -------
+      *   BBC Model B (with, or without, a 6502 second processor)
+ 
+      The above is the only machine the Account program has been tested on,
+      but it is written in "legal" BBC Basic, and so should also work on:
+ 
+      *   The Electron
+      *   The BBC B+ series
+      *   The Master 128 series (with, or without, Turbo)
+      *   The Archimedes machines
+ 
+ 
+ 
+      ADDITIONAL REQUIREMENTS
+      -----------------------
+      *   At least one disk drive.
+ 
+      *   Basic version 2 (or later).
+ 
+          [ Basic version 1 was only fitted to early BBC B micros.  To find
+          out whether your Basic is version 1, simply give the commands:
+ 
+              *BASIC
+              REPORT
+ 
+          If the copyright message so displayed is dated 1981, you are using
+          Basic version 1, and this program will not work. ]
+  
+ 
+      SETTING UP
+      ----------
+      The program displays a "statement", into which details of your various
+      payments can be placed.  Each statement is saved in a separate file.
+      If you exceed the maximum number of entries on a statement in any one
+      month, you will need to create additional ones.
+ 
+      I tend to use the scheme of naming files "Jan87", "Feb87", etc., with
+      (the only occasionally needed) additional files named "Jan87a",
+      "Feb87a", etc.  This scheme allows old files to be easily deleted
+      using the filename pattern "*87*".
+ 
+      The program can be set up to operate in one of two modes, "Big Model"
+      and "Small Model".  The former gives twenty-seven entries per
+      statement (screen), the latter only twenty.  The Big Model is
+      obviously better to use but, because of memory requirements, can only
+      be used on machines fitted with Shadow screen RAM, or with a 6502
+      Second Processor active.
+ 
+          [ Note:- The program has been tested on both a standard
+          Model B, and on a 6502 second processor.  As no machine
+          with Shadow Memory has been available to me, the code to
+          check the amount of memory left may not work properly.
+          Please let me know if you have problems ]
+ 
+      The program is initially set up to operate as a Big Model.  If you
+      need to change this to the Small Model, simply LIST the first few
+      lines of the program.  A comment will tell you what change needs to be
+      made.
+ 
+ 
+ 
+      COMMANDS
+      --------
+ 
+      E (Edit)
+          Edit Mode is started.  It is terminated by pressing the Escape
+          key.  (See the "Editing" description).
+ 
+      C (Clear)
+          The statement is cleared.
+ 
+      Q (Quit)
+          Quit leaves the Account program.
+ 
+      P (Print)
+          The statement is printed on the printer.
+ 
+      L (Load)
+          Loads a statement previously saved to disk.  A check is made that
+          the file being loaded is for the current Model (Big/Small).
+ 
+      S (Save)
+          Saves the current statement to disk.
+ 
+      T (Terminate)
+          Once a file is finished with (ie.  checked against a real Bank
+          Statement) it can be "terminated" to prevent further alterations.
+          All that Termination involves is locking the file using the
+          *ACCESS command, so the process is easily reversed from Basic if
+          need be!
+ 
+      ? (Catalog)
+          The names of the statements on the current disk are displayed.
+          These are kept by the program in the directory "pound" (ie.  the
+          pound-sign)
+ 
+      H (Help)
+          This displays the single character commands (and nothing else!).
+ 
+ 
+ 
+      EDITING
+      -------
+ 
+      a)  MOVING AROUND
+          -------------
+          When in Edit Mode, the cursor can be freely moved using the Arrow
+          Keys around the various fields displayed on the screen, with the
+          following exceptions:
+ 
+          *   The "Month" and "Initial Balance" fields are reached by going
+              Leftwards from the first (top-most) entry's date field.
+ 
+          *   To add a new entry to the balance sheet, move the cursor to
+              its date field and set this to a non-zero value.  Only after
+              this is done can the cursor be positioned elsewhere on the new
+              entry line.
+ 
+ 
+      b)  ALTERING AN ITEM
+          ----------------
+          To alter any item, "open" the field by pressing the Copy key.  You
+          may then type in a new value.
+ 
+          *   Pressing the Return key finishes the alteration and keeps the
+              change,
+ 
+          *   Pressing the Escape key restores its original value.
+ 
+          Every field will only accept certain valid characters (eg. digits
+          and "-" for numbers; "X" or " " for the "Chk" fields).
+ 
+ 
+      c)  ALTERING WHOLE ENTRIES
+          ----------------------
+          *   New entries can only be added to the end of the balance
+              sheet.
+ 
+          *   An entry can be deleted by changing its date field to "0".
+ 
+ 
+      d)  LEAVING
+          -------
+          Edit Mode is left by pressing the Escape key.  The "Balance"
+          fields and totals are then recalculated.
+ 
+ 
+      e)  CHECKING YOUR BANK STATEMENT
+          ----------------------------
+          The "Chk" column enables you to mark off entries as you check them
+          against a Bank Statement.  The only characters it accepts are "X"
+          and " " (space).
+ 
+          When all entries have been checked off, the file can be terminated
+          using the "T" command.
+

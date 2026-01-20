@@ -1,0 +1,2007 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller 
+Freeman, Inc. All rights reserved.<p>
+-->
+<CENTER>
+<B><H1>P: A SMALL-C PREPROCESSOR</H1> <p>
+
+by Axel T. Schreiner<p>
+</CENTER>
+</B>
+
+<i>This article originally appeared in Dr. Dobb's Journal #93 
+(July 1984).</i><p>
+
+Jim Hendrix's Small-C compiler supports some of the preprocessor 
+commands that
+ are usually available in C systems: a symbolic name can be 
+defined for an 
+arbitrary text, which is then inserted whenever the name appears 
+in the source 
+program. This facility is most frequently used to give meaningful 
+names to 
+various important constants in a program, but it can also be used 
+to give C 
+programs the appearance (almost) of Pascal programs, to 
+substitute one function 
+name for another, and so on. Hendrix's compiler also supports one 
+level of file 
+inclusion, although with a somewhat nonstandard syntax, and it 
+supports 
+conditional compilation based on whether certain symbolic names 
+have been defined.<p>
+
+Such a preprocessor is an important tool in its own right. It can 
+be
+combined with other language processors and assemblers as well. 
+It also becomes
+considerably more flexible if text substitution can be 
+parameterized (that is, if
+macro calls can have arguments and if file inclusion is performed 
+to arbitrary
+depth). If the preprocessor additionally eliminates C-style 
+comments and
+translates C-style constants to decimal notation, it simplifies 
+the compiler's job
+significantly and at the same time obtains a uniform approach to 
+constant notation,
+commenting conventions, and file inclusion.<p>
+
+The program described in this article, p (<a href="#list8-1">
+Listing 8-1</a> ), is such an
+independent preprocessor. It is written in Small-C and supports 
+all the features of the
+regular C preprocessor described by Kernighan and Ritchie (The <i>
+C
+Programming Language</i>, Prentice-Hall, 1978) with the exception 
+of an if preprocessor
+statement with a constant expression argument.<p>
+
+<b>Features<p>
+</b>
+p is based on a runtime support that passes arguments to the main 
+program; it
+expects to be called as follows:<p>
+<pre>
+     p (option)... (inputfile (outputfile))<p>
+</pre>
+If no files are explicitly specified, p reads from &quot;standard 
+input&quot; and writes to
+&quot;standard output&quot; (the runtime support presumably makes 
+those connections
+as well). If the runtime support would normally connect to the 
+terminal, it is
+simple to test certain features through input from the terminal, 
+or to see the
+results of a preprocessor run directly at the terminal.<p>
+
+You may specify options in any order, and they are generally 
+cumulative.
+The following options are available:<p>
+<pre>
+     -d name(=value)     define a symbolic name
+     -e                  suppress position stamps
+     -i drive            search for file inclusion
+     -u name             undefine a symbolic name
+     -v                  verbose -- for debugging<p>
+</pre>
+You may define symbolic names when p is called. This is 
+convenient for
+maintaining various versions of a program. The name <i>cpm</i> is 
+predefined by <i>p</i>. You
+can undo this (in particular) using the option to undefine a 
+name. To permit a
+compiler to emit error messages referencing the original source 
+files, <i>p</i> creates a
+position stamp (that is, a line starting with # and containing a 
+decimal line
+number and, if known, a filename, whenever this is necessary for 
+correct
+sequencing of output lines. Hendrix's Small-C compiler cannot 
+handle these
+position stamps; therefore, they can be suppressed.<p>
+
+CP/M identifies files by name and disk drive. Therefore, <i>p</i> 
+searches include
+files on various disks: first on the disk of the input file 
+(which may be the
+currently selected disk) and last on the currently selected disk. 
+In between, <i>p</i> may
+optionally search other disk drives, if appropriate options have 
+been specified.
+The search proceeds from right to left over the -i options.<p>
+
+The options are clearly patterned after the Unix system. The main 
+program
+expects to receive pointers to the various options as a vector, 
+<i>argv</i>. The number
+of such options, including (theoretically) the program name as 
+first option, is
+also passed as an integer, <i>argc</i>. <i>p</i> is tolerant 
+enough to accept the parameter of an
+option (such as an include drive) as part of the option or as a 
+separate,
+immediately following option. Options, however, must precede the 
+filenames.<p>
+
+Once started, <i>p</i> reads the input file and writes the output 
+file. C-style
+comments (arbitrary texts enclosed in /* and */ sequences) are 
+replaced by single
+blanks. Next, preprocessor command lines are processed. Then, in 
+regular text
+lines, macro calls (appearances of defined names, possibly 
+followed by a list of
+arguments in parentheses) are replaced. Replacement text is 
+surrounded by
+blanks and is reprocessed for further macro calls. Recursion may 
+happen, but
+reprocessing is aborted after a few attempts with an appropriate 
+message.<p>
+
+Input lines, as well as output lines, may be arbitrarily long. 
+You may
+optionally continue input lines over several source lines by 
+placing a backslash before
+the end of the source line to be continued. C is free format, but 
+preprocessing is
+line oriented; continuation should be necessary (and come in 
+handy) only for
+preprocessor command lines, macro calls, and very long strings. 
+Macro calls and
+strings must be fully contained within one (possibly continued) 
+input line.<p>
+
+A macro call is not recognized within a comment, a preprocessor 
+command
+line, a string, or a character constant. The replacement text is 
+surrounded by
+blanks. You cannot use two adjacent macro calls to create another 
+macro call
+from their replacement text.<p>
+
+If you define a macro with parameters, the macro call consists of 
+the macro
+name and a list of arguments, separated by commas and enclosed by
+parentheses. Although the left parenthesis must immediately 
+follow the macro name in
+the definition, it need not in the call. The call, however, must 
+be completely
+contained on one input line to avoid rather sticky questions 
+about whether a
+macro should be redefined inside its call, and so on. A macro 
+argument is an
+arbitrary text and may even contain a comma within balanced 
+parentheses, a
+string, or a character constant. The text is substituted wherever 
+the
+corresponding parameter appears in the macro definition, even 
+within a string. No blanks
+are forced around the argument text. There must be exactly as 
+many arguments
+as there are defined parameters.<p>
+
+p removes leading white space from the output lines and converts 
+constants
+to decimal notation. These &quot;features&quot; can easily be 
+removed. They do impair
+the general applicability of the program, but they overcome 
+certain problems in
+Hendrix's compiler while significantly shortening the output 
+file.<p>
+
+The following constant notations are accepted and are converted 
+to
+(signed) decimal representation:<p>
+<pre>
+     digits        decimal constant
+     0digits       octal constant (digits 0..7)
+     0xdigits or   hexadecimal constant
+     0Xdigits      (digits 0..9, a..f, A..F)
+     'c'           character constant<p>
+</pre>
+Clearly, no blank may separate the base prefix from the actual 
+constant.
+Character constants may be escaped; escape sequences consist of a 
+backslash character
+followed by other characters. The following escapes are 
+recognized:<p>
+<pre>
+     b             backspace
+     f             form feed
+     n             newline (line feed)
+     r             return
+     t             tab
+     '             single quote
+     &quot;             double quote
+     \             backslash itself
+     d             octal, up to three digits 0..7<p>
+</pre>
+Character constants are converted to decimal notation. This is 
+reasonable for C
+programs, but it might cause problems elsewhere.<p>
+
+Preprocessor command lines begin with a # symbol. White space may
+follow, and then a keyword must be distinguishable. Depending on 
+the keyword,
+there may be parameters; the rest of a command line can be quite 
+arbitrary. The
+following commands are supported:<p>
+<pre>
+     define     name replacement-text
+     define     name(name,...) replacement-text
+
+     undef      name
+
+     ifdef      name
+     ifndef     name
+     else
+     endif
+
+     include     &quot;filename&quot;
+     include     &lt;filename&gt;
+
+     line        linenumber filename<p>
+</pre>
+<i>define</i> is used to define a symbolic name for an arbitrary 
+replacement text. You
+can parameterize the replacement text. The parameter names are 
+local to each
+definition, and unfortunately no test exists to determine whether 
+two
+parameter names within one definition are one and the same. Names 
+follow C
+conventions: they must start in a letter or underscore, can 
+contain letters, digits, or
+underscores, and can be arbitrarily long.<p>
+
+Redefinition is possible but provokes a message. You can use <i>
+undef</i> to
+remove a definition, and there is no complaint if the relevant 
+name was never
+defined.<p>
+
+<i>ifdef</i> is fulfilled if the specified name is currently 
+defined; <i>ifndef</i> is fulfilled
+if it is not. In either case, subsequent input lines (including 
+preprocessor
+commands) are processed or skipped depending on the condition. 
+else reverses the
+current value of the condition, and <i>endif</i> terminates the 
+construct. You can nest
+these constructs to any depth. You should use else only once per 
+construct, but
+this is not checked. Each else reverses the current state of 
+things.<p>
+
+<i>include</i> causes file inclusion. The filename should follow 
+CP/M
+conventions. If it does not contain an explicit disk drive 
+specification, the file is
+searched on the list of drives beginning with the input file 
+drive and ending
+with the currently selected drive. If the filename is enclosed in 
+angle brackets
+rather than double quotes, the first drive on the list is 
+skipped. (Normally,
+brackets are used to designate public include files, presumably 
+residing on the
+currently selected disk and not on the disk of the input file.)<p>
+
+
+You can nest include to any depth, assuming the runtime support 
+for this
+program is reasonable. Once the end of an included file is 
+reached, processing
+continues after the include command causing the file inclusion. 
+If a file cannot
+be opened or found, a message is printed, but processing 
+continues.<p>
+
+The line command is intended for program generators. For purposes 
+of
+diagnostics and position stamps in the output file, p accepts a 
+line number and
+optionally a filename from the line command.<p>
+
+Other lines starting in # are processed as if they were text. 
+Thus, p passes
+through such things as &quot;asm&quot; and &quot;endasm,&quot; 
+provided these lines are not
+modified by macro expansions. Position stamps from a previous run 
+of p would also
+be passed through again.<p>
+
+<b>Implementation<p>
+</b>
+The task of preprocessing can be nicely structured into four 
+problems, each
+solved essentially by a single C function:<p>
+<pre>
+     take care of start options, initialize
+     while (there is another line)
+          if (after removing comments, there is something &amp;&amp;
+              after observing commands, there is something)
+               preprocess the text line<p>
+</pre>
+<i>main()</i> takes care of start options and initialization. <i>
+getline()</i> collects a
+nonblank line and takes care of line continuation. <i>comment()
+</i> eliminates
+comments, which may extend over several lines, and removes 
+leading white space.
+<i>command()</i> knows whether you are currently skipping in 
+observance of some if
+construct; if you are, <i>command()</i> pretends that a command 
+was actually found,
+so the the input line is not processed further. If there is a 
+preprocessor
+command, <i>command()</i> recognizes and executes it. If the 
+current line is regular text,
+<i>process()</i> takes care of macro expansion and output.<p>
+
+<i>getline()</i> collects input characters into a buffer until a 
+newline character or
+end of file is found. If there is a backslash followed by a 
+newline, both
+characters are ignored (but source lines are counted). If there 
+is an end of file following
+a backslash, <i>getline()</i> complains. At end of file, <i>
+getline()</i> attempts to pop the
+stack of open input files. <i>getline()</i> returns once there is 
+a nonblank input line, or
+if the end of the initial input file is reached. Non-ASCII 
+characters are not
+accepted as input to simplify subsequent processing.<p>
+
+For input and output, two buffers must be maintained and should 
+be able
+to grow more or less without limit. The <i>rebuff()</i> routine, 
+which is called with a
+full buffer, handles this. It reallocates the buffer and recopies 
+the information.
+Clearly, no other pointers into the buffer should exist at that 
+point.<p>
+
+The <i>comment()</i> algorithm is simple: copy everything until 
+/*, then quit
+copying (and reporting that there is text material) until */ is 
+found. Matters are
+complicated slightly by strings, (invalid) character constants, 
+and backslashes.
+The problem is handled with the state variable <i>cmode</i>, 
+which maintains the
+current context--comment, string, character constant--across 
+calls. Again,
+<i>comment()</i> suppresses blank lines as well as initial white 
+space.<p>
+
+<i>command()</i> deals with preprocessor commands in all those 
+line buffers that
+<i>comment()</i> did not prevent from being passed on. Calls to 
+the symbol table
+management routines handle command processing. if constructs are 
+implemented
+through two variables: <i>iflevel</i>, which counts the current 
+nesting depth of these
+constructs, and <i>skip</i>, which is usually and initially zero, 
+indicating that text should
+be processed. If text should be ignored, due to some <i>if</i> or 
+<i>else</i>, <i>skip</i> is set to the value
+of iflevel at which skipping should terminate. If you are 
+skipping and reach else or
+endif at the proper level, you are done; <i>skip</i> reverts to 
+zero.<p>
+
+There should really be only one <i>else</i> per <i>if</i>. 
+Enforcing this would require a
+stack indicating at each <i>iflevel</i> if you have already seen 
+<i>else</i>. I felt this was not
+really necessary; consequently (as in Hendrix's compiler) 
+multiple occurrences
+of <i>else</i> are allowed.<p>
+
+<i>line</i> and <i>include</i> require a certain amount of data 
+processing. The syntax
+must be verified, and the relevant information must be stacked. 
+There are stacks
+of open file pointers, filenames, and last line numbers. All the 
+stacks are handled
+by push routines, which return the address of a new element 
+linked before the
+stack. The result of push, therefore, must always be assigned 
+back to the stack
+top pointer, which is passed as an argument. A common <i>pop()</i>
+ routine handles
+removal of unwanted elements. A string stack is also used to hold 
+the include
+prefixes passed as options.<p>
+
+<i>process()</i> does the actual work if a line is ever passed to 
+it. The line buffer is
+scanned and copied to the oline buffer. The <i>outmacro()</i>, <i>
+outnumber()</i>,
+<i>outdelim()</i>, and <i>out()</i> routines are called to manage 
+processing of a macro call, a
+numerical constant, a string or character constant, and a simple 
+character,
+respectively. As long as a macro was actually expanded in a pass 
+over line, the
+two buffers are interchanged and processing is repeated until 
+either no more
+expansion is performed or a count runs out (to prevent infinite 
+recursion).
+<i>output()</i> takes care of emitting position stamps and the 
+processed text.<p>
+
+Finding names in the symbol table and undefining them is quite 
+simple:
+the symbol table is represented with a one-way linked list of 
+entries, each
+containing a pointer to the string defining the symbol and the 
+symbol name itself. If
+the symbol is a parameterized macro, the name is followed by a 
+left parenthesis
+and a (binary) parameter count. <i>find()</i> must take care to 
+match names
+correctly. If a symbol definition is parameterized, the value 
+contains (binary)
+parameter numbers in place of the original parameter names. Each 
+parameter
+number takes just one byte and is flagged in the high bit, since 
+all other text is
+ASCII.<p>
+
+The symbol table can employ a hashing mechanism. If the symbolic 
+name
+HASH is undefined, the symbol table consists of a single linear 
+list. If the name
+is defined, it must be as a power of 2, designating how many such 
+linear lists
+should be kept. In this case, each name is first converted to a 
+number indicating
+which of the lists should be used. This simple mechanism and a 
+rather naive
+hash function in <i>find()</i> cut preprocessing time by about 20 
+percent.<p>
+
+<i>define()</i> does a significant amount of text processing to 
+prepare a
+parameterized macro definition. <i>marknm()</i> has usually 
+separated the macro header
+from the macro value within the line buffer. <i>ismacro()</i> and 
+<i>isname()</i> make sure
+that the macro header uses only appropriate symbols and the 
+proper
+arrangements of commas and parentheses. <i>ismacro()</i> prepares 
+yet another string stack
+of parameter names. <i>define()</i> then removes leading and 
+trailing white space
+from the value and replaces parameter names by flagged numbers. 
+Finally, you
+must guard against redefinitions and store the result. A 
+redefinition is flagged
+only if it is truly different; therefore, header files can 
+usually be read several
+times without complaint.<p>
+
+<i>outmacro()</i> also does a large amount of text processing. If 
+the macro is
+parameterized, <i>markarg()</i> is used to flag the text 
+arguments in the input buffer
+and to prepare a stack of pointers to these argument values. This 
+task, too, is
+complicated by the usual potential assortment of parentheses and 
+string
+delimiters. Once the argument list is collected, it is a simple 
+matter (possibly handled
+with <i>outarg()</i>) to emit the macro definition with the 
+argument texts in place.<p>
+
+<b>Installation<p>
+</b>
+Getting p to run on your system might be a bit tricky. There is a 
+bootstrap
+problem--p uses features supported only by p and not by Hendrix's
+compiler--and there is a problem concerning the runtime support.
+<p>
+
+Overcoming the bootstrap problem is simple. You should replace 
+double
+quotes as a character constant by the value 34 (my Small-C 
+compiler got
+confused in certain places until I did this). You need to replace 
+all constants your
+compiler does not support (for example, the definitions of PARM 
+and PARMNO
+and the values for base in the routine <i>outnumber()</i>). You 
+might have to replace
+the character constants in the routine <i>outdelim()</i> if your 
+compiler does not yet
+support those escape sequences. Finally, you have to play 
+preprocessor for those
+macros that are parameterized. (Yes, it was not nice to use 
+those, but I did want
+to show how parameterized macros can be used to clarify data 
+types.)<p>
+
+The runtime support is quite a different matter. Although I agree 
+with Jim
+Hendrix that these matters ought to be standardized, I would like 
+to program on
+my CP/M system at home just as I do on the Unix systems at the 
+office (p can
+be compiled with the C compiler on Unix version 7). I have 
+actually made a
+runtime support that looks like the standard libraries available 
+with Unix
+version 7 and above, is based on CP/M, and supports all BIOS and 
+BDOS calls from
+Small-C.<p>
+
+I have had access to Chapter 17 of Hendrix's <i>Small-C Handbook
+</i> (Reston
+Publishing Company, 1984), describing his runtime support. 
+Although I did not
+have access to the runtime support itself and therefore could not 
+test it, I believe
+that installing p should be simple. The following probably should 
+be done:<p>
+<pre>
+     FILE          should be defined as int
+     _drive()      needs to access BDOS function 25
+     _narg()       is supported by the compiler
+     index()       is Hendrix's strrchr()
+     itod()        can be coded using Hendrix's itod()<p>
+</pre>
+I process the arguments to <i>main()</i> directly. Depending on 
+the actual
+implementation, you might have to use Hendrix's function <i>
+getarg()</i>.<p>
+
+I am assuming that the storage allocator, <i>calloc()/cfree()</i>
+, supports random
+order release of memory. The code in <a href="#list8-2">Listing 
+8-2</a>  may be useful to those wishing
+to add such random order release to the Hendrix-Payne library 
+published in this
+book.<p>
+
+Meanwhile, you should probably consult Kernighan and Ritchie's 
+book to
+learn about all the routines mentioned &quot;extern&quot; at the 
+beginning of the
+program. Most of them are simple to construct. It is essential, 
+however, that you
+provide multiple open files so arbitrary nesting of file 
+inclusion is possible. You
+also need a memory allocator, <i>calloc()</i> and <i>cfree()</i>, 
+that reuses available space
+and is reasonably stable. I am using a scheme where memory above 
+the load
+module and below the stack is managed by a list of words, each 
+word pointing to
+the next. The low bit in each such word indicates if the area 
+past that word and
+up to the next one is allocated or free. Kernighan and Ritchie 
+mention, and
+Unix supports, routines to classify characters. This is most 
+easily implemented
+as a 128-byte table with each byte classifying the corresponding 
+character as
+special, uppercase or lowercase, numeric, hexadecimal, white 
+space,
+punctuation, or control character. The routines are then simple 
+masking operations that
+can now be provided as macros.<p>
+
+Part of this work was done during a sabbatical spent at the 
+University of
+Illinois; in particular, the Small-C system was obtained from 
+UseNet.<p>
+
+<b><a name="list8-1">LISTING 8-1</a><p></b>
+<pre>
+  /*
+   *      contributed by A. T. Schreiner
+   *                     Sektion Informatik
+   *                     University of Ulm
+   *                     West Germany
+   *
+   */
+
+  /*
+   *      p -- Small-C preprocessor
+   *      ats 6/83
+   */
+
+  /*
+   *      define...
+   *
+   *      verbose         to support -v for debugging
+   */
+
+  char usage[] =
+  #ifdef verbose
+         &quot;p [-d n[=v]] [-e] [-i d:] [-u n] [-v] [in [out]]&quot;,
+         vflag;          /* set by -v */
+  #else
+         &quot;p [-d n[=v]] [-e] [-i d:] [-u n] [in [out]]&quot;;
+  #endif
+
+                         /* command names:               */
+  #define DEFINE  1      /* # define name text           */
+                         /* # define name(name,...) text */
+  #define ELSE    2      /* # else                       */
+  #define ENDIF   3      /* # endif                      */
+  #define IFDEF   4      /* # ifdef name                 */
+  #define IFNDEF  5      /* # ifndef name                */
+  #define INCLUDE 6      /* # include &quot;file&quot;             */
+                         /* # include &lt;file&gt;             */
+  #define LINE    7      /* # line number name           */
+  #define UNDEF   8      /* # undef name                 */
+  #define DEFAULT 0      /* any others passed on         */
+
+  /*
+   *      &quot;FEATURES&quot;:
+   *
+   *              Macro calls must be fully contained on one source
+   *              line -- all lines can be continued with \, however.
+   *
+   *              Recursive definitions are not detected as such.
+   *              p' will report as per NEST.
+   *
+   *              #else can be used (to reverse the current
+   *              #if condition) arbitrarily often.
+   */
+
+  #include &lt;stdio.h&gt;
+
+  /*
+   *      i/o header file
+
+  #define FILE    ???     type to represent files (used as FILE*)
+  #define stdin   ???     pre-opened standard input file
+  #define stdout  ???     pre-opened standard output file
+  #define stderr  ???     pre-opened diagnostic output file
+  #define NULL    0       null pointer, false
+  #define EOF     ???     end of file indication
+
+   */
+
+  #include &lt;ctype.h&gt;
+
+  /*
+   *      character classification macros header file
+   *
+   *      isascii(i)      i is ASCII character
+   *      isalnum(c)      c is letter or digit
+   *      isalpha(c)      c is letter
+   *      isdigit(c)      c is digit
+   *      islower(c)      c is lower case letter
+   *      isspace(c)      c is white space
+   *      isupper(c)      c is upper case letter
+   *      isxdigit(c)     c is base 16 digit
+   *
+   *      i can be any integer, isascii(c) must be true for c
+   */
+
+  #define INCR    80      /* line buffer increment */
+  #define HASH    128     /* hash table size (power of 2) */
+  #define NEST    10      /* limit for reprocessing - -1 is &quot;infinite&quot; */
+
+                          /* cmode states */
+  #define CMcmt   1       /* in comment */
+  #define CMstr   2       /* in string */
+  #define CMchr   3       /* in character constant */
+
+  #define PARM    0x80    /* flag macro parameter number */
+  #define PARMNO  0x7f    /* extract parameter number */
+  /*
+   *      special data types
+   */
+
+  #define LIST      int           /* list of word or string values */
+  #define l_next(x) (*(x))        /* -&gt; next element */
+  #define l_word(x) ((x)[1])      /* word value */
+  #define l_str(x)  ((x)+1)       /* -&gt; string value */
+  #define sz_WORD   4             /* size of word list element */
+  #define sz_STR(s) (3+strlen(s)) /* size of string list element */
+  #define SYMBOL    int           /* list of symbol table elements */
+  #define s_next(x) (*(x))        /* -&gt; next element */
+  #define s_val(x)  ((x)[1])      /* -&gt; defined value */
+  #define s_name(x) ((x)+2)       /* -&gt; name */
+  #define sz_SYM(n) (5+strlen(n)) /* size of symbol table element */
+
+  /*
+   *      runtime support routines
+   */
+
+  extern _drive(),        /* BDOS function 25: current drive number */
+         _narg(),         /* number of arguments passed in this call */
+         calloc(),        /* (n,l) return NULL or -&gt; n elements of length l */
+         cfree(),         /* (p) free area at p, returned by calloc() */
+         exit(),          /* terminate program execution */
+         fclose(),        /* (f) close file described by f */
+         fgetc(),         /* (f) return EOF or next character from file f */
+         fopen(),         /* (n,m) return NULL or descriptor for file &quot;n&quot;
+                             opened to read (m == &quot;r&quot;), write (&quot;w&quot;),
+                             or append (&quot;a&quot;) */
+         fputc(),         /* (c,f) write c on file f, return EOF or c */
+         fputs(),         /* (s,f) write string s on file f */
+         freopen(),       /* (n,m,f) like fopen(), but close and reuse f */
+         index(),         /* (s,c) find c in string s, return NULL or -&gt; to it.
+                             '\0' is always found */
+         itod(),          /* (i) return -&gt; (static) string with i in decimal */
+         strcmp(),        /* (a,b) &lt;, ==, &gt; 0 as string a is &lt;, ==, &gt; string b */
+         strcpy(),        /* (a,b) copy string b to string a */
+         strlen(),        /* (s) return number of characters in string s */
+         strncmp(),       /* (a,b,n) like strcmp(), but for n bytes at most */
+         strncpy();       /* (a,b,n) like strcpy(), but for n bytes at most */
+
+  /*
+   *     global data
+   */
+
+  int    parmno,          /* current number of parameters */
+         linelen,         /* current maximum usable length */
+         olinelen,
+         lineno,          /* current line number */
+         olineno,
+         iflevel,         /* depth of open #if */
+         skip;            /* non-0: iflevel to skip to */
+
+  char   eflag,           /* set by -e: prevent position stamps */
+         cmode,           /* comment() mode */
+         *line,           /* dynamic input line buffer */
+         *lp,             /* current position in line */
+         *oline,          /* dynamic output line buffer */
+         *olp;            /* current position in oline */
+
+  LIST   *drive,          /* include prefixes */
+         *filenms,        /* open file names */
+         *files,          /* open file pointers */
+         *lines,          /* line numbers */
+         *parms;          /* parameters */
+
+  SYMBOL *symbol;         /* list of symbol table elements */
+  #ifdef HASH             /* hash feature (optional) */
+                          /* symbol set by find() to -&gt; hashtab at s */
+  int    hashtab[HASH];   /* really SYMBOL *: begin of chains */
+  #endif
+
+  FILE   *infile;         /* current input file */
+
+  main(argc, argv)
+          int argc;
+          int *argv;
+  {       char *cp, *vp;
+  #ifdef verbose
+          LIST *ip;
+  #endif
+
+          /* current drive is last include prefix */
+          vp = &quot;a:&quot;;
+          *vp += _drive();
+          drive = pushs(drive, vp);
+
+          /* predefine &quot;cpm&quot; */
+          define(&quot;cpm&quot;, &quot;&quot;);
+
+          /* process arguments, values may be joined or separate */
+          while (--argc)
+          {       cp = *++argv;
+                  if (*cp != '-')
+                          break;
+                  switch (cp[1]) {
+                  case 'd':
+                          if (*(cp += 2))
+                                  ;
+                          else if (--argc == 0)
+                                  goto error;
+                          else
+                                  cp = *++argv;
+                          if (vp = index(cp, '='))
+                                  *vp++ = '\0';
+                          else
+                                  vp = &quot;&quot;;
+                          define(cp, vp);
+                          break;
+                  case 'e':
+                          eflag = 1;
+                          break;
+                  case 'i':
+                          /* explicit prefixes in order right to left */
+                          if (*(cp += 2))
+                                  ;
+                          else if (--argc == 0)
+                                  goto error;
+                          else
+                                  cp = *++argv;
+                          drive = pushs(drive, cp);
+                          break;
+                  case 'u':
+                          if (*(cp += 2))
+                                  ;
+                          else if (--argc == 0)
+                                  goto error;
+                          else
+                                  cp = *++argv;
+                          undefine(cp);
+                          break;
+  #ifdef verbose
+                  case 'v':
+                          vflag = 1;
+                          break;
+  #endif
+                  default:
+                          goto error;
+                  }
+          }
+
+          /* input file drive is first include prefix */
+          vp = &quot;a:&quot;;
+          *vp += _drive();
+          /* allow input and output files */
+          switch (argc) {
+          case 2:         /* use input, drive(input), output */
+          case 1:         /* use input, drive(input) */
+                  if (cp[1] == ':')
+                  {       vp = &quot;?:&quot;;
+                          *vp = cp[0];
+                  }
+                  if (freopen(*argv, &quot;r&quot;, stdin) == NULL)
+                  {       where(&quot;cannot read&quot;, *argv);
+                          exit();
+                  }
+                  filenms = pushs(filenms, *argv);
+  #ifdef verbose
+                  if (vflag)
+                          where(&quot;reading&quot;);
+  #endif
+                  if (--argc)
+                  {       if (freopen(*++argv, &quot;w&quot;, stdout) == NULL)
+                          {       filenms = NULL;
+                                  where(&quot;cannot write&quot;, *argv);
+                                  exit();
+                          }
+  #ifdef verbose
+                          if (vflag)
+                                  where(&quot;writing&quot;, *argv);
+  #endif
+                  }
+          case 0:         /* use stdin, current drive */
+                  break;
+          default:
+  error:          where(usage);
+                  exit();
+          }
+
+          /* set first include prefix */
+          drive = pushs(drive, vp);
+
+  #ifdef verbose
+          if (vflag)
+          {       for (ip = drive; ip; ip = l_next(ip))
+                          where(&quot;drive&quot;, l_str(ip));
+          }
+  #endif
+
+          /* start reading on stdin */
+          infile = stdin;
+
+          /* allocate first buffers */
+          if ((line = calloc(INCR, 1)) == NULL
+              || (oline = calloc(INCR, 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit();
+          }
+          olinelen = linelen = INCR;
+
+          /* make sure, we first get a position stamp */
+          olineno = lineno - 3;
+
+          /* main loop */
+          while (getline())
+                  if (! comment() &amp;&amp; ! command())
+                          process();
+  }
+
+  getline()               /* line = complete line, ascii */
+                          /* return false on EOF */
+  {       int c;          /* current character */
+
+          /* move to lp, concatenating continued lines */
+          for (lp = line; ; )
+          {       switch (c = fgetc(infile)) {
+                  case '\\':
+                          switch (c = fgetc(infile)) {
+                          case EOF:
+                                  where(&quot;trailing \\&quot;);
+                          case '\n':
+                                  ++lineno;
+                                  continue;
+                          }
+                          in('\\');
+                  default:
+                          if (! isascii(c))
+                                  where(&quot;illegal character&quot;);
+                          else
+                                  in(c);
+                          continue;
+                  case EOF:
+                          ++ lineno;
+                          if (lp != line)
+                                  break;
+                          else if (files)
+                          {       fclose(infile);
+  #ifdef verbose
+                                  if (vflag)
+                                          where(&quot;end include&quot;);
+  #endif
+                                  infile = pop(&amp;files);
+                                  lineno = pop(&amp;lines);
+                                  olineno = lineno - 3; /* stamp! */
+                                  pop(&amp;filenms);
+                                  continue;
+                          }
+                          return 0;
+                  case '\n':
+                          ++lineno;
+                          if (lp == line)
+                                  continue;
+                  }
+                  break;  /* got a nonempty line */
+          }
+          *lp = '\0';
+  #ifdef verbose
+          if (vflag)
+                  where(&quot;getline&quot;, line);
+  #endif
+          return 1;
+  }
+
+  comment()               /* line = line w/out comments, lead white space */
+                          /* return true if comment line */
+  {       char c;
+
+          /* move from olp to lp, eliminating comments */
+          for (lp = olp = line; ; )
+          {       switch (c = *olp++) {
+                  case '\\':
+                          if (cmode != CMstr &amp;&amp; cmode != CMchr)
+                                  break;
+                          in(c);
+                          if (c = *olp++)
+                                  break;
+                  case '\0':
+                          if (cmode == CMstr)
+                          {       if (! skip)
+                                          where(&quot;unbalanced \&quot;&quot;);
+                                  in('\&quot;');
+                                  cmode = 0;
+                          }
+                          else if (cmode == CMchr)
+                          {       if (! skip)
+                                          where(&quot;unbalanced \'&quot;);
+                                  in('\&quot;);
+                                  cmode = 0;
+                          }
+                          *lp = '\0';
+  #ifdef verbose
+                          if (vflag)
+                                  where(&quot;comment&quot;, line);
+  #endif
+                          return lp == line;
+                  case '/':
+                          if (cmode == 0 &amp;&amp; *olp == '*')
+                          {       cmode = CMcmt;
+                                  ++olp;
+                                  if (lp != line)
+                                          in(' ');
+                                  continue;
+                          }
+                          break;
+                  case '*':
+                          if (cmode == CMcmt &amp;&amp; *olp == '/')
+                          {       cmode = O;
+                                  ++olp;
+                                  continue;
+                          }
+                          break;
+                  case '\&quot;':
+                          switch (cmode) {
+                          case 0:
+                                  cmode = CMstr;
+                                  break;
+                          case CMstr:
+                                  cmode = 0;
+                          }
+                          break;
+                  case '\'':
+                          switch (cmode) {
+                          case 0:
+                                  cmode = CMchr;
+                                  break;
+                          case CMchr:
+                                  cmode = O;
+                          }
+                  }
+                  if (cmode != CMcmt &amp;&amp; (! isspace(c) || lp != line))
+                          in(c);
+          }
+  }
+
+  command()               /* process commands */
+                          /* return true if done (i.e., to skip) */
+  {       int k;
+          LIST *dp;
+          FILE *fp;
+          char *cp;
+  /*
+   *      #if algorithm
+   *
+   *      skip    if non-zero, knows #if-level to which to skip;
+   *              while skipping, comment() is executed, but not process().
+   *
+   *      iflevel current nesting depth of #if;
+   *              counted even while skipping (of course).
+   *
+   *      #else   if skipping to current #if-level, stop skipping;
+   *              if not skipping, start skipping to current level.
+   *
+   *      In order to limit #else to at most one per #if, we
+   *      would need a stack; why bother??
+   */
+
+          if (*line != '#' || (k = kind(&amp;lp)) == DEFAULT)
+                  return skip;
+
+          /* process the command */
+          switch (k) {
+          case DEFINE:
+                  if (! skip)
+                          define(lp, marknm(lp));
+                  break;
+          case ELSE:
+                  if (! skip &amp;&amp; iflevel == O)
+                          where(&quot;#else without #if&quot;);
+                  else if (skip == iflevel)
+                          skip = 0;
+                  else if (skip == 0)
+                          skip = iflevel;
+                  break;
+          case ENDIF:
+                  if (! skip &amp;&amp; iflevel == 0)
+                          where(&quot;#endif without #if&quot;);
+                  else
+                  {       if (skip == iflevel)
+                                  skip = O;
+                          --iflevel;
+                  }
+                  break;
+          case IFDEF:
+          case IFNDEF:
+                  ++iflevel;
+                  if (! skip)
+                  {       marknm(lp);
+                          if (isname(lp,&quot;&quot;))
+                                  if (find(lp))
+                          {       if (k == IFNDEF)
+                                          skip = iflevel;
+                          }
+                          else
+                          {       if (k == IFDEF)
+                                          skip = iflevel;
+                          }
+                  }
+                  break;
+          case INCLUDE:
+                  if (! skip)
+                          if (! markfl(lp))
+                                  where(&quot;#include?&quot;);
+                          else if (lp[2] == ':')
+                          {       ++lp;
+                                  if (fp = fopen(lp, &quot;r&quot;))
+                                  {
+  pushfile:                               files = pushw(files, infile);
+                                          lines = pushw(lines, lineno);
+                                          lineno = O;
+                                          olineno = lineno - 3; /* stamp ! */
+                                          filenms = pushs(filenms, lp);
+                                          infile = fp;
+  #ifdef verbose
+                                          if (vflag)
+                                                  where(&quot;including&quot;, lp);
+  #endif
+                                  }
+                                  else
+                                          where(&quot;cannot open include file&quot;, lp);
+                          }
+                          else
+                          {       dp = drive;
+                                  if (*lp == '&lt;')
+                                          dp = l_next(dp);
+                                  *lp-- = ':';
+                                  for (; dp; dp = l_next(dp))
+                                  {       *lp = *l_str(dp);
+                                          if (fp = fopen(lp, &quot;r&quot;))
+                                                  goto pushfile;
+                                  }
+                                  where(&quot;cannot find include file&quot;, lp+2);
+                          }
+                  break;
+          case LINE:
+                  if (! skip)
+                  {       if (isdigit(*lp))
+                          {       for (k = *lp - '0'; isdigit(*++lp); )
+                                          k = k*10 + *lp-'O';
+                                  while (isspace(*lp))
+                                          ++lp;
+                                  cp = lp;
+                                  while (*lp &amp;&amp; ! isspace(*lp))
+                                          ++lp;
+                                  if (lp != cp)
+                                  {       *lp = '\0';
+                                          lineno = k;
+                                          if (filenms)
+                                                  pop(&amp;filenms);
+                                          filenms = pushs(filenms, cp);
+                                          break;
+                                  }
+                          }
+                          where(&quot;#line?&quot;);
+                  }
+                  break;
+          case UNDEF:
+                  if (! skip)
+                  {       marknm(lp);
+                          undefine(lp);
+                  }
+          }
+          return 1;
+  }
+
+  process()               /* process regular input line */
+  {       char expand;    /* reprocess flag */
+          char c;         /* current input character */
+          SYMBOL *sp;     /* -&gt; found symbol */
+          char *name;     /* -&gt; begin of name */
+          int i;
+          int nest;
+
+          /* expand one buffer into the other */
+          nest = NEST+1;
+          do
+          {       lp = line;
+                  *(olp = oline) = '\0';
+                  expand = O;
+                  while(c = *lp++)
+                          if (isalpha(c) || c == '_')
+                          {       name = out(c);
+                                  while ((c = *lp) &amp;&amp; (isalnum(c) || c == '_'))
+                                  {       out(c);
+                                          ++lp;
+                                  }
+                                  if (sp = find(name))
+                                  {       expand = 1;
+                                          outmacro(name, sp);
+                                  }
+                          }
+                          else if (isdigit(c))
+                                  lp = outnumber(--lp);
+                          else if (c == '\'' || c == 34)
+                                  lp = outdelim(--lp);
+                          else
+                                  out(c);
+                  /* if something changed, flip buffers */
+                  if (expand)
+                  {       lp = line;
+                          line = oline;
+                          oline = lp;
+                          i = linelen;
+                          linelen = olinelen;
+                          olinelen = i;
+                  }
+          } while (expand &amp;&amp; --nest);
+          if (expand)
+                  where(&quot;#define nested too deep&quot;);
+          output(oline);
+  }
+
+  /*
+   *      symbol table routines
+   */
+
+  define(s, v)            /* #define s v */
+          char *s;        /* name of symbol ?? */
+          char *v;        /* value */
+  {       SYMBOL *r;
+          int f;
+          char *cp, *p, c, *name;
+
+          if (! ismacro(s))
+                  return;
+
+          /* prune and parametrize value*/
+          while (isspace(*v))
+                  ++v;
+          if (*v)
+          {       for (cp = v + strlen(v); cp != v; )
+                          if (! isspace(*--cp))
+                                  break;
+                          else
+                                  *cp = '\0';
+                  /* if we have parameters, replace names by positions */
+                  if (parmno)
+                  {       p = cp = v;
+                          while (c = *cp++)
+                                  if (isalpha(c) || c == '_')
+                                  {       *(name = p++) = c;
+                                          while ((c = *cp)
+                                                  &amp;&amp; (isalnum(c) || c == '_'))
+                                          {       *p++ = c;
+                                                  ++cp;
+                                          }
+                                          if (f = findparm(name, p-name))
+                                          {       *(p = name): f | PARM;
+                                                  ++p;
+                                          }
+                                  }
+                                  else
+                                  {       *p++ = c;
+                                          /* name as trailer of a constant?? */
+                                          if (c == '0'
+                                                   &amp;&amp; (*cp == 'x' || *cp == 'X'))
+                                                  do
+                                                          *p++ = *cp++;
+                                                  while (isxdigit(*cp));
+                                          else if (isdigit(c))
+                                                  while (isdigit(*cp))
+                                                          *p++ = *cp++;
+                                          else if (c == '\\')
+                                                  if (*cp)
+                                                          *p++ = *cp++;
+                                  }
+                          *p = '\0';
+                  }
+          }
+
+          /* check if (different) redefinition */
+          if (r = find(s))
+          {       if (strcmp(s_val(r), v) != O)
+                          where(&quot;redefining&quot;, s);
+                  undefine(s); /* parmno may change */
+  #ifdef verbose
+                  if (vflag)
+                          fputs(&quot;redefine &quot;, stderr);
+  #endif
+          }
+
+          /* if parametrized, save count */
+          if (parmno)
+          {       cp = s + strlen(s);
+                  *cp = '(';
+                  *++cp = parmno;
+                  *++cp = '\0';
+          }
+          /* ready to make new entry */
+          if ((r = calloc(sz_SYM(s), 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit();
+          }
+          else
+          {
+  #ifdef HASH     /* find() sets symbol -&gt; hashtab at s */
+                  s_next(r) = *symbol;
+                  *symbol = r;
+  #else
+                  s_next(r) = symbol;
+                  symbol = r;
+  #endif
+                  s_val(r) = NULL;
+                  strcpy(s_name(r), s);
+  #ifdef verbose
+                  if (vflag)
+                          fputs(&quot;define &quot;, stderr);
+  #endif
+          }
+          /* save new value */
+          if ((s_val(r) = calloc(strlen(v)+1, 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit();
+          }
+          strcpy(s_val(r), v);
+  #ifdef verbose
+          if (vflag)
+          {       fputs(s, stderr);
+                  fputc(' ', stderr);
+                  fputs(s_val(r), stderr);
+                  fputc('\n', stderr);
+          }
+  #endif
+  }
+
+  undefine(s)             /* #undef s */
+          char *s;        /* name of symbol ?? */
+  {       SYMBOL *r, *p;
+
+          if (isname(s, &quot;&quot;) &amp;&amp; ( r = find(s)))
+          {       cfree(s_val(r));
+                  /* need to unlink symbol descriptor from chain */
+  #ifdef HASH     /* find() sets symbol -&gt; hashtab at s */
+                  if (r == *symbol)
+                          *symbol = s_next(*symbol);
+                  else
+                  {       for (p = *symbol;
+  #else
+                  if (r == symbol)
+                          symbol = s_next(symbol);
+                  else
+                  {       for (p = symbol;
+  #endif
+                                          s_next(p) != r; p = s_next(p))
+                                  ;
+                          s_next(p) = s_next(r);
+                  }
+                  cfree(r);
+  #ifdef verbose
+                  if (vflag)
+                          where(&quot;undefine&quot;, s);
+  #endif
+          }
+  }
+
+  find(s)                 /* locate s in symbol table */
+                          /* return NULL or -&gt; entry */
+          char *s;        /* name to find */
+  {       SYMBOL *r;
+          char *sp, *rp, c;
+  #ifdef  HASH
+          int h;
+
+          /* symbol table chains start in hashtab[] */
+          /* compute hash address as sum of letters */
+          for (h = O, sp = s; c = *sp; ++sp)
+                  h += c;
+          symbol = hashtab + (h &amp; (HASH-1));
+
+          /* run down the chain */
+          for (r = *symbol;
+  #else
+          /* symbol table chain is one linear list */
+          /* run down the chain */
+          for (r = symbol;
+  #endif
+                          r; r = s_next(r))
+          {       for (sp = s, rp = s_name(r); (c = *sp) &amp;&amp; *rp == c; ++sp, ++rp)
+                          ;
+                  if (c == '\0' &amp;&amp; (*rp == '\0' || *rp == '('))
+                          return r;
+          }
+          return NULL;
+  }
+
+  findparm(s, l)          /* return 0 or parameter number */
+          char *s;        /* -&gt; begin of possible parameter name */
+          int l;          /* length of name */
+  {       int f;
+          LIST *p;
+
+          for (f = 0, p = parms; p; ++f, p = l_next(p))
+                  if (strncmp(l_str(p), s, l) == 0)
+                          return parmno - f;
+          return 0;
+  }
+
+  isname(s,d)             /* true, if s is a name */
+                          /* return -&gt; delimeter or NULL */
+          char *s;        /* -&gt; begin of name */
+          char *d;        /* chars in which name may also end */
+  {       char *cp, c;
+
+          for (cp = s; index(d, c = *cp) == NULL; ++cp)
+                  if (! isalnum(c) &amp;&amp; c != '_')
+                          goto error;
+          if (cp == s || isdigit(*s))
+          {
+
+  error:          where(&quot;illegal name&quot;, s);
+                  return NULL;
+          }
+
+          return cp;      /* return -&gt; delimeter */
+  }
+
+  ismacro(s)              /* true, if s is a macro header */
+          char *s;        /* -&gt; begin of name or header */
+  {       char *cp, c;
+          while (parms)   /* free old parameter list */
+                  pop(&amp;parms);
+          parmno = 0;
+          if ((s = isname(s, &quot;(&quot;)) == NULL)
+                  return 0;
+          if (*s)         /* we have a new macro */
+          {       *s = '\0';              /* delimit name */
+                  do                      /* and parse parameters */
+                  {       while (isspace(*++s))
+
+                          if (cp = isname(s, &quot;,) \t&quot;))
+                          {       c = *cp;
+                                  *cp = '\0';
+                                  parms = pushs(parms, s);
+                                  ++ parmno;
+                          }
+                          else
+                                  return 0;
+                          while (isspace(c))
+                                  c = *++cp;
+                          s = cp;
+                 } while (c == ',');
+                 if (c != ')')
+                 {        where(&quot;illegal macro header&quot;);
+                          return 0;
+                  }
+          }
+          return 1;
+  }
+
+  marknm(s)               /* bypass and terminate macro header */
+                          /* return -&gt; value */
+          char *s;        /* -&gt;begin of name */
+  {       char c;
+
+          /* find white space or ( */
+          while ((c = *s) &amp;&amp; ! isspace(c) &amp;&amp; c != '(')
+                  ++s;
+
+          /* if (, there must be names, white space and then ) */
+          if (c == '(')
+          {       while ((c = *++s) &amp;&amp; c != ')')
+                          ;
+                  /* after ) there must be \0 or white space */
+                  if (c &amp;&amp; (s[1] == '\0' || isspace(s[1])))
+                          ++s;
+          }
+
+          /* terminate in place of white space */
+          if (*s)
+                  *s++ = '\0';
+
+          /* this is a rough draft -- see ismacro/isname */
+          return s;
+  }
+
+  /*
+   *      input and output routines
+   */
+
+  in(c)                   /* store incoming character */
+          char c;         /* to be stored at lp */
+  {
+          *lp++ = c;
+          if (lp &gt;= line+linelen)
+                  rebuff(&amp;lp, &amp;line, &amp;linelen);
+  }
+
+  out(c)                  /* store a character, return -&gt; stored char */
+          char c;         /* to be stored at olp */
+  {
+          *olp++ = c;
+          if (olp &gt;= oline+olinelen)
+                  rebuff(&amp;olp, &amp;oline, &amp;olinelen);
+          *op = '\0';     /* maintain trailer */
+          return olp-1;
+  }
+
+  rebuff(p, buf, len)     /* make buffer longer */
+          int *p;         /* &amp; current pointer */
+          int *buf;       /* &amp; buffer pointer */
+          int *len;       /* &amp; maximum length */
+  {
+          if ((*p = calloc(*len + INCR, 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit( );
+          }
+          strncpy(*p, *buf, *len);
+          cfree(*buf);
+          *buf = *p;
+          *p = *buf + *len;
+          *len += INCR;
+  }
+
+  output(s)               /* write a string */
+          char *s;        /* to write as a line */
+  {
+          /* synchronize output linecount */
+          if (! eflag &amp;&amp; ++olineno != lineno)
+          {       if (++olineno != lineno)
+                  {       fputc('#', stdout);
+                          fputs(itod(olineno = lineno), stdout);
+                          if (filenms)
+                          {       fputc(' ', stdout);
+                                  fputs(l_str(filenms), stdout);
+                          }
+                  }
+                  fputc('\n', stdout);
+          }
+          /* emit string as a line */
+          fputs(s, stdout);
+          if (fputc('\n', stdout) == EOF)
+          {       where(&quot;output file full&quot;);
+                  exit();
+          }
+  }
+
+  /*
+   *      C constant processing:
+   *
+   *      digits          decimal
+   *      0digits         octal
+   *      0xdigits        hexadecimal
+   *      'c'             character value (escapes ok)
+   */
+
+  outnumber(cp)           /* store a C constant in decimal */
+                          /* return -&gt; past it */
+          char *cp;       /* -&gt; constant text (digit) */
+  {       char c, *p;
+          int base;
+          int i;
+
+          base = 10;
+          i = 0;
+          if ((c = *cp) == '0')
+          {       base = 010;
+                  if ((c = *++cp) == 'x' || c == 'X')
+                  {       base = 0x10;
+                          c = *++cp;
+                  }
+          }
+          for ( ; c; c = *++cp)
+          {       if (isdigit(c))
+                          c -= '0';
+                  else if (isxdigit(c))
+                          if (isupper(c))
+                                  c -= 'A' - 10;
+                          else
+                                  c -= 'a' - 10;
+                  else
+                          break;
+                  if (c &lt; base)
+                          i = i*base + c;
+                  else
+                          break;
+          }
+          for (p = itod(i); c = *p; ++p)
+                  out(c);
+          return cp;
+  }
+
+  outdelim(cp)            /* store a delimited string, return -&gt; past trailer /*
+          char *cp;       /* -&gt; delimeter */
+  {       char c, *p;
+
+          if ((c = *cp) == '\&quot;')
+          {       out(c);
+                  while (c = *++cp)
+                  {       out(c);
+                          if (c == '\&quot;')
+                                  return cp+l;
+                          if (c == '\\')
+                                  if (c = *++cp)
+                                          out(c);
+                                  else
+                                          break;
+                  }
+          }
+          else    /* it must be character constant */
+                  switch (c = *++cp) {
+                  case 0:
+                  case '\'':
+                          goto error;
+                  case '\\':
+                          switch (c = *++cp) {
+                          case 'b':  c = '\b'; break;
+                          case 'f':  c = '\f'; break;
+                          case 'n':  c = '\n'; break;
+                          case 'r':  c = '\r'; break;
+                          case 't':  c = '\t';
+                          case '\'':
+                          case '\\':
+                          case '\&quot;':           break;
+                          default:
+                                  if (! isdigit(c) || (c -= '0') &gt; 7)
+                                          goto error;
+                                  if (isdigit(cp[1]) &amp;&amp; cp[1] &lt;= '7')
+                                  {       c = (c &lt;&lt; 3) + *++cp - '0';
+                                          if (isdigit(cp[1]) &amp;&amp; cp[1] &lt;= '7')
+                                                  c = (c &lt;&lt; 3) + *++cp - '0';
+                                  }
+                          }
+                  default:
+                          if (*++cp != '\'')
+                          {
+  error:                          where(&quot;illegal character constant&quot;);
+                                  while (*cp &amp;&amp; *cp != '\'')
+                                          ++cp;
+                                  if (*cp)
+                                          ++cp;
+                                  break;
+                          }
+                          for (p = itod(c); *p; ++p)
+                                  out(*p);
+                          out(' ');
+                          ++cp;
+                  }
+          return cp;
+  }
+
+  /*
+   *      macro processing
+   */
+
+  outmacro(at, s)         /* replace string by macro value */
+          char *at;       /* replace from here on */
+          SYMBOL *s;      /* using this definition */
+  {       char *vp, c;
+
+          /* set output up for replacement */
+          olp = at;
+
+          /* force white space around replacement */
+          if (olp &gt; oline &amp;&amp; (! isspace(olp[-1])))
+                  out(' ');
+
+          /* if parametrized, collect arguments */
+          if (vp = index(s._name(s), '('))
+                  markarg(*++vp);
+          else
+                  parmno = 0;
+
+          /* emit replacement */
+          for (vp = s_val(s); c = *vp++; )
+                  if (c &amp; PARM)
+                          outarg(c &amp; PARMNO);
+                  else
+                          out(c);
+
+          /* white space */
+          out(' ');
+  }
+
+  markarg(n)              /* mark and collect arguments */
+          int n;          /* number to find */
+  {       char c, cmode;  /* cmode during argument collection only */
+          int lpar;
+
+          /* release parameter/argument list, if any */
+          while (parms)
+                  pop(&amp;parms);
+          parmno = 0;
+
+          /* find ( */
+          while (isspace(c = *lp))
+                  ++lp;
+
+          /* collect */
+          if (c == '(')
+          {       do
+                  {       parms = pushw(parms, ++lp);
+                          ++ parmno;
+                          lpar = cmode = 0;
+                          for ( ; c = *lp; ++lp)
+                          {       switch (c) {
+                                  case '(':
+                                          if (cmode == 0)
+                                                  ++ lpar;
+                                          continue;
+                                  case ',':
+                                          if (cmode || lpar)
+                                                  continue;
+                                          break;
+                                  case ')':
+                                          if (cmode || lpar--)
+                                                  continue;
+                                  case '\'':
+                                          switch (cmode) {
+                                          case 0:
+                                                  cmode = CMchr;
+                                          case CMstr:
+                                                  continue;
+                                          }
+                                          cmode = 0;
+                                          continue;
+                                  case '\&quot;':
+                                          switch (cmode) {
+                                          case 0:
+                                                  cmode = CMstr;
+                                          case CMchr:
+                                                  continue;
+                                          }
+                                          cmode = 0;
+                                                  continue;
+                                  case '\\':
+                                          if (*++lp == '\0')
+                                                  break;
+                                  default:
+                                          continue;
+                                  }
+                                  *lp = '\0';
+                                  break;
+                          }
+                  } while (c == ',');
+                  if (c == ')')
+                          ++lp;
+                  else
+                          where(&quot;incomplete macro call&quot;);
+          }
+
+          /* check and fill argument count */
+          if (parmno) != n)
+                  where(&quot;wrong number of arguments&quot;);
+          for ( ; parmno &lt; n; ++parmno)
+                  parms = pushw(parms,&quot;&quot;);
+  }
+
+  outarg(i)               /* emit argument */
+          int i;          /* number to emit */
+  {       LIST *p;
+          char *cp, c;
+
+          /* play double safe */
+          if (i &gt; parmno)
+          {       where(&quot;outarg(&gt;&gt;)??&quot;);
+                  exit();
+          }
+
+          /* locate */
+          for (i = parmno-i, p = parms; i &amp;&amp; p; --i, p = l_next(p))
+                  ;
+          if (p == NULL)
+          {       where(&quot;outarg(NULL)??&quot;);
+                  exit();
+          }
+
+          /* emit, no white space */
+          for (cp = l_word(p); c = *cp; ++cp)
+                  out(c);
+  }
+
+  /*
+   *      stack routines
+   */
+
+  pushw(l, w)             /* push word, return -&gt; new list */
+          LIST *l;        /* list */
+          int w;          /* word to push */
+  {       LIST *r;
+
+          if ((r = calloc(s_WORD, 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit();
+          }
+          l_next(r) = l;
+          l_word(r) = w;
+          return r;
+  }
+
+  pushs(l, s)             /* push string, return -&gt; new list */
+          LIST *l;        /* list */
+          char *s;        /* string to push */
+  {       LIST *r;
+
+          if ((r = calloc(sz_STR(s), 1)) == NULL)
+          {       where(&quot;no room&quot;);
+                  exit();
+          }
+          l_next(r) = l;
+          strcpy(l_str(r), s);
+          return r;
+  }
+
+  pop(l)                  /* pop list, return word */
+          LIST *l;        /* really**: list header */
+  {       LIST *r;
+          int i;
+
+          if (*l == NULL)
+          {       where(&quot;pop(NULL)??&quot;);
+                  exit();
+          }
+          r = *l;         /* element to pop */
+          i = l_word(r);  /* result */
+          r = l_next(r);  /* following element */
+          cfree(*l);
+          *l = r;
+          return i;       /* nonsense for a string list */
+  }
+
+  /*
+   * other utilities
+   */
+
+  where(vararg)           /* error message writer */
+          int vararg;     /* arbitrarily many strings */
+  {       int narg, *argv;
+
+          narg = _narg();
+          argv = &amp;vararg;
+          argv += narg;
+          if (filenms)
+          {       fputs(l_str(filenms), stderr);
+                  if (lineno)
+                          fputs(&quot;, &quot;, stderr);
+                  else
+                          fputs(&quot;: &quot;, stderr);
+          }
+          if (lineno)
+          {       fputs(&quot;line &quot;, stderr);
+                  fputs(itod(lineno), stderr);
+                  fputs(&quot;: &quot;, stderr);
+          }
+          while (narg)
+          {       fputs(*--argv, stderr);
+                  if (--narg)
+                          fputc(' ', stderr);
+          }
+          fputc('\n', stderr);
+  }
+
+  kind(plp)               /* determine command */
+                          /* move line pointer past it and white space */
+          int *plp;       /* char**, -&gt; line pointer; NULLed or advanced */
+  {       char *s;
+
+          for (s = line+1; isspace(*s); ++s)
+                  ;
+          if (*plp = cmd(s, &quot;define&quot;))    return DEFINE;
+          if (*plp = cmd(s, &quot;else&quot;))      return ELSE;
+          if (*plp = cmd(s, &quot;endif&quot;))     return ENDIF;
+          if (*plp = cmd(s, &quot;ifdef&quot;))     return IFDEF;
+          if (*plp = cmd(s, &quot;ifndef&quot;))    return IFNDEF;
+          if (*plp = cmd(s, &quot;include&quot;))   return INCLUDE;
+          if (*plp = cmd(s, &quot;line&quot;))      return LINE;
+          if (*plp = cmd(s, &quot;undef&quot;))     return UNDEF;
+          return DEFAULT; /* *plp is NULL */
+  }
+
+  cmd(l, c)               /* parse keyword */
+                          /* return NULL or -&gt; past it and white space */
+          char *l;        /* -&gt; begin of possible keyword */
+          char *c;        /* -&gt; keyword */
+  {
+          /* compare *
+          while (*l++ == *c++ &amp;&amp; *c)
+                  ;
+          if (*c)
+                  return 0;       /* incomplete keyword */
+          if (*l == '\0')
+                  return l;       /* just keyword */
+          if (! isspace(*l))
+                  return 0;       /* keyword plus trash */
+          while (isspace(*++l))
+                  ;
+          return l;               /* bypassed white space */
+  }
+
+  markfl(sp)              /* bypass and terminate file name */
+                          /* return true if found */
+          char *sp;       /* -&gt; begin delimeter, &quot; or &lt; */
+  {       char s, *cp, c;
+
+          if ((s = *(cp = sp)) &amp;&amp; (s == '\&quot;' || s == ' &lt;'))
+                  while (c = *++cp)
+                          if (c == '\&quot;' &amp;&amp; s == '\&quot;'
+                                  || c == &amp;&amp; s == '&lt;')
+                          {               *cp = '\0';
+                                          return cp-sp &gt; 1;
+                          }
+          return 0;
+  }<p>
+</pre>
+<b><a name="list8-2">LISTING 8-2</a><p></b>
+<pre>
+  /****
+   ****   UN*X compatible dynamic memory allocation
+   ****/
+  /*
+   *      calloc return pointer to vector of 0, or NULL
+   *      cfree free previously allocated area
+   *
+   *      The heap starts at _end and runs upward toward the stack.
+   *      Each area in the heap is preceded by a word at an even address:
+   *      a pointer chain runs from _end through these words to NULL:
+   *      The low bit in each word is 1 if the following area is free.
+   *      There is a blind, allocated element at the front of the chain.
+   *
+   *      BUG:    very unreasonable demands (e.g., wraparound)
+   *              will corrupt memory.
+   */
+
+  #define SLACK   1024    /* at least 1KB stack to be free */
+  #define NULL    0
+
+  word(wp)
+          int *wp;
+  {
+          return *wp;
+  }
+
+  char * calloc(n, len)
+          int n;          /* number of elements */
+          int len;        /* length of element */
+  {       int cell;       /* current allocation chain cell */
+          char *p;        /* -&gt; cell */
+          char *np;       /* pointer in cell */
+          int *ip, *wp;   /* for casting */
+
+          len = (len*n + 1) &amp; ~1;     /* even */
+          if (len == 0)
+                  return NULL;
+          for (ip = p = word(_end+1l &amp; ~1) &amp; ~1;
+               np = (cell = *ip) &amp; ~1;
+               ip = p = np)
+                  if (cell &amp; 1)           /* lowbit == 1 means free */
+                  {       if ((n = np-p - 2) &gt; len+2)
+                          {       wp = p + len+2;
+                                  *wp = cell;
+                                  *ip = wp;
+                                  }
+                                  else if (n &gt;= len)
+                                          *ip = np;
+                                  else
+                                          continue;
+                                  for (wp = p+2; len; len -= 2)
+                                          *wp++ = 0;
+                                  return p+2;
+                          }
+                  if {(wp = p + len+2) &gt; &amp;n - SLACK)
+                          return NULL;
+                  *ip = wp;
+                  *wp = NULL;
+                  for (wp = p+2; len; len -= 2)
+                          *wp++ = 0;
+                  return p+2;
+  }
+  cfree(fp)
+                  int *fp;        /* to be freed */
+  {               int *p, *np;
+
+                  --fp;                           /* to cell */
+                  for (p = _end+1 &amp; ~1;
+                       np = word(p) &amp; ~1;
+                       p = np)                    /* p-&gt; previous cell */
+                          if (np == fp)           /* fp-&gt; cell to free */
+                          {       np = *fp;       /* np-&gt; following cell */
+                                  if ((*fp &amp; 1) II np == NULL)
+                                          break;  /* he does not own it */
+                                  if (*p &amp; 1)
+                                          if (*np &amp; 1)
+                                                  *p = *np;
+                                          else if (*np == NULL)
+                                                  *p = NULL;
+                                          else
+                                          {       *p = np;
+                                                  *p I= 1;
+                                          }
+                                  else if (*np &amp; 1)
+                                          *fp =*np;
+                                  else if (*np == NULL)
+                                          *fp = NULL;
+                                  else
+                                          *fp I= 1;
+                                  return;
+                          }
+                  fputs(&quot;cfree botch&quot;, stderr);
+                  exit();
+  }
+</pre>
+<P>
+<CENTER> Return to <a href="../toc.htm">Table of Contents
+</a>
+</CENTER>
+<P>
+</HTML> 

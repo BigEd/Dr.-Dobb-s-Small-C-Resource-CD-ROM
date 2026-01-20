@@ -1,0 +1,27 @@
+# 
+# Makefile for the Retargetable Concurrent Small C Compiler 
+# please note that the file containing main() must be the last one
+# specified in the link process
+
+DIR	 = \rcsc
+CC       = $(DIR)\bin\rcsc
+OBJECTS  = cc2.obj cc3.obj cc4.obj cc1.obj
+ASMS     = cc2.asm cc3.asm cc4.asm cc1.asm
+#SCFLAGS  = -m -a -p
+
+rcsc.exe: $(OBJECTS)
+    link $(OBJECTS) , rcsc, rcsc, $(DIR)\lib86\clib.lib $(DIR)\lib86\csc.lib;
+
+asm: $(ASMS)
+
+.SUFFIXES
+
+.asm.obj:
+    masm $<;
+
+.m4.asm:
+    m4 $(DIR)\bin\8086.m4 $< > $*.asm
+
+.c.m4:
+    $(CC) $< $(SCFLAGS)
+

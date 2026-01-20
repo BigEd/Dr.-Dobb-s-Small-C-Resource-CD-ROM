@@ -1,0 +1,49 @@
+INDEX OF BBC MICRO (6502) SOFTWARE                    Updated 20/08/91 @ 1450
+
+Each item of software on the Archive has been stored in a separate
+sub-directory, which is identified by a prefix code.  The list below shows you
+the prefixes, and what the package is. 
+
+If you're accessing the files from a terminal, you'll need to change directory
+to the sub-directory concerned. For example, if you want the package with
+with prefix "a01", you'd do
+
+                 cd micros/bbc/a01
+
+(assuming you're in the top level directory).
+
+Access by FTP is similar: here you always need to give a full pathname for the
+files you want, so the files in this directory would be
+
+                 micros/bbc/a01/.....
+
+Within each directory is a file called "00contents" (the first two digits are
+zeros), which gives a list of all the other filenames in the directory. Thus,
+if you are using FTP, it's best to pull this first to see what's there. So
+that, in this example, you'd start by pulling
+
+                 micros/bbc/a01/00contents
+
+--------------------------------------------------------------------------------
+
+Pfx              Details
+---              -------
+
+a01  A macro assembler that handles 6502/65C02 opcodes. It runs as
+     a sideways ROM or in sideways RAM, and is Tube compatible. The current
+     release is version 1.60
+a02  Small-C compiler 0.70 (updated 26/07/89)
+a03  A BASIC program to plot out Chaotic sets
+a04  The FANFARE Teletext carousel display and mode 7 screen editor for
+     sideways RAM or ROM
+a05  Account A BBC Micro accounting program for bank statments.
+a06  PRINTO a printer re-direction program
+a07  STRIP a Function key strip printer program for epson printers
+a09  File archiver
+a10  Newcastle Handirom system for the disabled
+a11  Keylock CTRL/SHIFT key mapper
+a13  Custom ROM system customisation
+a14  User Friendly Print Controller 1.0
+
+d99  Various tools you'll need to convert some of the software to
+     runnable form after collecting it

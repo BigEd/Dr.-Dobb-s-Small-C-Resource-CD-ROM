@@ -1,0 +1,41 @@
+Title:			Custom ROM
+Author:			Rob Scott
+Version:		
+Title From:		Documentation
+Author From:		Documentation
+Version From:		
+Supplier:		Rob Scott
+			Newcastle University Medical Physics
+Date:			
+Keywords:		
+Shareware:		No
+Machine:		BBC or BBC Master
+Operating system:	OS
+Memory requirements:	
+Peripherals needed:	
+Other s/ware needed:	
+Directory:		micros/bbc/a13
+Date mounted/updated:	25/01/91
+File names:		a13cr.hex  -  "CUSTOM1" rom image
+			a13bp.bas  -  "BASPROG" program to configure rom
+			a13man.txt -  "MANUAL" for toolkit
+Unarchived files:	
+Unarchived size:	
+Omissions:		
+See also:		
+
+-------------------------------------------------------------------------------
+
+Acquiring the package:
+
+All files with the .BAS suffix need to be *EXECed and then saved using the
+filenames given above.  Files with .HEX suffix need to be converted into
+binary form using the converter online as micros/bbc/d99/d99deh.bas.
+
+Description:
+
+A toolkit that may be user configureable and then blown into rom so that m/c
+status is affected on startup. Most useful for BBC B type micros but is also
+useful on a Master as it contains a powerful bi-directional disassembler/dump
+and ADFS utils etc.
+

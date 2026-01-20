@@ -1,0 +1,4366 @@
+sed 's/^X//' << 'SHAR_EOF' > as65_c
+X/* as65.c  11-Apr-89  A.J.Travis */
+X
+X/*
+X * MOS Technology 6502 assembler
+X */
+X
+X#include <stdio.h>
+X#include <ctype.h>
+X
+X/*
+X * configuration options
+X */
+X#define FORCE_CASE 0		/* 1 = force lower case on input */
+X
+X/*
+X * implementation dependant pathnames, and i/o modes
+X */
+X#if MSDOS
+X
+X#define MNEMTAB "mnemtab"		/* opcode mnemonics */
+X#define OPTAB   "optab"			/* opcode table */
+X#define IO_W    "wb"			/* binary write mode */
+X/* #define ILLEGAL  0xFF */		/* needed in 'old' Zorland C */
+X#define ILLEGAL    -1 			/* 0xFF is sign extended to -1 */
+X
+X#else
+X
+X#define DFS 1				/* Acorn/BBC Disk File System */
+X#define MNEMTAB ":0.$.mnemtab"		/* opcode mnemonics */
+X#define OPTAB   ":0.$.optab"		/* opcode table */
+X#define IO_W    "w"			/* write mode */
+X#define W_CAT	1			/* write MOS catalogue info */
+X#define RW	3			/* read/write attributes */
+X#define ILLEGAL    -1 			/* 0xFF is sign extended to -1 */
+X
+X#endif
+X
+X/*
+X * boolean constants
+X */
+X#define TRUE        1
+X#define FALSE       0
+X#define ERROR      -1
+X#define SAME        0
+X
+X/*
+X * symbol table parameters
+X */
+X#define LINESIZE   80
+X#define HASHSIZE  257  
+X#define SYMSIZE 10000
+X
+X#define NEXTPTR     0
+X#define VALUE       2
+X#define NAME        4
+X#define BYTE      256
+X
+X/*
+X * 6502 addressing modes
+X */                             
+X#define IMPLIED     0
+X#define ACCUM       1
+X#define IMMED       2
+X#define DIRECT      3
+X#define DIRECT_X    4
+X#define DIRECT_Y    5
+X#define ABS         6
+X#define ABS_X       7
+X#define ABS_Y       8
+X#define IND_X       9
+X#define IND_Y      10
+X#define REL        11
+X#define INDIRECT   12
+X#define NMODES     13
+X#define NCODES     56
+X
+X/*
+X * function types
+X */
+Xchar *inline();
+Xchar *hashfind();
+X
+X/*
+X * global variables
+X */
+Xchar obj[LINESIZE];			/* object code output buffer */
+Xchar op[728];				/* opcode table (NCODES * NMODES) */
+Xchar ibuf[LINESIZE];			/* input buffer */
+Xchar sbuf[LINESIZE];			/* symbol buffer */
+Xchar symtab[SYMSIZE];			/* symbol table */
+Xchar *ofile;				/* output file */
+Xchar *endsym;				/* end of symbol table */
+Xchar *start;				/* start of symbol table */
+Xchar *freeptr;				/* next free location in hash chain */
+Xchar *ip;				/* input buffer pointer */
+Xunsigned loc;				/* location counter */
+Xunsigned origin;			/* assembly origin */
+Xunsigned _text;				/* start of text segment */
+Xunsigned _data;				/* start of data segment */
+Xunsigned _end;				/* end of program */
+Xunsigned textsz;			/* size of text segment */
+Xunsigned datasz;			/* size of data segment */
+Xint hashtab[HASHSIZE];			/* hash table */
+XFILE *in;				/* input stream */
+XFILE *out;				/* output stream */
+Xint endflag;				/* .end pseudo-op flag */
+Xint list;				/* produce assembler listing */
+Xint pass;				/* pass 1/2 */
+Xint nbytes;				/* number of bytes in obj[] */
+Xint errcnt;				/* error count */
+Xint nset;				/* number of setloc pseudo-ops */
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	int file;			/* source file no. */
+X
+X	in = NULL;
+X	out = NULL;
+X	ofile = "o_out";		/* default output file name */
+X	list = FALSE;			/* default no listing */
+X	while ((*argv[1] & 0xFF) == '-') {	/* BUG in compiler */
+X		if (strcmp(argv[1], "-l") == SAME)
+X			list++;
+X		else if (strcmp(argv[1], "-o") == SAME) {
+X			if (argc < 3)
+X				usage();
+X			else {
+X				ofile = argv[2];
+X				--argc;
+X				argv++;
+X			}
+X		}
+X		else
+X			usage();
+X		--argc;
+X		argv++;
+X	}
+X	if (argc < 2)
+X		usage();
+X	if ((out = fopen(ofile, IO_W)) == NULL) {
+X		fprintf(stderr, "as65: can't open %s\n", ofile);
+X		fatal(-1);
+X	}
+X	endsym = symtab + SYMSIZE;
+X	inithash();
+X	prehash();
+X	for (pass = 1; pass < 3; pass++) {
+X		errcnt = 0;
+X		nset = 0;
+X		loc = 0;
+X		origin = 0;
+X		endflag = FALSE;
+X		for (file = 1; file < argc; file++) {
+X			if ((in = fopen(argv[file], "r")) == NULL) {
+X				fprintf(stderr, "can't open %s\n", argv[file]);
+X				fatal(-1);
+X			}
+X			doasm();
+X			fclose(in);
+X		}
+X	}
+X	fclose(out);
+X	dumpsym();
+X
+X	/* print size of text and data areas if C 'segment' symbols present */
+X	if ((hashfind("~eot") != NULL) & (hashfind("~eod") != NULL)) {
+X		_text = origin;
+X		_data = lookup("~eot");
+X		_end = lookup("~eod");
+X		textsz = _data - _text;
+X		datasz = _end - _data;
+X		printf("%u = %u+%u ", textsz + datasz, textsz, datasz);
+X		printf("(0x%04X, 0x%04X, 0x%04X)\n", _text, _data, _end);
+X	}
+X#if DFS
+X	attributes(ofile, origin, origin);
+X#endif
+X	if (errcnt)
+X		fprintf(stderr, "as65: %d errors\n", errcnt);
+X}
+X
+X/*
+X * report correct usage and exit
+X */
+Xusage()
+X{
+X	fprintf(stderr, "usage: as65 [-l] [-o outfile] file1 ... [filen]\n");
+X	fatal(-1);
+X}
+X
+X/*
+X * assemble one pass
+X */
+Xdoasm()
+X{
+X	int mem;
+X
+X	*ibuf = '\0';
+X	while (inline() != NULL) {
+X		mem = loc;
+X		nbytes = 0;
+X		assem();
+X		if (pass == 2)
+X			output(mem);
+X		loc = loc + nbytes;
+X		if (endflag)
+X			break;
+X	}
+X}
+X
+X/*
+X * input line
+X * ----------
+X * ignore full line comments and empty lines
+X */
+Xchar *inline()
+X{
+X	int c;
+X	char *p;
+X
+X	while ((p = fgets(ibuf, LINESIZE, in)) != NULL) {
+X		if (*p == ';') {
+X			if (pass == 1 | list == FALSE)
+X				continue;
+X			else
+X				printf("                %s", p);
+X		}
+X		else if (*p == '\n')
+X			continue;
+X		else
+X			break;
+X	}
+X	ip = p;
+X
+X#if FORCE_CASE
+X	/* force lower case */
+X	while (c = tolower(*p)) {
+X		if (c == ';')
+X			break;
+X		else if (c == '"' | c == '\'') {
+X			while (*++p)
+X				if (*p == c)
+X					break;
+X		}
+X		else
+X			*p++ = c;	
+X	}
+X#endif
+X	return(ip);
+X}
+X
+X/*
+X * assemble one line
+X */
+Xassem()
+X{
+X	if (sym(sbuf)) {
+X		if (qlabel())
+X			return;
+X		else if (qmnem())
+X			return;
+X	}
+X	if (*ip == '\n')
+X		return;
+X	else if (match('.'))
+X		pseudo();
+X	else if (match('*'))
+X		setloc();
+X	else if (match(';'))
+X		return;
+X	else
+X		error("symbol/pseudo-op required");
+X}
+X
+X/*
+X * prehash mnemonics into symbol table
+X * -----------------------------------
+X * check current directory first for data files
+X */
+Xprehash()
+X{
+X	char *p, mnem[LINESIZE];
+X	int n, optab;
+X	FILE *mnemtab;
+X	
+X	if ((mnemtab = fopen("mnemtab", "r")) == NULL) {
+X		if ((mnemtab = fopen(MNEMTAB, "r")) == NULL) {
+X			fprintf(stderr, "as65: can't open mnemtab\n");
+X			fatal(-1);
+X		}
+X	}
+X	n = 0;
+X	while (n < NCODES) {
+X		fgets(mnem, LINESIZE, mnemtab);
+X		p = mnem;
+X		while (*p++ != '\n')
+X			;
+X		*--p = '\0';
+X		install(mnem, op + n++ * NMODES);
+X	}
+X	fclose(mnemtab);
+X	if ((optab = open("optab", 0)) == -1) {
+X		if ((optab = open(OPTAB, 0)) == -1)
+X			fprintf(stderr, "as65: can't open optab\n");
+X	}
+X	if (optab != -1) {
+X		p = op;
+X		while ((n = read(optab, p, BUFSIZ)) != 0)
+X			p = p + n;
+X		if (p - op < NCODES * NMODES) {
+X			fprintf(stderr, "as65: illegal optab size\n");
+X			fatal(-1);
+X		}
+X		close(optab);
+X	}
+X	start = freeptr;
+X}
+X
+X/*
+X * check for labelled statement
+X * ----------------------------
+X * Exit status indicates whether
+X * processing of line is complete
+X */
+Xqlabel()
+X{
+X	if (pass == 1)
+X		return(putlab());
+X	else
+X		return(getlab());
+X}
+X
+X/*
+X * put new label in symbol table
+X * -----------------------------
+X * 6502 Mnemonics are reserved symbols.
+X * Exit status indicates whether
+X * processing of line is complete
+X */
+Xputlab()
+X{
+X	char *tag;
+X
+X	if ((tag = hashfind(sbuf)) == NULL) {
+X		if (match('=')) {
+X			install(sbuf, exp());
+X			return(TRUE);
+X		}
+X		else {
+X			install(sbuf, loc);
+X			return(FALSE);
+X		}
+X	}
+X	else if (tag < start) {
+X		mnem(tag);
+X		return(TRUE);
+X	}
+X	else {
+X		error("label redefined");
+X		return(FALSE);
+X	}
+X}
+X
+X/*
+X * update labels on second pass
+X * ----------------------------
+X * Exit status indicates that
+X * processing of line is complete
+X */
+Xgetlab()
+X{
+X	char *tag;
+X
+X	if ((tag = hashfind(sbuf)) >= start) {
+X		if (match('='))	{	
+X			mputw(tag + VALUE, exp());
+X			return(TRUE);
+X		}
+X		else {
+X			mputw(tag + VALUE, loc);
+X			return(FALSE);
+X		}
+X	}
+X	else {
+X		mnem(tag);
+X		return(TRUE);
+X	}
+X}
+X
+X/*
+X * Check for mnemonic
+X * ------------------
+X * Exit status indicates whether
+X * processing of line is complete
+X */
+Xqmnem()
+X{
+X	char *tag, *savp;
+X
+X	savp = ip;
+X	if (sym(sbuf) == 0)
+X		return(FALSE);
+X	else if ((tag = hashfind(sbuf)) < start) {
+X		mnem(tag);
+X		return(TRUE);
+X	}
+X	else {
+X		ip = savp;
+X		return(FALSE);
+X	}
+X}
+X
+X/*
+X * process mnemonic
+X */
+Xmnem(tag)
+Xchar *tag;
+X{
+X	char *p;
+X	int mode;
+X
+X	p = mgetw(tag + VALUE);
+X	if ((obj[0] = p[IMPLIED]) != ILLEGAL) {
+X		nbytes = 1;
+X		return;
+X	}
+X	else {
+X		if ((obj[0] = p[REL]) != ILLEGAL) {
+X			relative();
+X			return;
+X		}
+X		else {
+X			mode = getmode();
+X			if ((obj[0] = p[mode]) != ILLEGAL)
+X				return;
+X			else if (tryfix(p, mode))
+X				return;
+X			else if (pass == 1)
+X				return;
+X			else
+X				error("illegal address mode");
+X		}
+X	}
+X}
+X
+X/*
+X * get address mode of opcode
+X */
+Xgetmode()
+X{
+X	int oper;
+X
+X	if (match('#'))
+X		return(immediate());
+X	else if (match('('))
+X		return(indirect());
+X	else if (*ip == 'a' & isalnum(ip[1]) == 0)
+X		return(accum());
+X	else
+X		oper = exp();
+X	if (match(','))
+X		return(indexed(oper));
+X	else if (oper >= 0 & oper < BYTE)
+X		return(direct(oper));
+X	else
+X		return(absolute(oper));
+X}  
+X
+X/*
+X * try to 'fix' illegal address modes
+X */
+Xtryfix(p, mode)
+Xchar *p;
+Xint mode;
+X{
+X	if (mode == DIRECT_X)
+X		return(fix_x(p));
+X	else if (mode == DIRECT_Y)
+X		return(fix_y(p));
+X	else
+X		return(FALSE);
+X}
+X
+X/*
+X * substitute absolute,X for direct,X
+X */
+Xfix_x(p)
+Xchar *p;
+X{
+X	if (p[ABS_X] == ILLEGAL)
+X		return(FALSE);
+X	else {
+X		nbytes = 3;
+X		obj[0] = p[ABS_X];
+X		obj[2] = 0;
+X		return(TRUE);
+X	}
+X}
+X
+X/*
+X * substitute absolute,Y for direct,Y
+X */
+Xfix_y(p)
+Xchar *p;
+X{
+X	if (p[ABS_Y] == ILLEGAL)
+X		return(FALSE);
+X	else {
+X		nbytes = 3;
+X		obj[0] = p[ABS_Y];
+X		obj[2] = 0;
+X		return(TRUE);
+X	}
+X}
+X
+X/*
+X * data immediately after opcode
+X */
+Ximmediate()
+X{
+X	nbytes = 2;
+X	obj[1] = exp() & 0xFF;
+X	return(IMMED);
+X}
+X
+X/*
+X * address data indirectly
+X */
+Xindirect()
+X{
+X	int oper;
+X
+X	nbytes = 2;
+X	oper = exp();
+X	if (match(','))
+X		return(preind(oper));
+X	else if (match(')'))
+X		return(postind(oper));
+X	else
+X		error("syntax error");
+X}
+X
+X/*
+X * pre-indexed indirect
+X */
+Xpreind(oper)
+Xint oper;
+X{
+X	if (match('x') == FALSE)
+X		error("'x' expected");
+X	else if (match(')') == FALSE)
+X		error("')' expected");
+X	else {
+X		obj[1] = oper & 0xFF;
+X		return(IND_X);
+X	}
+X}
+X
+X/*
+X * post-indexed indirect
+X */
+Xpostind(oper)
+Xint oper;
+X{
+X	if (match(',') == FALSE)
+X		return(ind(oper));
+X	else if (match('y') == FALSE)
+X		error("'y' expected");
+X	else {
+X		obj[1] = oper & 0xFF;
+X		return(IND_Y);
+X	}
+X}
+X
+X/*
+X * absolute indirect
+X */
+Xind(oper)
+Xint oper;
+X{
+X	nbytes = 3;
+X	obj[1] = oper & 0xFF;
+X	obj[2] = oper >> 8;
+X	return(INDIRECT);
+X}
+X
+X/*
+X * data in accumulator
+X */
+Xaccum()
+X{
+X	nbytes = 1;
+X	return(ACCUM);
+X}
+X
+X/*
+X * register indexed address modes
+X */
+Xindexed(oper)
+Xint oper;
+X{
+X	if (match('x')) 
+X		return(xindex(oper));
+X	else if (match('y'))
+X		return(yindex(oper));
+X	else
+X		error("'x' or 'y' expected");
+X}
+X
+X/*
+X * index register X
+X */
+Xxindex(oper)
+Xint oper;
+X{
+X	if (oper > 0 & oper < BYTE) {
+X		nbytes = 2;
+X		obj[1] = oper & 0xFF;
+X		return(DIRECT_X);
+X	}
+X	else {
+X		nbytes = 3;
+X		obj[1] = oper & 0xFF;
+X		obj[2] = oper >> 8;
+X		return(ABS_X);
+X	}
+X}
+X
+X/*
+X * index register Y
+X */
+Xyindex(oper)
+Xint oper;
+X{
+X	if (oper > 0 & oper < BYTE) {
+X		nbytes = 2;
+X		obj[1] = oper & 0xFF;
+X		return(DIRECT_Y);
+X	}
+X	else {
+X		nbytes = 3;
+X		obj[1] = oper & 0xFF;
+X		obj[2] = oper >> 8;
+X		return(ABS_Y);
+X	}
+X}
+X
+X/*
+X * direct (zero page) address
+X */
+Xdirect(oper)
+Xint oper;
+X{
+X	nbytes = 2;
+X	obj[1] = oper & 0xFF;
+X	return(DIRECT);
+X}
+X
+X/*
+X * 16-bit absolute address
+X */
+Xabsolute(oper)
+Xint oper;
+X{
+X	nbytes = 3;
+X	obj[1] = oper & 0xFF;
+X	obj[2] = oper >> 8;
+X	return(ABS);
+X}
+X
+X/*
+X * program counter relative
+X */
+Xrelative()
+X{
+X	int offset;
+X
+X	nbytes = 2;
+X	offset = exp() - loc - 2;
+X	if (offset < -128 | offset > 127) {
+X		if (pass == 1)
+X			offset = 0;
+X		else
+X			error("branch out of range");
+X	}
+X	obj[1] = offset;
+X	return(REL);
+X}
+X
+X/*
+X * set location counter pseudo-op
+X */
+Xsetloc()
+X{
+X	if (match('=') == FALSE)
+X		error("'=' expected");
+X	else {
+X		skip();
+X		if (*ip == '*')
+X			reserve();
+X		else {
+X			loc = exp();
+X			if (nset++ == 0)
+X				origin = loc;
+X		}
+X	}
+X}
+X
+X/*
+X * memory reserve pseudo-op
+X */
+Xreserve()
+X{
+X	int oldloc;
+X
+X	oldloc = loc;
+X	loc = exp();
+X	if (pass == 2) {
+X		while (oldloc++ < loc) 
+X			putc('\0', out);
+X	}
+X}
+X
+X/*
+X * explicit pseudo-ops
+X */
+Xpseudo()
+X{
+X	nbytes = 0;
+X	if (sym(sbuf) == FALSE)
+X		error("pseudo-op expected");
+X	else if (strcmp(sbuf, "byte") == SAME)
+X		byte();
+X	else if (strcmp(sbuf, "dbyte") == SAME)
+X		dbyte();
+X	else if (strcmp(sbuf, "end") == SAME)
+X		endflag = TRUE;
+X	else if (strcmp(sbuf, "word") == SAME)
+X		word();
+X	else if (strcmp(sbuf, "text") == SAME)
+X		text();
+X	else if (strcmp(sbuf, "file") == SAME)
+X		file();
+X	else
+X		error("illegal pseudo-op");
+X}
+X
+X/*
+X * initialise memory byte
+X */
+Xbyte()
+X{
+X	nbytes = 0;
+X	while(nbytes < LINESIZE) {
+X		obj[nbytes++] = exp() & 0xFF;
+X		if (match(',') == 0)
+X			break;
+X	}
+X}
+X
+X/*
+X * initialise memory word, high byte first
+X */
+Xdbyte()
+X{
+X	int word;
+X
+X	nbytes = 0;
+X	word = exp();
+X	while(nbytes < LINESIZE) {
+X		obj[nbytes++] = word >> 8;
+X		obj[nbytes++] = word & 0xFF;
+X		if (match(',') == 0)
+X			break;
+X	}
+X}
+X
+X/*
+X * initialise memory word, low byte first
+X */
+Xword()
+X{
+X	int word;
+X
+X	nbytes = 0;
+X	word = exp();
+X	while(nbytes < LINESIZE) {
+X		obj[nbytes++] = word & 0xFF;
+X		obj[nbytes++] = word >> 8;
+X		if (match(',') == 0)
+X			break;
+X	}
+X}
+X
+X/*
+X * enter ASCII text
+X */
+Xtext()
+X{
+X	char delim;			/* string delimeter */
+X
+X	skip();
+X	delim = *ip++;			/* first non-blank is delimeter */
+X	nbytes = 0;
+X	while(nbytes < LINESIZE & *ip != delim & *ip != '\n')
+X		obj[nbytes++] = *ip++;
+X	ip++;				/* skip trailing delimeter */
+X}
+X
+X/*
+X * switch input to new source file
+X */
+Xfile()
+X{
+X	char *bp;
+X
+X	fclose(in);
+X	skip();
+X	bp = sbuf;
+X	while (*ip != ' ' & *ip != '\n')
+X		*bp++ = *ip++;
+X	*bp = '\0';
+X	if ((in = fopen(sbuf, "r")) == NULL) {
+X		fprintf(stderr, "as65: can't open %s\n", sbuf);
+X		fatal(-1);
+X	}
+X}
+X
+X/*
+X * evaluate expression
+X * -------------------
+X * '<' returns low byte of expression
+X * '>' returns high byte
+X */
+Xexp()
+X{
+X	if (match('<'))
+X		return(expression() & 0xFF);
+X	else if (match('>'))
+X		return(expression() >> 8);
+X	else
+X		return(expression());
+X}
+X
+X/*
+X * evaluate infix expression
+X * -------------------------
+X * operator precedence is left to right
+X */
+Xexpression()
+X{
+X	int n;
+X
+X	n = operand();
+X	while (*ip) {
+X		if (match('+'))
+X			n = n + operand();
+X		else if (match('-'))
+X			n = n - operand();
+X		else if (match('*'))
+X			n = n * operand();
+X		else if (match('/'))
+X			n = n / operand();
+X		else
+X			break;
+X	}
+X	return(n);
+X}
+X
+X/*
+X * return arithmetic operand
+X */
+Xoperand()
+X{
+X	char symbol[LINESIZE];
+X
+X	if (sym(symbol))
+X		return(lookup(symbol));
+X	else if (match('$'))
+X		return(hexnum());
+X	else if (match('@'))
+X		return(octal());
+X	else if (match('%'))
+X		return(binary());
+X	else if (match('\''))
+X		return(character());
+X	else if (match('*'))
+X		return(loc);
+X	else if (isdigit(*ip))
+X		return(decimal());
+X	else {
+X		error("illegal expression");
+X		return(ILLEGAL);
+X	}
+X} 
+X
+X/*
+X * look up name in symbol table
+X */
+Xlookup(name)
+Xchar *name;
+X{
+X	char *tag;
+X
+X	tag = hashfind(name);
+X	if (pass == 2) {
+X		if (tag == 0)
+X			error("symbol undefined");
+X		else if (tag < start)
+X			error("illegal symbol");
+X	}
+X	if (tag == 0)
+X		return(0xEAEA);
+X	else
+X		return(mgetw(tag + VALUE));
+X}
+X
+X/*
+X * hexadecimal constant $n
+X */
+Xhexnum()
+X{
+X	int n;
+X
+X	if (isxdigit(*ip) == 0)
+X		return(ERROR);
+X	else {
+X		n = 0;
+X		while (isxdigit(*ip))
+X			n = n * 16 + toint(*ip++);
+X		return(n);
+X	}
+X}
+X
+X/*
+X * convert char to 'weight' of hex digit
+X */
+Xtoint(c)
+Xchar c;
+X{
+X	if (isdigit(c))
+X		return(c - '0');
+X	else if (isxdigit(c)) {
+X		if (isupper(c))
+X			return(c - 'A' + 10);
+X		if (islower(c))
+X			return(c - 'a' + 10);
+X	}
+X	else
+X		return(ERROR);
+X}   
+X
+X/*
+X * decimal constant n
+X */
+Xdecimal()
+X{
+X	int n;
+X
+X	if (isdigit(*ip) == 0)
+X		return(ERROR);
+X	else {
+X		n = 0;
+X		while (isdigit(*ip))
+X			n = n * 10 + *ip++ - '0';
+X		return(n);
+X	}
+X}
+X
+X/*
+X * octal constant @n
+X */
+Xoctal()
+X{
+X	int n;
+X
+X	if (*ip < '0' | *ip > '7')
+X		return(ERROR);
+X	else {
+X		n = 0;
+X		while (*ip >= '0' & *ip <= '7')
+X			n = n * 8 + *ip++ - '0';
+X		return(n);
+X	}
+X}
+X
+X/*
+X * binary constant %n
+X */
+Xbinary()
+X{
+X	int n;
+X
+X	if (*ip != '0' & *ip != '1')
+X		return(ERROR);
+X	else {
+X		n = 0;
+X		while (*ip == '0' | *ip == '1')
+X			n = n * 2 + *ip++ - '0';
+X		return(n);
+X	}
+X}
+X
+X/*
+X * character constant 'c'
+X */
+Xcharacter()
+X{
+X	char c;
+X
+X	c = *ip++;
+X	if (*ip == '\'')
+X		ip++;			/* discard optional trailing ' */
+X	return(c);
+X}
+X
+X/*
+X * get next symbol
+X * ---------------
+X * copy alpha prefixed alphanumeric string from input buffer
+X * accepts underline and tilde as alpha prefix
+X * returns length of string
+X */
+Xsym(p)
+Xchar *p;
+X{
+X	char *bp;
+X
+X	skip();
+X	bp = p;
+X	if (isalpha(*ip) | *ip == '_' | *ip == '~') {
+X		*bp++ = *ip++;
+X		while (isalnum(*ip) | *ip == '_')
+X			*bp++ = *ip++;
+X		*bp = '\0';
+X	}   
+X	return(bp - p);
+X}
+X
+X/*
+X * skip white space on input
+X */
+Xskip()
+X{
+X	while (*ip == ' ' | *ip == '\t')
+X		ip++;
+X}
+X
+X/*
+X * match literal with input buffer
+X */
+Xmatch(c)
+Xchar c;
+X{
+X	skip();
+X	if (*ip != c)
+X		return(FALSE);
+X	else {
+X		ip++;
+X		return(TRUE);
+X	}
+X}
+X
+X/*
+X * output assembly listing and object code
+X */
+Xoutput(mem)
+Xint mem;
+X{
+X	int n, byte;
+X
+X	if (list) {
+X		n = 0;
+X		do {
+X			printf("%04X  ", mem + n);
+X			for (byte = 0; byte < 3; byte++) {
+X				if (n < nbytes)
+X					printf("%02X ", obj[n++] & 0xFF);
+X				else
+X					printf("   ");
+X			}
+X			if (n < 4)
+X				printf(" %s", ibuf);
+X			else
+X				printf("\n");
+X		} while (n < nbytes);
+X	}
+X	for (n = 0; n < nbytes; n++)
+X		putc(obj[n], out);
+X}
+X
+X/*
+X * print error message
+X * -------------------
+X * use stdout, so errors appear in listing
+X */
+Xerror(message)
+Xchar *message;
+X{
+X	printf("\n*****: %s", ibuf);
+X	printf("error: %s\n", message);
+X	if (++errcnt > 5) {
+X		printf("as65: too many errors, assembly aborted\n");
+X		fatal(-1);
+X	}
+X}
+X
+X/*
+X * tidy up files and exit on fatal error
+X */
+Xfatal(stat)
+Xint stat;				/* exit status */
+X{
+X	if (in != NULL)
+X		fclose(in);
+X	if (out != NULL)
+X		fclose(out);
+X	exit(stat);
+X}
+X
+X/*
+X * initialise empty hash table
+X */
+Xinithash()
+X{
+X	int i;
+X
+X	freeptr = symtab;
+X	i = 0;
+X	while (i < HASHSIZE)
+X		hashtab[i++] = NULL;
+X}
+X
+X/*
+X * hashing algorithm
+X * -----------------
+X * returns value in range 0 to HASHSIZE - 1
+X * for best results HASHSIZE should be a prime
+X */
+Xhash(name)
+Xchar *name;
+X{
+X	int h;
+X
+X	h = 0;
+X	while (*name)
+X		h = (3 * h + *name++) % HASHSIZE;
+X	return(h);
+X}
+X
+X/*
+X * install new symbol
+X */
+Xinstall(name, val)
+Xchar *name;
+Xint val;
+X{
+X	int len, h;
+X	char *p;
+X
+X	len = strlen(name) + 5;
+X	if (freeptr + len > endsym) {
+X		fprintf(stderr, "symbol table full\n");
+X		fatal(-1);
+X	}
+X	h = hash(name);
+X	p = freeptr;
+X	mputw(p + NEXTPTR, hashtab[h]);
+X	hashtab[h] = p;
+X	mputw(p + VALUE, val);
+X	strcpy(p + NAME, name);
+X	freeptr = p + len;
+X}
+X
+X/*
+X * find symbol using hash + chain
+X */
+Xchar *hashfind(name)
+Xchar *name;
+X{
+X	char *tag;
+X
+X	tag = hashtab[hash(name)];
+X	while (tag) {
+X		if (strcmp(tag + NAME, name) == SAME)
+X			break;
+X		else
+X			tag = mgetw(tag + NEXTPTR);
+X	}
+X	return(tag);
+X} 
+X
+X/*
+X * put word into memory
+X */
+Xmputw(p, val)
+Xint *p;
+Xint val;
+X{
+X	*p = val;
+X}
+X
+X/*
+X * get word from memory
+X */
+Xmgetw(p)
+Xint *p;
+X{
+X	return(*p);
+X}
+X
+X/*
+X * dump symbol table
+X * -----------------
+X * symbols prefixed by tilde are local, and
+X * are not written to the global symbol file
+X */
+Xdumpsym()
+X{
+X	char *p;
+X	FILE *out;
+X
+X	if (freeptr == start)
+X		return;
+X	if ((out = fopen("g_out", "w")) == NULL) {
+X		fprintf(stderr, "as65: can't open g_out\n");
+X		fatal(-1);
+X	}
+X	p = start;
+X	while (p < freeptr) {
+X		if (*(p + NAME) != '~')
+X			fprintf(out, "%s =$%04X\n", p + NAME, mgetw(p + VALUE));
+X		if (list)
+X			printf("%s =$%04X\n", p + NAME, mgetw(p + VALUE));
+X		p = p + strlen(p + NAME) + 5;
+X	}
+X	fclose(out);
+X}
+X
+X#if DFS
+X/*
+X * set MOS load and execution attributes on object file
+X */
+Xattributes(file, load, exec)
+Xchar *file;				/* filename to set attributes on */
+Xint load;				/* load address */
+Xint exec;				/* execution address */
+X{
+X	int fcb[9];			/* file control block */
+X
+X	fcb[0] = 0;
+X	fcb[1] = load;
+X	fcb[2] = 0;
+X	fcb[3] = exec;
+X	fcb[4] = 0;
+X	fcb[5] = 0;
+X	fcb[6] = 0;
+X	fcb[7] = RW;
+X	fcb[8] = 0;
+X	return(osfile(file, fcb, W_CAT));
+X}
+X#endif
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > crt0_s
+X; crt0_s  26-Jan-89  A.J.Travis
+X
+X;
+X; startup code for tcc run-time support in default text area
+X; above primary operating system high water mark at $1900
+X;
+X	*=$1902		
+X;
+X; initialise sp (data stack pointer)
+X; and enter user program
+X;
+Xstart
+X	cld
+X	tsx		;save stack position
+X	stx rsp
+X	lda #132	;read bottom of display ram
+X	jsr osbyte
+X	stx sp		;initialise data stack
+X	sty sp+1
+X	lda #<escape	;set up escape vector
+X	sta evntv
+X	lda #>escape
+X	sta evntv+1
+X	lda #14		;enable escape event
+X	ldx #6
+X	jsr osbyte
+X	ldx #<__enter	;user entry point
+X	ldy #>__enter
+X	jsr push	;on tcc data stack
+X	jmp __cmdini	;enter _cmdinit(&_enter)
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > crt1_s
+X; crt1_s  04-Apr-89  A.J.Travis
+X
+X;
+X; Run-time support for tcc under Acorn/BBC MOS
+X;
+X
+X;
+X; _trace() - trace/debug trap
+X; ---------------------------
+X; print contents of 6502 regs, and tcc pseudo-regs in hex
+X;
+X__trace
+X	sta asave	;save 6502 regs
+X	stx pr
+X	sty pr+1
+X	jsr osnewl	;start of reg display
+X	ldy #1		;6502 stack hi
+X	tsx		;6502 stack lo
+X	jsr ~hex2
+X	lda $101,x	;return addr lo
+X	ldy $102,x	;return addr hi
+X	tax
+X	jsr ~hex2
+X	ldx pr		;primary reg lo
+X	ldy pr+1	;primary reg hi
+X	jsr ~hex2
+X	ldx sr		;secondary reg lo
+X	ldy sr+1	;secondary reg hi
+X	jsr ~hex2
+X	ldx tr		;tertiary reg lo
+X	ldy tr+1	;tertiary reg hi
+X	jsr ~hex2
+X	ldx sp		;data stack pointer lo
+X	ldy sp+1	;data stack pointer hi
+X	jsr ~hex2
+X	ldy #0
+X	lda (sp),y	;top stack item lo
+X	tax
+X	iny
+X	lda (sp),y	;top stack item hi
+X	tay
+X	jsr ~hex2
+X	lda asave	;restore 6502 regs
+X	ldx pr
+X	ldy pr+1
+X	rts
+X;
+X; output hex number followed by a blank
+X;
+X~hex2
+X	tya
+X	jsr ~hex
+X~hex1
+X	txa
+X	jsr ~hex
+X	lda #' '	
+X	jsr oswrch
+X	rts
+X;
+X; output a as 2 hex digits
+X;
+X~hex
+X	pha
+X	lsr a
+X	lsr a
+X	lsr a
+X	lsr a
+X	jsr ~ahex
+X	pla
+X	jsr ~ahex
+X	rts
+X;
+X; output bits 0-3 of a as hex digit
+X;
+X~ahex
+X	and #$0f
+X	cmp #$0a
+X	clc
+X	bmi ~ahex1
+X	adc #$07
+X~ahex1
+X	adc #$30
+X	jmp oswrch	;use mos rts
+X;
+X; sign extend char in xy 
+X; ----------------------
+X; sign bit in status reg on entry
+X;
+Xext
+X	bpl ~ext1
+X	ldy #$ff	;negative
+X	rts
+X~ext1  
+X	ldy #0		;positive
+X	rts
+X;
+X; convert sp offset to address
+X; -------------------------------
+X; addr   if offset = 0
+X; addr_1 if offset = 2
+X; addr_2 if offset = 4
+X; ...
+X; addr_6 if offset = 12
+X; addr_b if offset < 256
+X; addr_w if offset >= 256
+X;
+Xaddr
+X	ldx sp
+X	ldy sp+1
+X	rts
+Xaddr_1
+X	ldx #2	
+X	jmp addr_b
+Xaddr_2
+X	ldx #4
+X	jmp addr_b
+Xaddr_3
+X	ldx #6
+X	jmp addr_b
+Xaddr_4
+X	ldx #8	
+X	jmp addr_b
+Xaddr_5
+X	ldx #10
+X	jmp addr_b
+Xaddr_6
+X	ldx #12
+Xaddr_b
+X	ldy #0
+Xaddr_w
+X	clc
+X	txa
+X	adc sp
+X	tax
+X	tya
+X	adc sp+1
+X	tay
+X	rts
+X;
+X; store indirect byte in x at addr on stack
+X; -----------------------------------------
+X; leaves signed char in xy as result
+X;
+Xsind_b
+X	jsr pop
+X	ldy #0
+X	txa
+X	sta (sr),y
+X	jmp ext
+X;
+X; store indirect word in xy at addr on stack
+X;
+Xsind_w
+X	jsr pop
+X	sty pr+1
+X	ldy #0
+X	txa
+X	sta (sr),y
+X	iny
+X	lda pr+1
+X	sta (sr),y
+X	tay
+X	rts
+X;
+X; load indirect byte from addr in xy
+X;
+Xlind_b
+X	stx pr
+X	sty pr+1
+X	ldy #0
+X	lda (pr),y
+X	tax
+X	jmp ext
+X;
+X; load indirect word from addr in xy
+X;
+Xlind_w
+X	stx pr
+X	sty pr+1
+X	ldy #0
+X	lda (pr),y	;word lo
+X	tax
+X	iny
+X	lda (pr),y	;word hi
+X	tay
+X	rts
+X;
+X; call subroutine on data stack
+X; -----------------------------
+X; return addr is on 6502 return stack
+X;
+Xscall
+X	ldy #0
+X	lda (sp),y	;addr lo
+X	sta tr
+X	iny
+X	lda (sp),y	;addr hi
+X	sta tr+1
+X	jsr drop	;adjust data stack
+X	jmp (tr)	;return via rts
+X;
+X; xy = xy + 1
+X;
+Xinc1
+X	inx
+X	bne ~inc11
+X	iny
+X~inc11
+X	rts
+X;
+X; xy = xy + 2
+X;
+Xinc2	
+X	clc
+X	txa
+X	adc #2
+X	tax
+X	tya
+X	adc #0
+X	tay
+X	rts	
+X;
+X; xy = xy - 1
+X;
+Xdec1
+X	dex
+X	cpx #$ff
+X	bne ~dec11
+X	dey
+X~dec11
+X	rts
+X;
+X; xy = xy - 2
+X;
+Xdec2	
+X	sec
+X	txa
+X	sbc #2
+X	tax
+X	tya
+X	sbc #0
+X	tay
+X	rts	
+X;
+X; increment sp by byte in a
+X;
+Xsinc_b
+X	clc
+X	adc sp
+X	sta sp
+X	lda #0
+X	adc sp+1
+X	sta sp+1
+X	rts
+X;
+X; increment sp by word in a + asave
+X;
+Xsinc_w
+X	clc
+X	adc sp
+X	sta sp
+X	lda asave
+X	adc sp+1
+X	sta sp+1
+X	rts
+X;
+X; decrement sp by byte in a
+X;
+Xsdec_b
+X	sta tr
+X	sec
+X	lda sp
+X	sbc tr
+X	sta sp
+X	lda sp+1
+X	sbc #0
+X	sta sp+1
+X	rts
+X;
+X; decrement sp by word in a + asave
+X;
+Xsdec_w
+X	sta tr
+X	sec
+X	lda sp
+X	sbc tr
+X	sta sp
+X	lda sp+1
+X	sbc asave
+X	sta sp+1
+X	rts
+X;
+X; swap xy and sr
+X;
+Xswap
+X	txa
+X	ldx sr
+X	sta sr
+X	tya
+X	ldy sr+1
+X	sta sr+1
+X	rts
+X;
+X; push xy to data stack
+X;
+Xpush
+X	sec		;sp = sp - 2
+X	lda sp
+X	sbc #2
+X	sta sp
+X	lda sp+1
+X	sbc #0
+X	sta sp+1
+X	sty pr+1	;save y
+X	tya
+X	ldy #1
+X	sta (sp),y	;old y in stack item hi
+X	dey
+X	txa
+X	sta (sp),y	;old x in stack item lo
+X	ldy pr+1	;restore y
+X	rts
+X;
+X; pop data stack to sr
+X;
+Xpop
+X	sty pr+1	;save y
+X	ldy #0
+X	lda (sp),y
+X	sta sr
+X	iny
+X	lda (sp),y
+X	sta sr+1
+X	ldy pr+1	;restore y
+X	jmp drop
+X;
+X; drop top three stack items
+X;
+Xdrop3
+X	jsr drop
+X;
+X; drop top two stack items
+X;
+Xdrop2
+X	jsr drop
+Xdrop
+X	clc		;drop top stack item
+X	lda sp
+X	adc #2
+X	sta sp
+X	lda sp+1
+X	adc #0
+X	sta sp+1
+X	rts
+X;
+X; exchange xy and top stack item
+X;
+Xxchange
+X	sty pr+1	;save y
+X	ldy #0
+X	lda (sp),y	;save stack item lo
+X	sta pr
+X	txa
+X	sta (sp),y	;old x in stack item lo
+X	iny
+X	lda (sp),y	;save stack item hi in x
+X	tax
+X	lda pr+1
+X	sta (sp),y	;old y in stack item hi
+X	txa
+X	tay		;old stack item hi in y
+X	ldx pr		;old stack item lo in x
+X	rts
+X;
+X; xy = xy * 2
+X;
+Xscale2
+X	lda #2
+X;
+X; xy = xy * a
+X;
+Xscale
+X	sta tr
+X	stx pr+2
+X	sty pr+3
+X	ldy #0
+X	sty pr
+X	sty pr+1
+X	ldy #16
+X~scale1
+X	asl pr
+X	rol pr+1
+X	rol pr+2
+X	rol pr+3
+X	bcc ~scale2
+X	clc
+X	lda tr
+X	adc pr
+X	sta pr
+X	lda #0
+X	adc pr+1
+X	sta pr+1
+X~scale2
+X	dey
+X	bne ~scale1
+X	ldx pr
+X	ldy pr+1
+X	rts
+X;
+X; xy = top stack item + xy
+X;
+Xadd
+X	jsr pop
+X	clc
+X	txa
+X	adc sr
+X	tax
+X	tya
+X	adc sr+1
+X	tay
+X	rts
+X;
+X; xy = top stack item - xy
+X;
+Xsub
+X	jsr pop
+X	stx pr
+X	sty pr+1
+X	sec
+X	lda sr
+X	sbc pr
+X	tax
+X	lda sr+1
+X	sbc pr+1
+X	tay
+X	rts
+X;
+X; xy = top stack item * xy
+X;
+Xmult
+X	jsr pop
+X	stx pr+2
+X	sty pr+3
+X	ldy #0
+X	sty pr
+X	sty pr+1
+X	ldy #16
+X~mult1
+X	asl pr
+X	rol pr+1
+X	rol pr+2
+X	rol pr+3
+X	bcc ~mult2
+X	clc
+X	lda sr
+X	adc pr
+X	sta pr
+X	lda sr+1
+X	adc pr+1
+X	sta pr+1
+X	lda #0
+X	adc pr+2
+X	sta pr+2
+X~mult2
+X	dey
+X	bne ~mult1
+X	ldx pr
+X	ldy pr+1
+X	rts
+X;
+X; xy = top stack item / xy (16-bit signed)
+X;
+Xdiv
+X	jsr pop		;divisor in sr
+X	tya		;dividend sign
+X	eor sr+1
+X	pha		;sign of quotient
+X	tya		;test sign of xy
+X	bpl ~div1
+X	jsr neg
+X~div1
+X	bit sr+1	;test sign of sr
+X	bpl ~div2
+X	jsr ~negsr
+X~div2
+X	jsr ~udiv	;unsigned divide
+X	pla		;sign of quotient
+X	bpl ~div3
+X	jsr neg		;quotient in xy
+X~div3
+X	rts
+X;
+X; xy = top stack item / xy (16-bit unsigned)
+X;
+Xudiv
+X	jsr pop
+X;
+X; xy = xy / sr (16-bit unsigned)
+X;
+X~udiv
+X	jsr ~ztrap	;trap division by zero
+X	stx tr
+X	sty tr+1
+X	lda sr
+X	sta pr
+X	lda sr+1
+X	sta pr+1
+X	ldy #0
+X	sty sr
+X	sty sr+1
+X	ldx #16
+X	asl pr
+X	rol pr+1
+X~udiv2
+X	rol sr
+X	rol sr+1
+X	sec
+X	lda sr
+X	sbc tr
+X	tay
+X	lda sr+1
+X	sbc tr+1
+X	bcc ~udiv3
+X	sty sr
+X	sta sr+1
+X~udiv3
+X	rol pr
+X	rol pr+1
+X	dex
+X	bne ~udiv2
+X	ldx pr
+X	ldy pr+1
+X	rts
+X;
+X; xy = top stack item % xy (16-bit signed)
+X;
+Xmod
+X	jsr pop		;divisor in sr
+X	tya		;dividend sign
+X	pha		;save sign
+X	bpl ~mod1
+X	jsr neg
+X~mod1
+X	bit sr+1	;test sign of sr
+X	bpl ~mod2
+X	jsr ~negsr
+X~mod2
+X	jsr ~umod	;unsigned remainder
+X	pla		;sign of result
+X	bpl ~mod3
+X	jsr neg
+X~mod3
+X	rts
+X;
+X; xy = top stack item % xy (16-bit unsigned)
+X;
+Xumod
+X	jsr pop
+X;
+X; xy = sr % xy (16-bit unsigned)
+X;
+X~umod
+X	jsr ~ztrap	;trap division by zero
+X	stx tr
+X	sty tr+1
+X	ldy #0		;clear pr
+X	sty pr
+X	sty pr+1
+X	ldx #16		;bit count
+X	asl sr
+X	rol sr+1
+X~umod1
+X	rol pr
+X	rol pr+1
+X	sec
+X	lda pr
+X	sbc tr
+X	tay
+X	lda pr+1
+X	sbc tr+1
+X	bcc ~umod2
+X	sty pr
+X	sta pr+1
+X~umod2
+X	rol sr
+X	rol sr+1
+X	dex
+X	bne ~umod1
+X	ldx pr
+X	ldy pr+1
+X	rts
+X;
+X; division by zero trap
+X;
+X~ztrap
+X	txa
+X	bne ~ztrap1
+X	tya
+X	bne ~ztrap1
+X	brk
+X	.byte 0
+X	.text "division by zero"
+X	.byte 0
+X~ztrap1
+X	rts
+X;
+X; negate sr
+X;
+X~negsr
+X	sec
+X	lda #0
+X	sbc sr
+X	sta sr
+X	lda #0
+X	sbc sr+1
+X	sta sr+1
+X	rts
+X;
+X; xy = top stack item | xy
+X;
+Xor
+X	jsr pop
+X	txa
+X	ora sr
+X	tax
+X	tya
+X	ora sr+1
+X	tay
+X	rts
+X;
+X; xy = top stack item ^ xy
+X;
+Xxor
+X	jsr pop
+X	txa
+X	eor sr
+X	tax
+X	tya
+X	eor sr+1
+X	tay
+X	rts
+X;
+X; xy = top stack item & xy
+X;
+Xcand
+X	jsr pop
+X	txa
+X	and sr
+X	tax
+X	tya
+X	and sr+1
+X	tay
+X	rts
+X;
+X; right shift top stack item xy bits
+X;
+Xcasr
+X	jsr pop
+X	lda sr+1
+X	sta pr+1
+X	lda sr
+X	cpx #0
+X	beq ~asr2
+X~asr1
+X	lsr pr+1
+X	ror a
+X	dex
+X	bne ~asr1
+X~asr2
+X	tax
+X	ldy pr+1
+X	rts
+X;
+X; left shift top stack item xy bits
+X;
+Xcasl
+X	jsr pop
+X	lda sr
+X	sta pr
+X	lda sr+1
+X	cpx #0
+X	beq ~asl2
+X~asl1
+X	asl pr
+X	rol a
+X	dex
+X	bne ~asl1
+X~asl2
+X	tay
+X	ldx pr
+X	rts
+X;
+X; negate xy
+X;
+Xneg
+X	clc
+X	txa
+X	eor #$ff
+X	adc #1
+X	tax
+X	tya
+X	eor #$ff
+X	adc #0
+X	tay
+X	rts
+X;
+X; relational operators return status in 6502 'z' flag
+X; ---------------------------------------------------
+X; xy != 0
+X;
+Xnz
+X	cpx #0	
+X	bne ~nz1
+X	cpy #0
+X~nz1
+X	rts
+X;
+X; signed top stack item == xy
+X;
+Xeq
+X	jsr ~cmp
+X	beq ~eq1
+X	ldx #0
+X	rts
+X~eq1
+X	ldx #1
+X	rts
+X;
+X; signed top stack item != xy
+X;
+Xne
+X	jsr ~cmp
+X	bne ~ne1
+X	ldx #0
+X	rts
+X~ne1
+X	ldx #1
+X	rts
+X;
+X; signed top stack item > xy
+X;
+Xgt
+X	jsr ~cmp
+X	beq ~gt1
+X	bcc ~gt1
+X	ldx #1
+X	rts
+X~gt1
+X	ldx #0
+X	rts
+X;
+X; signed top stack item <= xy
+X;
+Xle
+X	jsr ~cmp
+X	beq ~le1
+X	bcc ~le1
+X	ldx #0
+X	rts
+X~le1
+X	ldx #1
+X	rts
+X;
+X; signed top stack item >= xy
+X;
+Xge
+X	jsr ~cmp
+X	bcs ~ge1
+X	ldx #0
+X	rts
+X~ge1
+X	ldx #1
+X	rts
+X;
+X; signed top stack item < xy
+X;
+Xlt
+X	jsr ~cmp
+X	bcc ~lt1
+X	ldx #0
+X	rts
+X~lt1
+X	ldx #1
+X	rts
+X;
+X; signed compare top stack item and xy
+X;
+X~cmp
+X	jsr pop
+X	stx pr
+X	tya
+X	ldy #0		;result hi
+X	eor #$80
+X	sta pr+1
+X	lda sr+1
+X	eor #$80
+X	cmp pr+1
+X	bne ~cmp1
+X	lda sr
+X	cmp pr
+X~cmp1
+X	rts
+X;
+X; unsigned top stack item > xy
+X;
+Xugt
+X	jsr ~ucmp
+X	beq ~ugt1
+X	bcc ~ugt1
+X	ldx #1
+X	rts
+X~ugt1
+X	ldx #0
+X	rts
+X;
+X; unsigned top stack item <= xy
+X;
+Xule
+X	jsr ~ucmp
+X	beq ~ule1
+X	bcc ~ule1
+X	ldx #0
+X	rts
+X~ule1
+X	ldx #1
+X	rts
+X;
+X; unsigned top stack item >= xy
+X;
+Xuge
+X	jsr ~ucmp
+X	bcs ~uge1
+X	ldx #0
+X	rts
+X~uge1
+X	ldx #1
+X	rts
+X;
+X; unsigned top stack item < xy
+X;
+Xult
+X	jsr ~ucmp
+X	bcc ~ult1
+X	ldx #0
+X	rts
+X~ult1
+X	ldx #1
+X	rts
+X;
+X; unsigned compare top stack item and xy
+X;
+X~ucmp
+X	jsr pop
+X	stx pr
+X	sty pr+1
+X	ldy #0		;result hi
+X	lda sr+1
+X	cmp pr+1
+X	bne ~ucmp1
+X	lda sr
+X	cmp pr
+X~ucmp1
+X	rts
+X;
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > lib_c
+X/* lib.c  09-Apr-89  A.J.Travis */
+X
+X/*
+X * Part of the 'standard' C library
+X */
+X
+X#include <stdio.h>
+X
+X#define _MAXARG 32			/* max no. of command arguments */
+X#define _IOSTRG -1			/* string input mode for _doscan() */
+X#define LINESIZE 81			/* length of output line + 1 */
+X#define EOL '\r'			/* MOS end of line */
+X#define DELETE '\177'			/* i/o delete char */
+X#define SAME 0				/* strcmp() strings equal */
+X
+X#define TRUE 1
+X#define FALSE 0
+X#define ERROR -1
+X
+X/*
+X * append string s2 to string s1
+X */
+Xstrcat(s1, s2)
+Xchar *s1;
+Xchar *s2;
+X{
+X	char *os1;
+X
+X	os1 = s1;
+X	while (*s1++)
+X		;
+X	--s1;
+X	while (*s1++ = *s2++)
+X		;
+X	return(os1);
+X}
+X
+X/*
+X * compare strings s1 and s2
+X */
+Xstrcmp(s1, s2)
+Xchar *s1;
+Xchar *s2;
+X{
+X	while (*s1 == *s2++) {
+X		if (*s1++ == '\0')
+X			return(0);
+X	}
+X	return(*s1 - *--s2);
+X}
+X
+X/*
+X * copy string s2 to string s1
+X */
+Xstrcpy(s1, s2)
+Xchar *s1;
+Xchar *s2;
+X{
+X	char *os1;
+X
+X	os1 = s1;
+X	while (*s1++ = *s2++)                             
+X		;
+X	return(os1);
+X}
+X
+X/*
+X * length of string
+X */
+Xstrlen(s)
+Xchar *s;
+X{
+X	int n;
+X
+X	n = 0;
+X	while (*s++)
+X		n++;
+X	return(n);
+X}
+X
+X/*
+X * concatenate up to n chars of s2 onto the end of s1
+X */
+Xstrncat(s1, s2, n)
+Xchar *s1;
+Xchar *s2;
+Xint n;
+X{
+X	char *os1;
+X
+X	os1 = s1;
+X	while (*s1++)
+X		;
+X	--s1;
+X	while  (*s1++ = *s2++)
+X		if (--n < 0) {
+X			*--s1 = '\0';
+X			break;
+X		}
+X	return(os1);
+X}
+X
+X/*
+X * compare up to n chars of s1 and s2
+X */
+Xstrncmp(s1, s2, n)
+Xchar *s1;
+Xchar *s2;
+Xint n;
+X{
+X	while (--n >= 0 & *s1 == *s2++)
+X		if (*s1++ == '\0')
+X			return(0);
+X	if (n < 0)
+X		return(0);
+X	else
+X		return(*s1 - *--s2);
+X}
+X
+X/*
+X * copy n chars from s2 to s1, truncating or null padding if necessary
+X */
+Xstrncpy(s1, s2, n)
+Xchar *s1;
+Xchar *s2;
+Xint n;
+X{
+X	int i;
+X	char *os1;
+X
+X	os1 = s1;
+X	for (i = 0; i < n; i++)
+X		if ((*s1++ = *s2++) == '\0') {
+X			while (++i < n)
+X				*s1++ = '\0';
+X			return(os1);
+X		}
+X	return(os1);
+X}
+X
+X/*
+X * close i/o stream
+X */
+Xfclose(fp)
+XFILE *fp;		/* (pseudo) i/o stream pointer */
+X{
+X	return(close(fp));	
+X}
+X
+X/*
+X * open file by pathname
+X */
+Xfopen(name, mode)
+Xchar *name;
+Xchar *mode;
+X{
+X	int fd;			/* file descriptor for low level i/o */
+X
+X	if (*mode == 'w') {
+X
+X		/* need to zap existing file under DFS/ADFS */
+X		if ((fd = open(name, 2)) != -1) {
+X			close(fd);
+X			unlink(name);
+X		}
+X
+X		/* create file (pmode ignored in this version ...) */
+X		fd = creat(name, 0);
+X	}
+X	else
+X		/* anything else is assumed to be 'r' */
+X		fd = open(name, 0);
+X	if (fd == -1)
+X		return(NULL);
+X
+X	/* no file pointers in Small-C */
+X	return(fd);
+X}
+X
+X/*
+X * a version of fgets that permits '\r' in lieu of
+X * '\n' as end of line and allows character deletion
+X */
+Xfgets(s, n, fp)
+Xchar *s;
+Xint n;
+XFILE *fp;
+X{
+X	int c;
+X	char *cs;
+X
+X	cs = s;
+X	while (--n > 0 & (c = getc(fp)) != EOF) {
+X		if (c == DELETE) {
+X			if (--cs < s)
+X				cs = s;
+X			continue;
+X		}
+X		if (c == '\r')
+X			c = '\n';
+X		if ((*cs++ = c) == '\n')
+X			break;
+X	}
+X	*cs = '\0';
+X	if (c == EOF & cs == s)
+X		return(NULL);
+X	else
+X		return(s);
+X}
+X
+X/*
+X * Put null terminated string to output stream
+X * -------------------------------------------
+X * map '\n' to '\r' for BBC Micro environment
+X */
+Xfputs(s, fp)
+Xchar *s;
+XFILE *fp;
+X{
+X	char *p;
+X	int r;
+X	int c;
+X
+X	if ((fp != stdin) & (fp != stdout) & (fp != stderr)) {
+X		for (p = s; *p; ++p) {
+X			if (*p == '\n')
+X				*p = '\r';
+X		}
+X	}
+X	while (c = *s++)
+X		r = putc(c, fp);
+X	return(r);
+X}
+X
+Xgets(s)
+Xchar *s;
+X{
+X	int c;
+X	char *cs;
+X
+X	cs = s;
+X	while ((c = getchar()) != '\n' & c >= 0)
+X		*cs++ = c;
+X	if (c < 0 & cs == s)
+X		return(NULL);
+X	else {
+X		*cs = '\0';
+X		return(s);
+X	}
+X}
+X
+Xputs(s)
+Xchar *s;
+X{
+X	int c;
+X
+X	while (c = *s++)
+X		putchar(c);
+X	return(putchar('\n'));
+X}
+X
+X/*
+X * formatted output
+X */
+Xprintf(fmt, arg)
+Xchar *fmt;	/* output format */
+Xint arg;	/* argument list */
+X{
+X	char _iobuf[LINESIZE];
+X	
+X	_doprint(_iobuf, fmt, &arg);
+X	fputs(_iobuf, stdout);
+X}
+X
+X/*
+X * formatted output to file
+X */
+Xfprintf(fp, fmt, arg)
+XFILE *fp;	/* output stream */
+Xchar *fmt;	/* output format */
+Xint arg;	/* argument list */
+X{
+X 	char _iobuf[LINESIZE];
+X	
+X	_doprint(_iobuf, fmt, &arg);
+X	fputs(_iobuf, fp);
+X}
+X
+X/*
+X * formatted output to string
+X */
+Xsprintf(s, fmt, arg)
+Xchar *s;	/* output string */
+Xchar *fmt;	/* output format */
+Xint arg;	/* argument list */
+X{
+X	_doprint(s, fmt, &arg);
+X}
+X
+X/*
+X * output format conversion
+X */
+X_doprint(buf, fmt, arg)
+Xchar *buf;	/* output buffer */
+Xchar *fmt;	/* output format */
+Xint *arg[];	/* argument list */
+X{
+X	char *cp;	/* pointer to start of conversion buffer */
+X	char *bp;	/* buffer pointer */
+X	char pad;	/* padding character */
+X	char c;		/* conversion character */
+X	char *s;	/* string pointer */
+X	int width;	/* minimum field width */
+X	int precision;	/* number of digits to print */
+X
+X	bp = buf;
+X	while (*fmt) {
+X		cp = bp;
+X		if (*fmt != '%') {
+X			*bp++ = *fmt++;
+X			continue;
+X		}
+X		if  (*++fmt == '-')
+X			pad = *fmt++;
+X		else
+X			pad = ' ';
+X		if (*fmt == '0') {
+X			if (pad == '-')
+X				*fmt++;
+X			else
+X				pad = *fmt++;
+X		}
+X		width = 0;
+X		while (isdigit(*fmt))
+X			width = width * 10 + *fmt++ - '0';
+X		if (*fmt != '.')
+X			precision = -1;
+X		else {
+X			if (isdigit(*++fmt) == 0)
+X				precision = 1;
+X			else {
+X				precision = 0;
+X				while (isdigit(*fmt))
+X					precision = precision * 10 + *fmt++ - '0';
+X			}
+X		}
+X		if ((c = *fmt++) == 'd') {
+X			if (*arg & 0x8000) {
+X				*bp++ = '-';
+X				bp = bp + itoa(-*arg, bp, 10);
+X			}
+X			else
+X				bp = bp + itoa(*arg, bp, 10);
+X		}
+X		else if (c == 'o')
+X			bp = bp + itoa(*arg, bp, 8);
+X		else if (c == 'u')
+X			bp = bp + itoa(*arg, bp, 10);
+X		else if (c == 'x')
+X			bp = bp + itoa(*arg, bp, 16);
+X		else if (c == 'X')
+X			bp = bp + itoa(*arg, bp, -16);
+X		else if (c == 'c') {
+X			*bp++ = *arg;
+X			*bp = '\0';
+X		}
+X		else if (c == 's') {
+X			s = *arg;
+X			--bp;
+X			if (precision < 0)
+X				while (*++bp = *s++)
+X					;
+X			else {
+X				while (*++bp = *s++) {
+X					if (precision-- == 0) {
+X						*bp = '\0';
+X						break;
+X					}
+X				}
+X			}
+X		}
+X		else {
+X			*bp++ = c;
+X			*bp = '\0';
+X		}
+X		if ((width = width - (bp - cp)) > 0) {
+X			if (pad == '-') {
+X				while (width-- > 0)
+X					*bp++ = ' ';
+X				*bp = '\0';
+X			}
+X			else {
+X				if ((c == 'd') & (*cp == '-') & (pad == '0'))
+X					cp++;
+X				while (bp >= cp)
+X					*(bp + width) = *bp--;
+X				while (width-- > 0)
+X					*cp++ = pad;
+X				while (*bp++)
+X					;
+X				--bp;
+X			}
+X		}
+X		arg++;
+X	}
+X	*bp = '\0';
+X}   
+X
+X/*
+X * convert unsigned 16-bit number to ASCII string
+X * ----------------------------------------------
+X * returns number of digits in output string
+X */
+Xitoa(n, s, base)
+Xunsigned n;	/* input value */
+Xchar *s;	/* output buffer */
+Xint base;	/* conversion base */
+X{
+X	int d;		/* current digit */
+X	int xset;	/* extended character set */
+X	char *p;	/* buffer pointer */
+X
+X	if (base >= 0)
+X		/* default is lower-case hex */
+X		xset = 'a' - 10;
+X	else {
+X		/* 'negative' base used to force upper-case hex */
+X		base = -base;
+X		xset = 'A' - 10;
+X	}
+X
+X	/* generate string least significant digit first */
+X	p = s;  
+X	if (n == 0)
+X		*p++ = '0';
+X	else {
+X		while (n) {
+X			if ((d = n % base) < 10)
+X				*p++ = d + '0';
+X			else
+X				*p++ = d + xset;
+X			n = n / base;
+X		}
+X	}
+X	n = p - s;
+X
+X	/* reverse digit string in-situ */
+X	*p-- = '\0';
+X	while (s < p) {
+X		d = *s;
+X		*s++ = *p;
+X		*p-- = d;
+X	}
+X	return(n);
+X}
+X
+X/*
+X * formatted input
+X */
+Xscanf(fmt, arg)
+Xchar *fmt;
+Xint arg;
+X{
+X	char _iobuf[LINESIZE];
+X
+X	return(_doscan(stdin, _iobuf, fmt, &arg));
+X}
+X
+X/*
+X * formatted input from file
+X */
+Xfscanf(fp, fmt, arg)
+XFILE *fp;
+Xchar *fmt;
+Xint arg;
+X{
+X	char _iobuf[LINESIZE];
+X
+X	return(_doscan(fp, _iobuf, fmt, &arg));
+X}
+X
+X/*
+X * formatted input from string
+X */
+Xsscanf(s, fmt, arg)
+Xchar *s;
+Xchar *fmt;
+Xint arg;
+X{
+X	return(_doscan(_IOSTRG, s, fmt, &arg));
+X}
+X
+X/*
+X * input format conversion
+X */
+X_doscan(fp, buf, fmt, arg)
+XFILE *fp;			/* input stream */
+Xchar *buf;			/* i/o buffer */
+Xchar *fmt;			/* conversion format */
+Xint *arg[];			/* argument list */
+X{
+X	char *bp;		/* conversion buffer pointer */
+X	char *ip;		/* i/o buffer pointer */
+X	char fc;		/* current format string character */
+X	char ic;		/* input character */
+X	int width;		/* input field width */
+X	int sign;		/* sign of decimal number */
+X	int n;			/* number input */
+X	int digit;		/* hex digit */
+X	int assign;		/* if using '*' suppression character */
+X	int nmatch;		/* number of successful conversions */
+X
+X	/* start with empty buffer if reading from file */
+X	if (fp != _IOSTRG)
+X		*buf = '\0';
+X
+X	ip = buf;
+X	nmatch = 0;
+X	while (*fmt) {
+X		while ((fc != '%') | (ic == '\0')) {
+X			while (isspace(fc = *fmt++))
+X				;
+X			while (isspace(ic = *ip++))
+X				;
+X			if (fc == '\0')
+X				break;
+X
+X			/* fill buffer unless input from string */
+X			if (fp != _IOSTRG) {
+X				while (ic == '\0') {
+X					ip = buf;
+X					for (n = 0; n < LINESIZE; n++) {
+X						if ((ic = getc(fp)) == EOF)
+X							break;
+X						if (ic == DELETE) {
+X							if (--ip < buf)
+X								ip = buf;
+X							continue;
+X						}
+X						*ip++ = ic;
+X						if ((ic == EOL) | (ic == '\n'))
+X							break;
+X					}
+X					*ip = '\0';
+X					if ((ic == EOF) & (ip == buf))
+X						return(EOF);
+X					ip = buf;
+X					while (isspace(ic = *ip++))
+X						;
+X				}
+X			}
+X
+X			if ((fc != '\0') & (fc != ic) & (fc != '%'))
+X				return(EOF);
+X		}
+X		if (fc == '\0')
+X			break;
+X		fc = *fmt++;
+X		if ((assign = (fc != '*')) == FALSE)
+X			fc = *fmt++;
+X		if (isdigit(fc) == 0)  
+X			width = LINESIZE;
+X		else {
+X			width = 0;
+X			do {
+X				width = (width * 10 + fc - '0');
+X			} 
+X			while (isdigit(fc = *fmt++));
+X		}
+X		n = 0;
+X		if (fc == 'd') {
+X			sign = 1;
+X			if (ic == '+') {
+X				ic = *ip++;
+X				--width;
+X			}
+X			else if (ic == '-') {
+X				ic = *ip++;
+X				sign = -1;
+X				--width;
+X			}
+X			if (isdigit(ic) == 0)
+X				return(EOF);
+X			while ((isdigit(ic) != 0) & (width-- > 0)) {
+X				n = n * 10 + ic - '0';
+X				ic = *ip++;
+X			}
+X			n = n * sign;
+X		}
+X		else if (fc == 'o') {
+X			if ((ic < '0') | (ic > '7'))
+X				return(EOF);
+X			while ((ic >= '0') & (ic <= '7') & (width-- > 0)) {
+X				n = n * 8 + ic - '0';
+X				ic = *ip++;
+X			}
+X		}                                         
+X		else if (fc == 'x' | fc == 'X') {
+X			if (ic == '0') {
+X				if ((ic = *ip++) == fc)
+X					ic = *ip++;
+X				else
+X					return(EOF);
+X			}
+X			if (isxdigit(ic) == 0)
+X				return(EOF);
+X			while ((isxdigit(ic) != 0) & (width-- > 0)) {
+X				if (isdigit(ic))
+X					digit = ic - '0';
+X				else if (isupper(ic))
+X					digit = ic - 'A' + 10;
+X				else if (islower(ic))
+X					digit = ic - 'a' + 10;
+X				n = n * 16 + digit;
+X				ic = *ip++;
+X			}
+X		}
+X		else if (fc == 's') {
+X			if (assign) {
+X				bp = arg[nmatch++];
+X				while ((ic != '\0') & (width-- > 0)) {
+X					*bp++ = ic;
+X					if (isspace(ic = *ip++))
+X						break;
+X				}
+X				*bp = '\0';
+X			}
+X			else {
+X				while ((ic != '\0') & (width-- > 0))
+X					if (isspace(ic = *ip++))
+X						break;
+X			}				
+X		}
+X		else if (fc == 'c') {
+X			n = ic;
+X			ic = *ip++;
+X			--width;
+X		}
+X		else
+X			return(EOF);
+X		if ((assign != 0) & (fc != 's'))
+X			*(arg[nmatch++]) = n;
+X		--ip;
+X	}
+X	return(nmatch);
+X}
+X
+X/*
+X * convert string to integer
+X */
+Xatoi(s)
+Xchar *s;
+X{
+X	int n;
+X	int sign;
+X	int c;
+X
+X	n = 0;
+X	sign = 1;			/* no sign == positive */
+X	if ((c = *s++) == '+')
+X		c = *s++;
+X	else if (c == '-') {
+X		c = *s++;
+X		sign = -1;
+X	}
+X	while (isdigit(c)) {
+X		n = n * 10 + c - '0';
+X		c = *s++;
+X	}
+X	return(n * sign);
+X}
+X
+X/*
+X * extract command line arguments
+X */
+X_cmdinit(enter)
+Xunsigned enter;				/* entry point (should be int *()) */
+X{
+X	char *lp;			/* pointer to command line */
+X	char *bp;			/* buffer pointer */
+X	int argc;			/* argument count */
+X	int *argv[_MAXARG];		/* BUG - should be char *argv[32] */
+X	char _argbuf[LINESIZE];		/* argument buffer */
+X
+X	lp = _cmdline();		/* get address of MOS command line */
+X	bp = _argbuf;
+X	argv[0] = bp;			/* argv[0] is name of invocation */
+X	*bp++ = '\0';			/* argv[0] not accessible to MOS */
+X	argc = 1;			/* null argv[0] 'always' present */
+X	while (*lp != EOL) {
+X		while (*lp == ' ' | *lp == '\t')
+X			lp++;
+X		if (*lp != EOL)
+X			argv[argc++] = bp;
+X		while (*lp != ' ' & *lp != '\t' & *lp != EOL)     
+X			*bp++ = *lp++;
+X		*bp++ = '\0';
+X	}
+X	enter(argc, argv);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > mkcrt
+Xrm -f crt ext_s g_out
+Xas65 -o crt oshdr_s crt0_s crt1_s sys_s lib_s patch_s
+Xrename g_out ext_s
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > mkswcrt
+Xrm -f swcrt swext_s g_out
+Xas65 -o swcrt oshdr_s swcrt_s crt1_s sys_s lib_s patch_s
+Xrename g_out swext_s
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > mktcc
+X# Makefile  01-May-89  A.J.Travis
+X
+X#
+X# Make 6502 Small-C system for BBC Micro using Zortech C on MSDOS 3.2 host
+X#
+X
+X#
+X# 'old' Zorland C
+X#
+X# CC = zc
+X# LIB = _main.obj
+X
+X#
+X# 'new' Zortech C
+X#
+XCC = ztc
+XLIB = _mains.obj
+X
+XCFLAGS = -p
+XDEFINE = -DMSDOS=1
+X
+Xdefault : resident
+X
+XXFILES1 = dehex_x sh_x shar_x
+X
+XXFILES2 = crt_x swcrt_x as65_x cmp_x diff_x hex_x ld_x lpr_x optab_x
+X
+XXFILES3 = rm_x sfa_x tcc_x tccom_x tcpp_x
+X
+XSHARS = tcc1.sha tcc2.sha tcc3.sha tcc4.sha
+X
+XSHAR1 = $(XFILES2)
+X
+XSHAR2 = $(XFILES3) ctype_h enter_s errors ext_s get install mnemtab put \
+X	start_s stdio_h swext_s
+X
+XSHAR3 = as65_c crt0_s crt1_s lib_c mkcrt mkswcrt mktcc optab_s oshdr_s \
+X	patch_s sh_c swcrt_s sys_s
+X
+XSHAR4 = bm_c cmp_c dehex_c diff_c fahr_c hanoi_c hex_c ld_c lpr_c plot_c rm_c !
+X	sfa_c shar_c sieve_c tcc_c tccom_c tcpp_c
+X
+X#
+X# 8086/88 Binaries for MSDOS host
+X#
+Xhost : as65.exe optab hex.exe rm.exe shar.exe tcpp.exe tccom.exe tcc.exe ld.exe
+X
+Xas65.exe : as65.c
+X	$(CC) $(CFLAGS) $(DEFINE) as65.c
+X
+Xoptab : optab_s
+X	as65 optab_s
+X	+rm optab
+X	+ren o_out optab
+X
+Xhex.exe : hex.c
+X	$(CC) $(CFLAGS) $(DEFINE) hex.c
+X
+Xrm.exe : rm.c
+X	$(CC) $(CFLAGS) $(DEFINE) rm.c $(LIB)
+X	
+Xshar.exe : shar.c
+X	$(CC) $(CFLAGS) $(DEFINE) shar.c $(LIB)
+X
+Xtcpp.exe : tcpp.c
+X	$(CC) $(CFLAGS) $(DEFINE) tcpp.c
+X
+Xtccom.exe : tccom.c
+X	$(CC) $(CFLAGS) $(DEFINE) tccom.c
+X
+Xtcc.exe : tcc.c
+X	$(CC) $(CFLAGS) $(DEFINE) tcc.c
+X
+Xld.exe : ld.c
+X	$(CC) $(CFLAGS) $(DEFINE) ld.c
+X
+X#
+X# resident 6502 binaries for Acorn DFS/MOS
+X#
+Xresident : host crt swcrt as65 bm cmp dehex diff fahr hanoi hex ld lpr plot \
+X	rm sfa sh shar sieve tcc tccom tcpp
+X
+Xcrt : oshdr_s crt0_s crt1_s sys_s lib_s patch_s
+X	+rm ext_s
+X	+as65 -o crt oshdr_s crt0_s crt1_s sys_s lib_s patch_s
+X	ren g_out ext_s
+X
+Xswcrt : oshdr_s swcrt_s crt1_s sys_s lib_s patch_s
+X	+rm swext_s
+X	+as65 -o swcrt oshdr_s swcrt_s crt1_s sys_s lib_s patch_s
+X	ren g_out swext_s
+X
+Xlib_s : lib.c
+X	tcc -S lib.c
+X
+Xas65 : as65.c start_s swcrt 
+X	tcc -o as65 as65.c
+X
+Xbm : bm.c start_s swcrt
+X	tcc -o bm bm.c
+X
+Xcmp : cmp.c start_s swcrt
+X	tcc -o cmp cmp.c
+X
+Xdehex : dehex.c start_s swcrt
+X	tcc -o dehex dehex.c
+X
+Xdiff : diff.c start_s swcrt
+X	tcc -o diff diff.c
+X
+Xfahr : fahr.c start_s swcrt
+X	tcc -o fahr fahr.c
+X
+Xhanoi : hanoi.c start_s swcrt
+X	tcc -o hanoi hanoi.c
+X
+Xhex : hex.c start_s swcrt
+X	tcc -o hex hex.c
+X
+Xld : ld.c start_s swcrt
+X	tcc -o ld ld.c
+X
+Xlpr : lpr.c start_s swcrt
+X	tcc -o lpr lpr.c
+X
+Xplot : plot.c start_s swcrt
+X	tcc -o plot plot.c
+X
+Xrm : rm.c start_s swcrt
+X	tcc -o rm rm.c
+X
+Xsfa : sfa.c start_s swcrt
+X	tcc -o sfa sfa.c
+X	
+Xsh : sh.c start_s swcrt
+X	tcc -R -o sh sh.c
+X
+Xshar : shar.c start_s swcrt
+X	tcc -o shar shar.c
+X
+Xsieve : sieve.c start_s swcrt
+X	tcc -o sieve sieve.c
+X
+Xtcc : tcc.c start_s swcrt
+X	tcc -o tcc tcc.c
+X
+Xtccom : tccom.c start_s swcrt
+X	tcc -o tccom tccom.c
+X
+Xtcpp : tcpp.c start_s swcrt
+X	tcc -o tcpp tcpp.c
+X
+X#
+X# Shell archive distribution
+X#
+Xdistrib : resident $(XFILES1) $(XFILES2) $(XFILES3) dfsname $(SHARS) dosname
+X
+Xas65_x : as65
+X	hex as65 as65_x
+X
+Xbm_x : bm
+X	hex bm bm_x
+X
+Xcmp_x : cmp
+X	hex cmp cmp_x
+X
+Xcrt_x : crt
+X	hex crt crt_x
+X
+Xdehex_x : dehex
+X	hex dehex dehex_x
+X
+Xdiff_x : diff
+X	hex diff diff_x
+X
+Xfahr_x : fahr
+X	hex fahr fahr_x
+X
+Xhanoi_x : hanoi
+X	hex hanoi hanoi_x
+X
+Xhex_x : hex
+X	hex hex hex_x
+X
+Xld_x : ld
+X	hex ld ld_x
+X
+Xlpr_x : lpr
+X	hex lpr lpr_x
+X
+Xplot_x : plot
+X	hex plot plot_x
+X
+Xoptab_x : optab
+X	hex optab optab_x
+X
+Xrm_x : rm
+X	hex rm rm_x
+X
+Xsfa_x : sfa
+X	hex sfa sfa_x
+X
+Xsh_x : sh
+X	hex -R sh sh_x
+X
+Xshar_x : shar
+X	hex shar shar_x
+X
+Xsieve_x : sieve
+X	hex sieve sieve_x
+X
+Xswcrt_x : swcrt
+X	hex swcrt swcrt_x
+X
+Xtcc_x : tcc
+X	hex tcc tcc_x
+X
+Xtccom_x : tccom
+X	hex tccom tccom_x
+X
+Xtcpp_x : tcpp
+X	hex tcpp tcpp_x
+X
+Xdfsname :
+X	ren ctype.h ctype_h
+X	ren stdio.h stdio_h
+X	ren makefile mktcc
+X	ren as65.c as65_c
+X	ren bm.c bm_c
+X	ren cmp.c cmp_c
+X	ren dehex.c dehex_c
+X	ren diff.c diff_c
+X	ren fahr.c fahr_c
+X	ren hanoi.c hanoi_c
+X	ren hex.c hex_c
+X	ren ld.c ld_c
+X	ren lib.c lib_c
+X	ren lpr.c lpr_c
+X	ren plot.c plot_c
+X	ren rm.c rm_c
+X	ren sfa.c sfa_c
+X	ren sh.c sh_c
+X	ren shar.c shar_c
+X	ren sieve.c sieve_c
+X	ren tcc.c tcc_c
+X	ren tccom.c tccom_c
+X	ren tcpp.c tcpp_c
+X
+Xdosname :
+X	ren ctype_h ctype.h
+X	ren stdio_h stdio.h
+X	ren mktcc makefile
+X	ren as65_c as65.c
+X	ren bm_c bm.c
+X	ren cmp_c cmp.c
+X	ren dehex_c dehex.c
+X	ren diff_c diff.c
+X	ren fahr_c fahr.c
+X	ren hanoi_c hanoi.c
+X	ren hex_c hex.c
+X	ren ld_c ld.c
+X	ren lib_c lib.c
+X	ren lpr_c lpr.c
+X	ren plot_c plot.c
+X	ren rm_c rm.c
+X	ren sfa_c sfa.c
+X	ren sh_c sh.c
+X	ren shar_c shar.c
+X	ren sieve_c sieve.c
+X	ren tcc_c tcc.c
+X	ren tccom_c tccom.c
+X	ren tcpp_c tcpp.c
+X
+Xtcc1.sha : $(SHAR1)
+X	shar -a tcc1.sha $(SHAR1)
+X
+Xtcc2.sha : $(SHAR2)
+X	shar -a tcc2.sha $(SHAR2)
+X
+Xtcc3.sha : $(SHAR3)
+X	shar -a tcc3.sha $(SHAR3)
+X
+Xtcc4.sha : $(SHAR4)
+X	shar -a tcc4.sha $(SHAR4)
+X
+Xclean :
+X	+rm compile.bat litfile a_out g_out
+X	+rm $(XFILES1)
+X	+rm $(XFILES2)
+X	+rm $(XFILES3)
+X	+rm *.obj *.map *.sha
+X
+Xclobber :
+X	+rm ext_s swext_s lib_s crt swcrt optab as65 bm cmp dehex diff fahr
+X	+rm hanoi hex ld lpr plot rm sfa sh shar tcc tccom tcpp
+X	+rm *.exe
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > optab_s
+X; optab_s  11-Apr-89  A.J.Travis
+X
+X;
+X; opcode table for as65 (6502) assembler
+X;
+X
+X	.byte $ff,$ff,$69,$65,$75,$ff,$6d,$7d,$79,$61,$71,$ff,$ff
+X	.byte $ff,$ff,$29,$25,$35,$ff,$2d,$3d,$39,$21,$31,$ff,$ff
+X	.byte $ff,$0a,$ff,$06,$16,$ff,$0e,$1e,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$90,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$b0,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$f0,$ff
+X	.byte $ff,$ff,$ff,$24,$ff,$ff,$2c,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$30,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$d0,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$10,$ff
+X	.byte $00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$50,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$70,$ff
+X	.byte $18,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $d8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $58,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $b8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$c9,$c5,$d5,$ff,$cd,$dd,$d9,$c1,$d1,$ff,$ff
+X	.byte $ff,$ff,$e0,$e4,$ff,$ff,$ec,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$c0,$c4,$ff,$ff,$cc,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$c6,$d6,$ff,$ce,$de,$ff,$ff,$ff,$ff,$ff
+X	.byte $ca,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $88,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$49,$45,$55,$ff,$4d,$5d,$59,$41,$51,$ff,$ff
+X	.byte $ff,$ff,$ff,$e6,$f6,$ff,$ee,$fe,$ff,$ff,$ff,$ff,$ff
+X	.byte $e8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $c8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$4c,$ff,$ff,$ff,$ff,$ff,$6c
+X	.byte $ff,$ff,$ff,$ff,$ff,$ff,$20,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$a9,$a5,$b5,$ff,$ad,$bd,$b9,$a1,$b1,$ff,$ff
+X	.byte $ff,$ff,$a2,$a6,$ff,$b6,$ae,$ff,$be,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$a0,$a4,$b4,$ff,$ac,$bc,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$4a,$ff,$46,$56,$ff,$4e,$5e,$ff,$ff,$ff,$ff,$ff
+X	.byte $ea,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$09,$05,$15,$ff,$0d,$1d,$19,$01,$11,$ff,$ff
+X	.byte $48,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $08,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $68,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $28,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$2a,$ff,$26,$36,$ff,$2e,$3e,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$6a,$ff,$66,$76,$ff,$6e,$7e,$ff,$ff,$ff,$ff,$ff
+X	.byte $40,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $60,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$e9,$e5,$f5,$ff,$ed,$fd,$f9,$e1,$f1,$ff,$ff
+X	.byte $38,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $f8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $78,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$85,$95,$ff,$8d,$9d,$99,$81,$91,$ff,$ff
+X	.byte $ff,$ff,$ff,$86,$ff,$96,$8e,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ff,$ff,$ff,$84,$94,$ff,$8c,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $aa,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $a8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $ba,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $8a,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $9a,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X	.byte $98,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+X
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > oshdr_s
+X; oshdr_s  26-Jan-89  A.J.Travis
+X
+X;
+X; operating system header file for tcc run-time support
+X;
+X
+X;
+X; pseudo regs in page zero
+X;
+X; 2 lsb of primary are kept in the
+X; x and y registers whenever possible 
+X;
+Xpr	=$70		;primary reg        (32-bits)
+Xsr	=$74		;secondary reg      (32-bits)
+Xtr	=$78		;tertiary reg       (32-bits)
+Xsp	=$7c		;data stack pointer (16-bits)
+X;
+X; page zero workspace
+X;
+Xrsp	=$7e		;return stack pointer
+Xasave	=$7f		;temp for a
+Xparam	=$80		;page zero parameter block
+X;
+X; MOS variables
+X;
+Xosrom 	=$f4		;number of sideways ROM being executed
+X;
+X; MOS vectors
+X;
+Xuserv	=$200		;user vector
+Xbrkv	=$202		;brk vector
+Xirq1v	=$204		;primary interrupt vector
+Xirq2v	=$206		;unrecognised irq vector
+Xcliv	=$208		;command line interpreter
+Xbytev	=$20a		;*fx/osbyte call
+Xwordv	=$20c		;osword call
+Xwrchv	=$20e		;write character
+Xrdchv	=$210		;read character
+Xfilev	=$212		;load/save file
+Xargsv	=$214		;load/save file data
+Xbgetv	=$216		;get byte from file
+Xbputv	=$218		;put byte in file
+Xgbpbv	=$21a		;multiple bput/bget
+Xfindv	=$21c		;open or close file
+Xfscv	=$21e		;file system control entry
+Xevntv	=$220		;event vector
+Xuptv	=$222		;user print routine
+Xnetv	=$224		;econet vector
+Xvduv	=$226		;unrecognised vdu commands
+Xkeyv	=$228		;keyboard vector
+Xinsv	=$22a		;insert into buffer vector
+Xremv	=$22c		;remove from buffer vector
+Xcnpv	=$22e		;count/purge buffer vector
+Xind1v	=$230		;spare vector
+Xind2v	=$232		;spare vector
+Xind3v	=$234		;spare vector
+X;
+X; page 4 workspace
+X;
+Xgsbuf	=$0400		;general string input buffer
+X;	       
+X; MOS interface
+X;
+Xosurom	=$8000		;user paged ROM/RAM area
+Xosrdrm	=$ffb9		;read byte from paged ROM
+Xoseven	=$ffbf		;generate an event
+Xgsinit	=$ffc2		;string input initialise
+Xgsread	=$ffc5		;read char from string
+Xnvwrch	=$ffc8		;non-vectored write char
+Xnvrdch	=$ffcb		;non-vectored read char
+Xosfind	=$ffce		;open/close file
+Xosgbpb	=$ffd1		;group get/put bytes
+Xosbput	=$ffd4		;put byte to file
+Xosbget	=$ffd7		;get byte from file
+Xosargs	=$ffda		;load/save file data
+Xosfile	=$ffdd		;load/save complete file
+Xosrdch	=$ffe0		;read char (key/RS423)
+Xosasci	=$ffe3		;write ascii char (vdu/RS423)
+Xosnewl	=$ffe7		;write lf,cr (vdu/RS423)
+Xoswrch	=$ffee		;write char (vdu/RS423)
+Xosword	=$fff1		;MOS call (control block)
+Xosbyte	=$fff4		;*fx call
+Xoscli	=$fff7		;command line interpreter
+X;
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > patch_s
+X; patch_s  20-Apr-87  A.J.Travis
+X
+X;
+X; patch a jump here from startup code
+X;
+X__enter
+X;
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > sh_c
+X/* sh.c  01-Dec-88  A.J.Travis */
+X
+X/*
+X * Small-C command shell
+X */
+X
+X#include <stdio.h>
+X
+X#define SAME 0			/* strcmp() strings equal */
+X#define LINESIZE 81		/* length of command line + '\0' */
+X#define LINEMAX 80		/* length of command line */
+X#define SH_EOF '\004'		/* i/o end of file char */
+X
+Xmain()
+X{
+X	char *p1, *p2;			/* line pointers */
+X	int mode;			/* VDU mode */
+X	int eof;			/* end of file */
+X	char line[LINESIZE];		/* command line */
+X
+X	eof = 0;
+X	do {
+X		fputs("$ ", stdout);	/* prompt */
+X		p1 = p2 = fgets(line, LINEMAX, stdin);
+X
+X		/* clean up command line */
+X		while (*p2 == ' ')
+X			++p2;
+X		while (*p1 = *p2++) {
+X			if (*p1++ == '\n')
+X				--p1;
+X		}
+X
+X		/* exit on ^D */
+X		if (*line == SH_EOF)
+X			eof++;
+X		else if (strncmp(line, "mode", 4) == SAME) {
+X			p1 = line + 4;
+X			while (*p1 == ' ')
+X				++p1;
+X			if (isdigit(*p1)) {
+X				mode = *p1 - '0';
+X				vdu(22);
+X				vdu(mode);
+X				exit(0);	/* resets tcc data stack */
+X			}
+X		}
+X		else
+X			system(line);
+X	} 
+X	while (eof == 0);
+X	exit(0);
+X}
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > swcrt_s
+X; swcrt_s  22-Apr-89  A.J.Travis
+X
+X;
+X; startup code for tcc run-time support
+X; in user sideways ROM/RAM area above $8000
+X;
+X	*=osurom
+X;
+X	evs = tr		;pointer to extended vector space
+X	ebrkv = $ff03		;extended break vector
+X	eevntv = $ff30		;extended event vector
+X;
+X; language entry
+X;
+X	jmp ~lang
+X;
+X; service entry
+X;
+X	jmp ~serv
+X;
+X; ROM type (service and language entry)
+X;
+X	.byte %11000010
+X;
+X; copyright offset pointer
+X;
+X	.byte ~cpmess - osurom - 1
+X;
+X; binary version number
+X;
+X	.byte 07
+X;
+X; title string
+X;
+X~title
+X	.text "Small-C"
+X	.byte 0
+X;
+X; version string
+X;
+X~version
+X	.text "0.70"
+X	.byte 0
+X;
+X; copyright message
+X;
+X~cpmess
+X	.text "(C) 1989 A.J.Travis"
+X	.byte 0
+X;
+X; relocation address (not used)
+X;
+X~reloc
+X	.byte 0,0,0,0,0
+X;
+X; Small-C command shell name
+X;
+X~shell
+X	.text "sh"
+X	.byte 0
+X;
+X; Small-C command shell help
+X;
+X~helpmess
+X	.text "NAME"
+X	.byte $0a,$0d
+X	.text "    sh - Small-C command shell"
+X	.byte $0a,$0d,$0a,$0d
+X	.text "SYNOPSIS"
+X	.byte $0a,$0d
+X	.text "    *sh"
+X	.byte $0a,$0d
+X	.text "    *Small-C"
+X	.byte $0a,$0d,$0a,$0d
+X	.text "DESCRIPTION"
+X	.byte $0a,$0d
+X	.text "    Sideways ROM/RAM version of Small-C"
+X	.byte $0a,$0d
+X	.text "    run-time support, and tcc library."
+X	.byte $0a,$0d
+X	.text "    *sh invokes an interactive shell,"
+X	.byte $0a,$0d
+X	.text "    and *Small-C returns ROM # in Y reg"
+X	.byte $0a,$0d,$0a,$0d
+X	.text "AUTHOR"
+X	.byte $0a,$0d
+X	.text "    A.J.Travis"
+X	.byte $0a,$0d,$00
+X;
+X; check service call
+X;
+X~serv
+X	pha		;save registers
+X	tya
+X	pha
+X	txa
+X	pha
+X;
+X	tsx
+X	lda $103,x	;service type requested
+X	cmp #$04	;unrecognised command?
+X	bne ~qhelp
+X;
+X; scan MOS command line for name of Small-C ROM
+X;
+X	ldx #$00
+X~scan1
+X	lda ~title,x
+X	beq ~select
+X	cmp ($f2),y
+X	bne ~qshell
+X	iny
+X	inx
+X	jmp ~scan1
+X~select
+X	tsx
+X	lda osrom	;current ROM id
+X	sta $102,x	;returned in y
+X	jmp ~complete	;service complete
+X;
+X; scan MOS command line for name of Small-C command shell
+X; -------------------------------------------------------
+X; exit with registers preserved if not selected
+X;
+X~qshell
+X	tsx
+X	lda $102,x	;recover y offset
+X	tay
+X	ldx #$00
+X~scan2
+X	lda ~shell,x
+X	beq ~myname
+X	cmp ($f2),y
+X	bne ~notme
+X	iny
+X	inx
+X	jmp ~scan2
+X~myname
+X	lda ($f2),y
+X	cmp #$0d	;end of command string ?
+X	bne ~notme
+X	jmp ~startup
+X~notme
+X	jmp ~out
+X;
+X; check for *help [sh]
+X;
+X~qhelp
+X	cmp #$09	;*help request?
+X	bne ~out
+X	jsr osnewl
+X	lda ($f2),y	;*help <null> ?
+X	cmp #$0d
+X	bne ~morehelp
+X	ldx #0
+X~help1
+X	lda ~title,x	;print ROM title
+X	beq ~help2
+X	jsr oswrch
+X	inx
+X	jmp ~help1
+X~help2
+X	lda #$20	;space
+X	jsr oswrch
+X	ldx #0
+X~help3
+X	lda ~version,x	;print ROM version
+X	beq ~help4
+X	jsr oswrch
+X	inx
+X	jmp ~help3
+X~help4
+X	jsr osnewl
+X	lda #$20	;space
+X	jsr oswrch
+X	jsr oswrch
+X	ldx #0
+X~help5
+X	lda ~shell,x	;print help prompt
+X	beq ~help6
+X	jsr oswrch
+X	inx
+X	jmp ~help5
+X~help6
+X	jsr osnewl
+X	jmp ~out
+X;
+X; expand Small-C command shell help if requested
+X;
+X~morehelp
+X	ldx #0
+X~scan3
+X	lda ~shell,x
+X	beq ~dohelp
+X	cmp ($f2),y
+X	bne ~out
+X	iny
+X	inx
+X	jmp ~scan3
+X~dohelp
+X	ldy #0
+X	lda #<~helpmess
+X	sta tr
+X	lda #>~helpmess
+X	sta tr + 1
+X~help7
+X	lda (tr),y
+X	beq ~help8
+X	jsr oswrch
+X	inc tr
+X	bne ~help7
+X	inc tr + 1
+X	jmp ~help7
+X~help8
+X	jsr osnewl
+X~complete
+X	tsx
+X	lda #0		;stop further processing
+X	sta $103,x	;clobber service request
+X~out
+X	pla		;restore registers and exit
+X	tax
+X	pla
+X	tay
+X	pla
+X	rts
+X;
+X; startup language
+X;
+X~startup
+X	lda #$8e	;start language
+X	ldx osrom	;current ROM id
+X	jmp osbyte
+X;
+X; language entry point
+X; --------------------
+X; initialise sp (data stack pointer)
+X; and enter command shell
+X;
+X~lang
+X	lda #$a8	;get extended vector space
+X	ldx #$00
+X	ldy #$ff
+X	jsr osbyte	;returns evs in xy
+X	stx evs
+X	sty evs + 1
+X;
+X	ldy #3		;brkv = vector #1 * 3
+X	lda #<break	;address of Small-C BRK handler
+X	sta (evs),y
+X	iny
+X	lda #>break
+X	sta (evs),y
+X	iny
+X	lda osrom	;current ROM id
+X	sta (evs),y
+X;
+X	ldy #48		;evntv = vector #16 * 3
+X	lda #<escape	;address of Small-C escape handler
+X	sta (evs),y
+X	iny
+X	lda #>escape
+X	sta (evs),y
+X	iny
+X	lda osrom	;current ROM id
+X	sta (evs),y
+X;
+X	lda #<ebrkv	;set up BRK vector
+X	sta brkv
+X	lda #>ebrkv
+X	sta brkv+1
+X	lda #<eevntv	;set up escape vector
+X	sta evntv
+X	lda #>eevntv
+X	sta evntv+1
+X;
+X; warm start
+X;
+X~restart
+X	lda #14		;enable escape event
+X	ldx #6
+X	jsr osbyte
+X	cli		;enable interrupts
+X	cld
+X	ldx #$ff	;initialise return stack
+X	txs
+X	lda #>~restart	;place return addr on stack
+X	pha
+X	lda #<~restart
+X	pha
+X	tsx
+X	stx rsp		;save value of return stack pointer
+X	lda #$84	;read bottom of display RAM
+X	jsr osbyte
+X	stx sp
+X	sty sp+1
+X	jmp __enter	;user entry point
+X;
+X; BRK handler
+X;
+Xbreak
+X	ldy #1		;offset to start of message
+X~break1
+X	lda ($fd),y	;error message pointer = $fd,$fe
+X	beq ~break2	;null terminated message
+X	jsr oswrch
+X	iny
+X	jmp ~break1	
+X~break2
+X	jsr osnewl
+X	jmp ~lang	;cold start
+X;
+SHAR_EOF
+sed 's/^X//' << 'SHAR_EOF' > sys_s
+X; sys_s  07-Apr-88  A.J.Travis
+X
+X;
+X; Operating system interface for tcc under Acorn/BBC MOS
+X;
+X
+X;
+X; escape trap
+X;
+Xescape
+X	cmp #6		;escape event?
+X	bne ~escape1
+X	lda #13		;disable escape event
+X	ldx #6		;event no.
+X	jsr osbyte
+X	lda #$7e	;acknowledge escape condition
+X	jsr osbyte
+X	lda #0		;close all open files
+X	ldy #0
+X	jsr osfind
+X	lda #$b2	;write keyboard semaphore
+X	ldy #$00	;and y
+X	ldx #$ff	;eor x (enable keyboard interrupts)
+X	jsr osbyte
+X	brk
+X	.byte $11	;escape 'error' code
+X	.byte $0a,$0d	;lf/cr
+X	.text "escape"
+X	.byte 0
+X~escape1
+X	rts
+X;
+X; exit()
+X; ------
+X; exit from user program
+X;
+X_exit
+X	ldx rsp		;recover stack position
+X	txs
+X	rts
+X;
+X; open(name, rwmode)
+X; ------------------
+X; exit with error status if file does not exist
+X; new files are opened with creat()
+X; MOS modes: read=$40, write=$80, r/w=$c0
+X;
+X_open
+X	jsr ~gsconv	;convert filename
+X	lda #<gsbuf	;MOS filename
+X	sta param	;file control block
+X	lda #>gsbuf
+X	sta param+1
+X	lda #5		;read catalogue information
+X	ldx #<param
+X	ldy #>param
+X	jsr osfile
+X	cmp #0
+X	beq ~openerr	;if zero, file does not exist
+X;
+X	ldy #2
+X	lda (sp),y	;rwmode lo
+X	clc
+X	adc #1		;convert to MOS format
+X	ror a
+X	ror a
+X	ror a
+X	ldx #<gsbuf	;filename
+X	ldy #>gsbuf
+X	jsr osfind
+X	tax		;return fd in xy
+X	beq ~openerr	;unless zero file handle
+X;
+X	ldy #0
+X	rts
+X~openerr
+X	ldx #$ff	;return -1 on error
+X	ldy #$ff
+X	rts
+X;
+X; creat(name, pmode)
+X; ------------------
+X; pmode ignored in this version ...
+X;
+X_creat
+X	jsr ~gsconv
+X	lda #$80	;open in write mode
+X	ldx #<gsbuf	;filename
+X	ldy #>gsbuf
+X	jsr osfind
+X	tax		;return fd in xy
+X	beq ~createrr	;unless zero file handle
+X;
+X	ldy #0
+X	rts
+X~createrr
+X	ldx #$ff	;return -1 on error
+X	ldy #$ff
+X	rts
+X;
+X; close(fd)
+X;
+X_close
+X	ldy #0
+X	lda (sp),y	;fd lo
+X	tay		;MOS fd parameter
+X	lda #0		;close file operation
+X	jsr osfind
+X	rts
+X;
+X; unlink(name)
+X;
+X_unlink
+X	jsr ~gsconv
+X	lda #<gsbuf	;filename
+X	sta param	;control block
+X	lda #>gsbuf
+X	sta param+1
+X	lda #6		;delete file
+X	ldx #<param
+X	ldy #>param
+X	jsr osfile
+X	rts
+X;
+X; stat(name, fcb)
+X;
+X_stat
+X	lda #5		;read catalogue information
+X	jmp ~osfile
+X;
+X; system(string)
+X; --------------
+X; execute MOS command
+X;
+X_system
+X	jsr ~gsconv	;convert to MOS format
+X	ldx #<gsbuf
+X	ldy #>gsbuf
+X	jsr oscli
+X	rts
+X;
+X; export address of MOS command line to C environment
+X;
+X__cmdlin
+X	lda #1		;get address of MOS command line		
+X	ldx #param	;4 byte parameter block
+X	ldy #0		;no file descriptor involved
+X	jsr osargs
+X	ldx param	;return address of '\r' terminated line
+X	ldy param+1
+X	rts
+X;
+X; convert string from C to MOS format
+X; -----------------------------------
+X; string is null terminated in c, $0d terminated in MOS
+X; use pr to copy filename from addr pointed to by
+X; top stack item into MOS general string input buffer
+X;
+X~gsconv
+X	ldy #0
+X	lda (sp),y	;name lo
+X	sta pr
+X	iny
+X	lda (sp),y	;name hi
+X	sta pr+1
+X	ldy #0
+X~conv
+X	lda (pr),y
+X	sta gsbuf,y	;parameter block for call
+X	beq ~term
+X	iny
+X	bne ~conv	;max length = 255 chars
+X~term
+X	lda #13		;replaces C '\0'
+X	sta gsbuf,y
+X	rts
+X;
+X; read(fd, buf, count)
+X; --------------------
+X; checks eof on fd before attempting to read
+X;
+X_read
+X	ldy #0
+X	lda (sp),y	;fd
+X	tax		;MOS fd in x
+X	lda #127	;check eof operation
+X	jsr osbyte
+X	txa		;exit status in x
+X	beq ~doread	;x=$ff is eof
+X	ldx #0		;return 0
+X	ldy #0
+X	rts
+X~doread
+X	lda #4
+X	pha
+X	jmp ~access
+X;
+X; write(fd, buf, count)
+X;
+X_write
+X	ldy #0
+X	lda (sp),y	;fd
+X	cmp #1		;fd 1 is stdout
+X	beq ~sput
+X	cmp #2		;fd 2 is stderr
+X	beq ~sput
+X	lda #2
+X	pha
+X	jmp ~access
+X;
+X; string output on stdout or stderr
+X;
+X~sput
+X	ldy #2
+X	lda (sp),y	;buf lo
+X	sta pr
+X	iny
+X	lda (sp),y	;buf hi
+X	sta pr+1
+X	iny
+X	lda (sp),y	;count lo
+X	sta tr
+X	iny
+X	lda (sp),y	;count hi
+X	tax
+X	ldy #0
+X~sput1
+X	lda tr
+X	bne ~sput2	 	
+X	cpx #0
+X	beq ~sput3
+X	dex
+X~sput2
+X	dec tr
+X	lda (pr),y
+X	jsr ~aput
+X	iny
+X	bne ~sput1
+X	inc pr+1
+X	jmp ~sput1
+X~sput3
+X	rts	
+X;
+X; MOS file access interface to tcc
+X; --------------------------------
+X; on entry:
+X;	a=2: write, ignoring new file ptr
+X;	a=4: read, ignoring new file ptr
+X;
+X; high order buffer address is zero, so the 6502 second processor
+X; accesses the 'correct' buffer in second processor memory.
+X;
+X~access
+X	ldy #0
+X	lda (sp),y	;fd lo
+X	sta param
+X	ldy #2
+X	lda (sp),y	;buf addr lo
+X	sta param+1
+X	iny
+X	lda (sp),y	;buf addr hi
+X	sta param+2
+X	lda #0		;hi order buf addr bytes
+X	sta param+3
+X	sta param+4
+X	iny
+X	lda (sp),y	;count lo
+X	sta param+5
+X	iny
+X	lda (sp),y	;count hi
+X	sta param+6
+X	lda #0
+X	sta param+7	;zero high order count
+X	sta param+8
+X	pla		;get access mode
+X	ldx #<param	;MOS control block
+X	ldy #>param
+X	jsr osgbpb
+X	sec		;calc no. transfers
+X	ldy #4
+X	lda (sp),y	;count lo
+X	sbc param+5	;resid lo
+X	tax		;ntransfers lo
+X	iny
+X	lda (sp),y	;count hi
+X	sbc param+6	;resid hi
+X	tay		;ntransfers hi
+X	rts
+X;
+X; getc(fd)
+X;
+X_getc
+X	ldy #0
+X	lda (sp),y	;fd lo
+X	beq ~getchar	;fd 0 is stdin
+X	tay		;MOS fd in y
+X	jsr osbget
+X	bcs ~geof	;c indicates eof on fd
+X	tax
+X	jmp ext		;sign extend char
+X~geof
+X	ldx #$ff	;return -1 on eof
+X	ldy #$ff
+X	rts
+X;
+X; input char from keyboard/rs423
+X;
+X~getchar
+X	jsr osrdch
+X	cmp #$0d	;\r
+X	bne ~echo
+X	jsr oswrch	;echo \r on input
+X	lda #$0a	;map \r to \n on input
+X~echo
+X	jsr oswrch	;echo chars on input
+X	tax
+X	jmp ext		;sign extend char
+X;
+X; putc(c, fd)
+X;
+X_putc
+X	ldy #0
+X	lda (sp),y	;char to put
+X	tax		;save in x for now
+X	ldy #2
+X	lda (sp),y	;fd
+X	cmp #1		;fd 1 is stdout
+X	beq ~xput
+X	cmp #2		;fd 2 is stderr
+X	beq ~xput
+X	tay		;MOS fd in y
+X	txa		;MOS char in a
+X	jsr osbput
+X	rts
+X;
+X; output x to screen/rs423
+X;
+X~xput
+X	txa
+X;
+X; output a to screen/rs423
+X;
+X~aput
+X	cmp #$0a	;\n
+X	beq ~mapn   
+X	jsr oswrch
+X	rts
+X;
+X; map \n to \r\n on output
+X;
+X~mapn
+X	lda #$0d	;\r
+X	jsr oswrch
+X	lda #$0a	;\n
+X	jsr oswrch
+X	rts
+X;
+X; vdu(c)
+X; ------
+X; output char to keyboard/rs423 without \n to \r\n transformation
+X;
+X_vdu
+X	ldy #0
+X	lda (sp),y
+X	jsr oswrch
+X	rts
+X;
+X; osbyte(type, parameters)
+X; ------------------------
+X; MOS "osbyte" interface
+X; a is type of call
+X; x and y are parameters
+X;
+X_osbyte
+X	ldy #2
+X	lda (sp),y	;x parameter
+X	tax
+X	iny
+X	lda (sp),y	;y parameter
+X	sta asave	;save it
+X	ldy #0
+X	lda (sp),y	;type of call
+X	ldy asave
+X	jsr osbyte
+X	rts		;return val in xy
+X;
+X; osword(type, address)
+X; ---------------------
+X; MOS "osword" interface
+X; a is type of call
+X; (x + y << 8) is address of parameter block
+X;
+X_osword
+X	ldy #2
+X	lda (sp),y	;address lo
+X	tax
+X	iny
+X	lda (sp),y	;address hi
+X	sta asave	;save it
+X	ldy #0
+X	lda (sp),y	;type of call
+X	ldy asave
+X	jsr osword
+X	rts		;return val in xy
+X;
+X; osfile(name, fcb, type)
+X; -----------------------
+X; MOS osfile interface
+X;
+X_osfile
+X	ldy #4
+X	lda (sp),y	;osfile type
+X~osfile	
+X	pha		;save type
+X	jsr ~gsconv	;convert name to MOS format
+X	ldy #2
+X	lda (sp),y	;fcb address lo
+X	sta tr
+X	iny
+X	lda (sp),y	;fcb address hi
+X	sta tr+1
+X	ldy #0
+X	lda #<gsbuf	;update file control block
+X	sta (tr),y	;fcb address lo
+X	iny
+X	lda #>gsbuf
+X	sta (tr),y	;fcb address hi
+X	pla		;osfile type
+X	ldx tr		;addr of fcb
+X	ldy tr+1
+X	jsr osfile
+X	cmp #0		;check MOS exit status, 0 = no file
+X	bne ~osfile1
+X	ldx #$ff	;return -1 if no file found
+X	ldy #$ff
+X	rts
+X~osfile1
+X	ldx #0		;return 0 otherwise
+X	ldy #0
+X	sta (tr),y	;leave MOS file type in fcb 
+X	rts
+X;
+X; isalpha(c)
+X;
+X_isalpha
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$03	;_U | _L
+X	tax
+X	beq ~isalpha1
+X	ldx #$01	;return true
+X~isalpha1
+X	rts		;result in x
+X;
+X; isupper(c)
+X;
+X_isupper
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$01	;_U
+X	tax
+X	beq ~isupper1
+X	ldx #$01	;return true
+X~isupper1
+X	rts		;result in x
+X;
+X; islower(c)
+X;
+X_islower
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$02	;_L
+X	tax
+X	beq ~islower1
+X	ldx #$01	;return true
+X~islower1
+X	rts		;result in x
+X;
+X; isdigit(c)
+X;
+X_isdigit
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$04	;_N
+X	tax
+X	beq ~isdigit1
+X	ldx #$01	;return true
+X~isdigit1
+X	rts		;result in x
+X;
+X; isxdigit(c)
+X;
+X_isxdigi
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$44	;_N | _X
+X	tax
+X	beq ~isxdigit1
+X	ldx #$01	;return true
+X~isxdigit1
+X	rts		;result in x
+X;
+X; isspace(c)
+X;
+X_isspace
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$08	;_S
+X	tax
+X	beq ~isspace1
+X	ldx #$01	;return true
+X~isspace1
+X	rts		;result in x
+X;
+X; ispunct(c)
+X;
+X_ispunct
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$10	;_P
+X	tax
+X	beq ~ispunct1
+X	ldx #$01	;return true
+X~ispunct1
+X	rts		;result in x
+X;
+X; isalnum(c)
+X;
+X_isalnum
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$07	;_U | _L | _N
+X	tax
+X	beq ~isalnum1
+X	ldx #$01	;return true
+X~isalnum1
+X	rts		;result in x
+X;
+X; isprint(c)
+X;
+X_isprint
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$17	;_P | _U | _L | _N
+X	tax
+X	beq ~isprint1
+X	ldx #$01	;return true
+X~isprint1
+X	rts		;result in x
+X;
+X; iscntrl(c)
+X;
+X_iscntrl
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$20	;_C
+X	tax
+X	beq ~iscntrl1
+X	ldx #$01	;return true
+X~iscntrl1
+X	rts		;result in x
+X;
+X; isascii(c)
+X;
+X_isascii
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	and #$80	;0 if <= 127
+X	eor #$80	;invert
+X	tax
+X	beq ~isascii1
+X	ldx #$01	;return true
+X~isascii1
+X	rts		;result in x
+X;
+X; toupper(c)
+X;
+X_toupper
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$02	;_L
+X	beq ~toupper1	;skip if not lower-case
+X	sec
+X	txa		;original char
+X	sbc #'a' - 'A'	;force upper case
+X	tax
+X~toupper1
+X	rts		;result in x
+X;
+X; tolower(c)
+X;
+X_tolower
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	tax
+X	lda _ctype_,x
+X	and #$01	;_U
+X	beq ~tolower1	;skip if not upper-case
+X	clc
+X	txa		;original char
+X	adc #'a' - 'A'	;force lower case
+X	tax
+X~tolower1
+X	rts		;result in x
+X;
+X; toascii(c)
+X;
+X_toascii
+X	ldy #0
+X	lda (sp),y	;low byte of c
+X	and #$7f
+X	tax
+X	rts		;result in x
+X;
+X; character classification table
+X;
+X	.byte $00	;EOF 'subscript' is -1
+X_ctype_
+X	.byte $20,$20,$20,$20,$20,$20,$20,$20
+X	.byte $20,$08,$08,$08,$08,$08,$20,$20
+X	.byte $20,$20,$20,$20,$20,$20,$20,$20
+X	.byte $20,$20,$20,$20,$20,$20,$20,$20
+X	.byte $18,$10,$10,$10,$10,$10,$10,$10
+X	.byte $10,$10,$10,$10,$10,$10,$10,$10
+X	.byte $04,$04,$04,$04,$04,$04,$04,$04
+X	.byte $04,$04,$10,$10,$10,$10,$10,$10
+X	.byte $10,$41,$41,$41,$41,$41,$41,$01
+X	.byte $01,$01,$01,$01,$01,$01,$01,$01
+X	.byte $01,$01,$01,$01,$01,$01,$01,$01
+X	.byte $01,$01,$01,$10,$10,$10,$10,$10
+X	.byte $10,$42,$42,$42,$42,$42,$42,$02
+X	.byte $02,$02,$02,$02,$02,$02,$02,$02
+X	.byte $02,$02,$02,$02,$02,$02,$02,$02
+X	.byte $02,$02,$02,$10,$10,$10,$10,$20
+X;
+SHAR_EOF
+

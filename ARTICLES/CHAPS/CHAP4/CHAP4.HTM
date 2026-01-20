@@ -1,0 +1,832 @@
+<HTML>
+<!--
+ 	Dr. Dobb's Small C Resource CD-ROM Compilation (c) 1997 Dr. 
+Dobb's Journal, M&T Publishing, Inc., a subsidiary of Miller Freeman, Inc. All rights reserved.
+-->
+<CENTER>
+<B>
+<H1>
+HOW COMPILERS WORK <p>
+</H1>
+by Allen Holub<p>
+</CENTER>
+</B>
+
+<i>The article originally appeared in Dr. Dobb's Journal # 107 
+(September 1985) as a &quot;C Chest&quot; 
+column.</i> <p>
+ 
+Before looking at Jim Hendrix's version of the Small C compiler, 
+some 
+general compiler theory may be useful. In the interest of clarity 
+I'll reduce the 
+problem from the recognition of a real computer language to a 
+small arithmetic 
+expression analyzer. The techniques used for one are applicable 
+to the other. 
+This expression analyzer will take as input an ASCII string 
+representing an 
+arithmetic expression. Only numbers, parentheses, and the 
+operators + - / * are 
+legal. The analyzer returns the result of the evaluation. For 
+example, if you give 
+it the string &quot;(3+1)*2&quot; the analyzer returns the number 
+8. The routine is 
+simpleminded, but the point of this exercise is to understand 
+compilers, not to 
+analyze complicated expressions. <p>
+<B>
+Anatomy of a Compiler <p>
+</B> 
+Every compiler has three functionally distinct parts. These parts 
+are often 
+combined, but it's best to look at them as separate functions. 
+The first part of the 
+compiler is a token recognizer. A token is some collection of 
+ASCII characters from the 
+input stream that are meaningful to the compiler when taken as a 
+group. That is, a 
+program can be seen as a collection of tokens, each of which is 
+made up of one or 
+more sequential ASCII characters. For example, in C the ASCII 
+character; is a 
+token; similarly, the keyword while is a token. The matter is 
+complicated by 
+operators such as +, ++, and +=, all of which are single tokens. 
+A token is a sort of 
+programming atom, an indivisible part of the language (you can't 
+say while), and a 
+token recognizer is a subroutine that, when called, returns the 
+next token from the 
+input stream. Usually tokens are represented internally as an 
+enumerated type or as 
+a set of integer values corresponding to <i>#define</i>s in a 
+header file somewhere, and 
+the token recognizer returns this integer value. Small-C doesn't 
+do this, though. 
+Rather, various subroutines within the compiler retrieve the 
+tokens from input one 
+at a time as they are needed. <p>
+
+The second part of the compiler, and the part that does most of 
+the work, is 
+the parser. The verb to parse retains its meaning when applied to 
+compilers: &quot;to 
+resolve (a sentence, etc.) into its component parts of speech and 
+describe them 
+grammatically.&quot;[1] For a compiler, replace the word sentence 
+with program. 
+Computer languages may be described by means of a formal grammar 
+(see below), 
+and the parser breaks up a program into its component parts and 
+interprets the 
+parts in a larger, grammatical context. That is, a parser 
+organizes the tokens in 
+such a way that the compiler can generate code conveniently. <p>
+
+A good (though not practical) way to look at the process is as 
+the creation 
+of a parse tree. For example, the expression 
+&quot;(a-b)*(c-d)&quot; can be organized 
+into the tree shown in Figure 4-1.<p> 
+<CENTER> 
+<b>Figure 4-1. A parse tree for (a-b)*(c-d)</b><p>
+</CENTER> 
+<PRE>                                ** 
+                                | 
+                   +------------+------------+ 
+               +---+---+                 +---+---+ 
+               |   |   |                 |   |   | 
+               (   -   )        (   -   ) 
+                   |                         | 
+               +---+---+                 +---+---+ 
+               |       |                 |       | 
+               aa      bb            cc       dd <p>
+
+</PRE>
+ 
+The third part of the compiler, the code generator, traverses the 
+parse tree 
+in an orderly way, generating code according to certain rules. 
+For example, if 
+you do a post order traversal of the tree shown in Figure 4-1 
+(visit the left node, 
+middle node, fight node, and then the root, recursively) the 
+tokens will be read 
+in the following order: <p>
+<PRE> 
+             ( a b -) ( c d - ) * <p>
+</PRE> 
+
+Now, the expression may be evaluated by applying the following 
+rules to 
+each token in the tree as it is visited:<p> 
+<OL> 
+<LI> If the token is a parenthesis, do nothing.  
+<LI> If the token is a variable (a,b,c or d), push the variable 
+onto a stack. 
+<LI> If the token is a minus (-), pop two items off the stack, 
+subtract them, and push 
+       the result. 
+<LI> If the token is an asterisk (*), pop two items off the 
+stack, multiply them, and 
+       push the result. <p>
+</OL> 
+When you're done parsing (traversing the tree), the answer will 
+be on the top of 
+the stack. Owners of Hewlett-Packard calculators are familiar 
+with the process. 
+In a real compiler, the actual rule applied will be some function 
+of the type of 
+token found and the position of that token in the parse tree. <p>
+
+There are several flavors of parsers.[2] Most compilers use 
+table-driven 
+parsers. It's easier to automate compiler creation with table 
+driven parsers, and 
+they're also more efficient. The Unix utility YACC (Yet Another 
+Compiler 
+Compiler), when given a formal description of a programming 
+language, creates 
+a set of tables that can be used by a generic table-driven 
+parser.[3] Similarly, LEX 
+(LEXical analyzer) can output a C program that recognizes 
+tokens.[4] <p>
+
+Unfortunately, most public domain compilers don't use the more 
+sophisticated table-driven methods (and Small-C is no exception). 
+These compilers use a 
+parsing method known as recursive descent. Recursive descent 
+parsers are easier 
+to understand than their table-driven cousins. However, they have 
+several 
+disadvantages. They are inherently inefficient, using large 
+amounts of stack space, 
+and they have to be built by hand. To change a table-driven 
+compiler you need 
+only to change the table; to change the way a recursive descent 
+compiler works, 
+you have to change the compiler itself, so maintenance is a 
+problem with 
+recursive descent compilers. <p>
+<B> 
+Grammars: Representing Computer Languages <p>
+</B> 
+The best way to start writing a program is to reduce the problem 
+to some sort of 
+symbolic form. Pseudo-code, flowcharts, and Warnier-Orr diagrams 
+are all 
+examples of this kind of symbolic reduction. Compilers are no 
+exception to this 
+process. When writing a compiler, you start by representing the 
+programming 
+language to be compiled in a formal, symbolic format called a 
+grammar. Any 
+programming language can be described by several grammars. The 
+type of parser 
+you're going to use will determine which of these is correct for 
+your application. 
+The most useful notation used for grammars is the Backus-Naur 
+Format 
+(abbreviated BNF), which I introduce below. <p>
+
+To create an expression analyzer, you need to start with a 
+grammar. The 
+first question to ask is: What exactly is an expression? You'll 
+remember from the 
+third grade that an expression is composed of factors. A factor 
+by itself (that is, a 
+single number) is an expression, as are two factors separated by 
+an operator. BNF 
+representations of these two rules are: <p>
+<PRE> 
+     &lt;expression&gt; ::= &lt;factor&gt;
+ 
+     &lt;expression&gt; ::= &lt;factor&gt; &lt;operator&gt; &lt;factor&gt;<p> 
+</PRE> 
+You can save some typing by using the vertical bar to represent 
+or: <p>
+<PRE> 
+     &lt;expression&gt; ::=   &lt;factor&gt; 
+ 
+                      | &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; <p>
+</PRE> 
+Note in these definitions that no element of the BNF definition 
+of the 
+&lt;expression&gt; is a real symbol (one that can be found in the 
+input stream). That is, 
+&lt;factor&gt; and &lt;operator&gt; both have to be defined 
+further before they can be 
+related to a real program. Symbols such as &lt;factor&gt; that 
+need further 
+definition are called nonterminal symbols. Symbols that can be 
+found in the input are 
+called terminal symbols. The four terminal symbols that can be 
+operators are + 
+- / *. A BNF role for &lt;operator&gt; is:. <p>
+<PRE> 
+         &lt;operator&gt; ::= + | - | * | / <p>
+</PRE> 
+Defining a factor is a little harder. A factor can be a number, 
+but it can also be 
+another expression (as in a+b-d: &quot;a+b&quot; is one factor 
+and &quot;d&quot; is the second 
+factor). A BNF definition of factor is: <p>
+<PRE> 
+           &lt;factor&gt; ::= &lt;number&gt; | &lt;expression&gt; 
+<p>
+ </PRE>
+The only symbol yet to be defined is &lt;number&gt;. Since a 
+number is an easy 
+thing for the token recognizer to find, you can cheat a little 
+and define 
+&lt;number&gt; in English. The entire grammar is shown in Figure 
+4-2. <p>
+<CENTER>  
+<b>Figure 4-2. A simple expression recognition grammar</b> <p>
+</CENTER> 
+<PRE> 
+         1. &lt;expression&gt; ::=   &lt;factor&gt; 
+                             | &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; 
+ 
+         2. &lt;operator&gt;   ::=  + | - | * | / 
+ 
+         3. &lt;factor&gt;     ::=   &lt;number&gt; | &lt;expression&gt; 
+ 
+         4. &lt;number&gt;     ::=  A string of ASCII characters 
+                              in the range 0 to 9. <p>
+</PRE> 
+Notice that every nonterminal used at of a ::= is also defined to 
+the left, and 
+that no terminal symbols are found to the left of a ::=. To test 
+the grammar, 
+plug in an example: 1+2. Both 1 and 2 are &lt;number&gt;s; so you 
+can replace 
+them with the equivalent nonterminal symbols by using rule 4: <p>
+<PRE> 
+                                    1  +   2 
+                 &lt;number&gt; + &lt;number&gt; 
+</PRE> 
+According to rule 3, a single number is also a factor, so you can 
+do another 
+replacement: <p>
+<PRE> 
+                           &lt;number&gt; + &lt;number&gt; 
+                           &lt;factor&gt; + &lt;factor&gt; <p>
+</PRE> 
+The + can be evaluated using rule 2: <p>
+<PRE> 
+                      &lt;factor&gt;      +     &lt;factor&gt; 
+                      &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; <p>
+</PRE> 
+And finally, by using rule 1, you can replace the above with a 
+single 
+&lt;expression &gt;:<p> 
+<PRE> 
+                      &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; 
+                              &lt;expression&gt; <p>
+</PRE> 
+So you can reduce 1+2 to an &lt;expression&gt; using the rules of 
+the 
+grammar. Therefore, you can conclude that 1 + 2 is a legal 
+expression in this 
+grammar. <p>
+ 
+What if there's an error in the expression. Let's try to parse 
+&quot;1+*.&quot; You can 
+apply rules 3 and 6 to yield <p>
+<PRE> 
+                      &lt;number&gt; &lt;operator&gt; &lt;operator&gt; <p>
+</PRE> 
+and then apply rule 4 to get: <p>
+<PRE> 
+                      &lt;factor&gt; &lt;operator&gt; &lt;operator&gt; <p>
+</PRE> 
+But there is no rule you can apply to reduce this any further, so 
+you can 
+conclude that 1+* is not an expression as defined by this 
+grammar. <p>
+<B> 
+Parsing with a Grammar<p> 
+</B> 
+A parser, then, can be seen as a program that reduces a 
+collection of input 
+tokens to a single nonterminal. We have &quot;parsed&quot; the 
+expression 1 + 2. To turn a 
+parser into a real compiler, you need to make it do something 
+active, too, to 
+generate code. So, you can associate an action rule with each 
+grammatical rule. 
+This grammar, slightly shuffled around and with action rules 
+added, is shown in 
+Figure 4-3. <p>
+
+Every time you apply a grammatical rule, you must also perform 
+the action 
+specified in the equivalent action rule. For example, 1+2, parsed 
+with the 
+grammar in Figure 4-3, is shown in Figure 4-4.<p>
+ 
+A somewhat more involved example is given in Figure 4-5. You can 
+see how 
+the process works. If the action rules had generated the code 
+necessary to 
+perform the operation, rather than doing the operation itself, 
+you would have a 
+compiler. <p>
+<CENTER> 
+<b>Figure 4-3. Adding actions to the grammar<p> </b>
+</CENTER> 
+<PRE>
+          Grammar: 
+ 
+                   1. &lt;expression&gt; ::= &lt;factor&gt; 
+                   2. &lt;expression&gt; ::= &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; 
+                   3. &lt;operator&gt;   ::= + | - |* | / 
+                   4. &lt;factor&gt;     ::= &lt;number&gt; 
+                   5. &lt;factor&gt;     ::= &lt;expression&gt; 
+                   6. &lt;number&gt;     ::= Any string of ASCII characters 
+                                       in the range 0 to 9. 
+               Action rules: 
+ 
+                   1. Do nothing. 
+                   2. Pop two objects off the stack, apply the operator 
+                      remembered in rule 3, and then push the result. 
+                   3. Remember the operator for rule 2. 
+                   4. Push the number onto the stack. 
+                   5. Do nothing. 
+                   6. Translate the ASCII string into a number. 
+<p>
+</PRE> 
+As you've probably noticed, the grammar just defined isn't very 
+useful. 
+It would be nice to have at least parentheses and negative 
+numbers and be 
+able to negate an entire expression (such as -(17*11) ). You may 
+also 
+notice in the above examples that the expression is parsed left 
+to right, so you 
+can make all possible substitutions as you parse. A more 
+realistic grammar 
+makes its substitutions in a somewhat more complex way, and the 
+grammar 
+has to reflect this complexity. A grammar has to be organized so 
+that the 
+parser can always tell what rule to apply based on the current 
+input symbol, 
+and the current rule being processed. A better 
+expression-recognizing 
+grammar is given in Figure 4-6. This grammar is used in the 
+actual program.[5] <p>
+<B> 
+A Recursive Descent Parser <p>
+</B> 
+The best way to see how a parser works is to look at one. Before 
+discussing the 
+parser, I want to describe how the program is organized. The 
+actual subroutines 
+in the parser are highly recursive. As such, they use up a lot of 
+stack space as 
+they work. Because of this stack usage, you'd want to pass as few 
+parameters as 
+possible to the subroutines (because all these parameters take up 
+stack space). <p>
+<CENTER>  
+<b>Figure 4-4. Parsing 1+2 using grammar in Figure 4-3</b> <p>
+</CENTER> 
+<PRE> 
+                                  rule action 
+           1       +     2 
+     &lt;number&gt;      +     2         6   Translate ASCII to int 
+     &lt;factor&gt;      +     2         4   Push 1 
+     &lt;factor&gt;      +     &lt;number&gt;  6   Translate ASCII to int 
+     &lt;factor&gt;      +     &lt;factor&gt;  4   Push 2 
+     &lt;factor&gt; &lt;operator&gt; &lt;factor&gt;  3   Remember the + 
+     &lt;expression&gt;                  2   Pop the 1 &amp;  2, apply + 
+                                       and push the result. <p>
+</PRE> 
+
+<CENTER> 
+<b>Figure 4-5. Parsing 1 + 2 - 3</b> <p>
+</CENTER>  
+<PRE>                                   Apply     Action 
+                                     rule 
+ 
+     1 + 2 - 3                           -   Start here 
+     &lt;number&gt; + 2 - 3                    6   Translate &quot;1&quot; to int 
+     &lt;factor&gt; + 2 - 3                    4   Push 1 
+     &lt;factor&gt; &lt;operator&gt; 2 - 3           3   Remember + 
+     &lt;factor&gt; &lt;operator&gt; &lt;number&gt; - 3    6   Translate &quot;2&quot; to int 
+     &lt;factor&gt; &lt;operator&gt; &lt;factor&gt; - 3    4   Push 2 
+     &lt;expression&gt; - 3                    2   Pop two numbers, apply + and push result. 
+     &lt;factor&gt; - 3                        1   Do nothing. 
+     &lt;factor&gt; &lt;operator&gt; 3               3   Remember - 
+     &lt;factor&gt; &lt;operator&gt; &lt;number&gt;        6   Translate &quot;3&quot; to int 
+     &lt;factor&gt; &lt;operator&gt; &lt;factor&gt;        4   Push 3 
+     &lt;expression&gt;                        2   Pop two numbers off stack, subtract and push result.
+<p> 
+</PRE> 
+<CENTER> 
+<b>Figure 4-6. A more realistic expression-recognizing grammar</b>
+ <p>
+</CENTER> 
+<PRE> 
+             &lt;expr&gt;     ::=    &lt;factor&gt;                 (1) 
+                            | &lt;factor&gt; * &lt;expr&gt;          (2) 
+                            | &lt;factor&gt; / &lt;expr&gt;          (3) 
+                            | &lt;factor&gt; + &lt;expr&gt;         (4) 
+                            | &lt;factor&gt; - &lt;expr&gt;          (5)
+             &lt;factor&gt;   ::= |  ( &lt;expr&gt; )              (6) 
+                            | -( &lt;expr&gt; )                (7) 
+                            | &lt;constant&gt;               (8) 
+                            | -&lt;constant&gt;              (9) 
+ 
+             &lt;constant&gt; ::= A string of ASCII characters 
+                            in the range 0 to 9,<p> 
+</PRE> 
+So, you make global those variables that would normally be passed 
+to the 
+subroutines as arguments. However, this practice introduces new 
+problems. In C, all 
+nonstatic global variables are shared between all modules in a 
+program. But the 
+expression parser is probably going to be a library routine, and 
+you don't want it 
+to interfere with the normal workings of the rest of a program. 
+Moreover, you 
+don't want the programmer to have to remember that certain 
+globals are used by 
+a particular library routine and can't be used anywhere else. So, 
+you make the 
+globals static, and also make static those subroutines that are 
+used only internally. Now, however, you need some way to 
+initialize the static globals from 
+outside the parser module. You do this initialization with the 
+&quot;access routine&quot; 
+starting on line 84 of the <a href="#list4-1">listing</a> (the 
+only externally accessible subroutine in the 
+module). This access routine (called <i>parse()</i>) does nothing 
+but initialize the 
+globals and then call <i>expr()</i> to do the work. Another 
+organizational concern is 
+the <i>main()</i> routine in lines 34-79. The primary purpose of 
+<i>main()</i> is to test 
+<i>parse()</i>, thus the<i> #ifdef/#endif</i> on lines 32 and 81. 
+DEBUG is not <i>#define</i>d 
+when you compile for inclusion in a library. The <i>main()</i> 
+routine given is 
+moderately useful in its own right. You can enter the expression 
+from the command 
+line (&quot;expr 17/(2*12)&quot;) or you can just type expr and 
+then enter expressions as 
+the program prompts you--sort of a rudimentary desk calculator. 
+<p>
+
+Moving back to parsers, there are a few things to notice about 
+the grammar 
+in Figure 4-6. First, the left-most symbol following the :: = is 
+always either a 
+terminal or the same nonterminal for all rules. That is, all 
+rules associated with 
+&lt;expr&gt; have &lt;factor&gt; as their left-most symbol. The 
+left-most symbol of all 
+&lt;factor&gt; rules is either a terminal, ( or -, or the 
+nonterminal &lt;constant&gt;. 
+The left-most symbol of a constant has to be an ASCII digit. This 
+property of the 
+grammar is required by the parser so that it can know what rule 
+to apply in a 
+given situation. For example, when evaluating an &lt;expr&gt;, 
+the parser will 
+always apply a rule associated with &lt;factor&gt; first. <p>
+
+A second property of the grammar is that the definitions for 
+&lt;expr&gt; and 
+&lt;factor&gt; are recursive. An &lt;expr&gt; is defined in terms 
+of other &lt;expr&gt;s. 
+The recursion in &lt;factor&gt; is two levels deep. A 
+&lt;factor&gt; is defined in terms 
+of an &lt;expr&gt;, which is in turn defined in terms of a 
+&lt;factor&gt;. The recursion 
+in the grammar suggests that you can also use recursion in a 
+parser that 
+implements the grammar. <p>
+
+So, given an appropriate grammar, you can translate that grammar 
+directly 
+into a parser. In the program given here, all nonterminal symbols 
+in the 
+grammar have an equivalent subroutine with the same name. The 
+routine for 
+&lt;expr&gt; starts on line 104, &lt;factor&gt; on line 124, and 
+&lt;constant&gt; on line 
+155. <p>
+
+Looking again at the grammar in Figure 4-6, you'll see that the 
+first thing 
+done in all the &lt;expr&gt; rules (1-5) is to look for a 
+&lt;factor&gt;. Similarly, the first 
+thing the subroutine <i>expr()</i> does is call the subroutine <i>
+factor()</i> (line 108). 
+Looking back at the grammar, the next thing &lt;expr&gt; does is 
+look for a terminal 
+symbol (either a * / + - or a null string). The equivalent code 
+is the switch on 
+lines 110-117. The default case takes care of the null terminal 
+(rule 1). The 
+recursive evaluation of &lt;expr&gt; in rules 2-5 is also done in 
+the switch. On line 
+119 <i>expr()</i> returns the evaluated expression. <p>
+
+<i>Factor()</i> is somewhat more complex. It first checks (on 
+lines 128-132) for 
+the leading minus sign required by rules 7 and 9. After stripping 
+off the minus, 
+rules 6 and 7 become identical, similarly rules 8 and 9 are 
+identical once the 
+minus is gone. So,<i> factor()</i> now decides which rule to 
+process by looking for a 
+leading parenthesis (line 134). If it doesn't find the 
+parenthesis, rule 8 is 
+processed (line 135) by calling the subroutine <i>constant()</i>, 
+otherwise rule 6 is 
+processed by skipping past the parenthesis and then calling <i>
+expr()</i> (lines 138-139). 
+You can also do some error checking here by looking for a close 
+parenthesis 
+when <i>expr()</i> returns (lines 143-147). <p>
+
+The final part of the parser is the routine <i>constant()</i> on 
+lines 155-169. This 
+routine is essentially <i>atoi()</i>, but it advances the string 
+pointer past the end of a 
+number and flags an error if a number isn't found.<p>
+ 
+Note that in this program (and in the Small-C Compiler) the three 
+
+functional parts of the compiler are merged. There is no explicit 
+token recognizer; 
+rather, each routine is responsible for advancing the global 
+string pointer (<i>Str</i>) 
+past the token being processed. Similarly, the code generation 
+part of the 
+compiler is integrated into the parser. In our example, code 
+generation is replaced by 
+the various return statements. In a real compiler the routine <i>
+factor()</i> would 
+generate code to push a value onto a runtime stack rather than 
+return a value. The 
+switch on lines 110 to 117 would be replaced by something like: 
+<p>
+<PRE> 
+     switch( *Str ) 
+     { 
+     case '+': 
+             Str++; 
+             expr(); 
+             codegen(1); 
+ 
+     case '-': 
+             Str++; 
+             expr(); 
+             codegen(2); 
+ 
+     /* etc. */ 
+     } <p>
+</PRE> 
+Since the code to push one number onto the stack is generated in 
+<i>factor()</i>, the 
+first number will be pushed by the <i>factor()</i> call on line 
+108. By the time <i>expr()</i> 
+returns, the code to push the second number will have been 
+generated (by the 
+<i>factor()</i> call inside <i>expr()</i>. The call to <i>
+codegen(1)</i> inside the switch generates 
+the code needed to pop two numbers off the stack, add them 
+together, and push 
+the result. The <i>codegen(2)</i> call behaves similarly, but it 
+subtracts rather than 
+adds. <p>
+
+That's the bulk of the problem. A better understanding of what's 
+going on 
+will help when you try to sort out the workings of Small-C 
+itself. <p>
+<B> 
+Notes<p> 
+</B> 
+   1. <i>The Compact Edition of the Oxford English Dictionary</i> 
+(Oxford: Oxford 
+      University Press, 1971), p. 2083. <p>
+ 
+   2. A good short description of table-driven parsing techniques 
+can be found in Dr. 
+      Henry A. Seymour's, &quot;An Introduction to Parsing,&quot; 
+<i>Dr. Dobb's Journal</i>, #98 
+      (December 1984), pp. 78-86. A more in-depth look at the 
+subject, and at compiler 
+      design in general, can be found in Alfred V. Aho, Ravi 
+Sethi, and Jeffrey D. 
+      Ullman, <i>Compilers: Principles, Techniques, Tools</i> 
+(Reading, Mass.: Addison-Wesley, 
+      1985); and P.M.Lewis, D.J.Rosenkrantz and R.E. Stearns, <i>
+Compiler Design Theory </i>
+      (Reading, Mass.: Addison-Wesley, 1976). <p>
+ 
+   3. See Axel T. Schreiner and H. George Friedman, Jr., <i>
+Introduction to Compiler 
+      Construction with Unix</i> (Englewood Cliffs: 
+Prentice-Hall, 1985) and Stephen C. 
+      Johnson, &quot;Yacc: Yet Another Compiler-Compiler,&quot; 
+<i>Unix Programmer's Manual, 
+      Vol. 2</i> (New York: Holt, Rinehart and Winston, 1979), 
+pp. 353-387. <p>
+ 
+   4. See Schreiner and Friedman, loc. cit., and M. E. Lesk and 
+E. Schmidt, &quot;Lex - A 
+      Lexical Analyzer Generator,&quot; <i>Unix Programmer's 
+Manual, Vol. 2</i>, pp. 388-400. <p>
+ 
+   5. A grammar for the C language is in B.W. Kernighan &amp; 
+D.B. Ritchie, <i>The C 
+      Programming Language</i> (Englewood Cliffs, N.J.: 
+Prentice-Hall, 1978), pp. 214-219. <p>
+
+<b><a name="list4-1">LISTING 4-1</a><p></b>
+<PRE>  
+    1: #include &lt;stdio.h&gt; 
+    2: 
+    3: /* EXPR.C: (C) Copyright 1985, Allen I. Holub. All rights reserved 
+    4:  * 
+    5:  *   Evaluate an expression pointed to by str. Expressions evaluate 
+    6:  *   right to left unless parenthesis are present. Valid operators are 
+    7:  *   * + - / for multiply add, subtract and divide. The expression must 
+    8:  *   be formed from the character set { 0123456789+-*()/ }. White 
+    9:  *   space is not allowed. 
+   10:  * 
+   11:  *   &lt;expr&gt;      ::=    &lt;factor&gt; 
+   12:  *                    | &lt;factor&gt; * &lt;expr&gt; 
+   13:  *                    | &lt;factor&gt; / &lt;expr&gt; 
+   14:  *                    | &lt;factor&gt; + &lt;expr&gt; 
+   15:  *                    | &lt;factor&gt; - &lt;expr&gt; 
+   16:  * 
+   17:  *   &lt;factor&gt;    ::=     ( &lt;expr&gt; ) 
+   18:  *                    | -( &lt;expr&gt; ) 
+   19:  *                    |  &lt;constant&gt; 
+   20:  *                    | -&lt;constant&gt; 
+   21:  * 
+   22:  *   &lt;constant&gt;  ::=  A string of ASCII chars in the range '0'-'9'. 
+   23:  * 
+   24:  *--------------------------------------------------------------- 
+   25:  *  Global variables: 
+   26:  */ 
+   27: 
+   28: static char *Str ;   /* Current position in string being parsed    */ 
+   29: static int  Error;   /* # of errors found so far                   */ 
+   30: 
+   31: /*--------------------------------------------------------------*/ 
+   32: #ifdef DEBUG 
+   33: 
+   34: main(argc, argv) 
+   35: char    **argv; 
+   36: { 
+   37:         /*     Routine to exercise the expression parser. If an 
+   38:          *     expression is given on the command line it is 
+   39:          *     evaluated and the result is printed, otherwise 
+   40:          *     expressions are fetched from stdin (one per line) 
+   41:          *     and evaluated. The program will return -1 to the 
+   42:          *     shell on a syntax error, 0 if it's in interactive 
+   43:          *     mode, otherwise it returns the result of  the 
+   44:          *     evaluation. 
+   45:          */ 
+   46: 
+   47:         char buf[133], *bp = buf; 
+   48:         int err, rval; 
+   49: 
+   50:         if( argc &gt; 2 ) 
+   51:         { 
+   52:                 fprintf(stderr, &quot;Usage: expr [&lt;expression&gt;]&quot;); 
+   53:                 exit( -1 ); 
+   54:         } 
+   55: 
+   56:         if( argc &gt; 1 ) 
+   57:         { 
+   58:                 rval = parse( argv[l], &amp;err ); 
+   59:                 printf(err ? &quot;*** ERROR ***&quot; : &quot;%d&quot;, rval ); 
+   60:                 exit( rval ); 
+   61:         } 
+   62: 
+   63:         printf(&quot;Enter expression or &lt;CR&gt; to exit program\n&quot;); 
+   64: 
+   65:         while( 1 ) 
+   66:         { 
+   67:                 printf(&quot;?&quot;); 
+   68: 
+   69:                 if(gets(buf) == NULL || !*buf ) 
+   70:                        exit(0); 
+   71: 
+   72:                 rval= parse(buf, &amp;err); 
+   73: 
+   74:                 if( err ) 
+   75:                         printf(&quot;*** ERROR ***\n&quot;); 
+   76:                 else 
+   77:                         printf(&quot;%s: %d\n&quot;, buf, rval); 
+   78:         } 
+   79: } 
+   80: 
+   81: #endif 
+   82: /*------------------------------------------------------------------*/ 
+   83: 
+   84: int     parse( expression, err ) 
+   85: char    *expression; 
+   86: int         *err; 
+   87: { 
+   88:         /* Return the value of &quot;expression&quot; or 0 if any errors were 
+   89:          * found in the string. &quot;*Err&quot; is set to the number of errors. 
+   90:          * &quot;Parse&quot; is the &quot;access routine&quot; for expr(). By using it you 
+   91:          * need not know about any of the global vars used by expr(). 
+   92:          */ 
+   93: 
+   94:         register int        rval; 
+   95: 
+   96:         Error = 0; 
+   97:         Str = expression; 
+   98:         rval = expr(); 
+   99:         return( (*err = Error) ? 0 : rval ); 
+  100: } 
+  101: 
+  102: /*------------------------------------------------------------------*/ 
+  103: 
+  104: static int expr() 
+  105: { 
+  106:         int    lval; 
+  107: 
+  108:         lval = factor(); 
+  109: 
+  110:         switch (*Str) 
+  111:         { 
+  112:         case '+':  Str++;  lval += expr();    break; 
+  113:         case '-':  Str++;  lval -= expr();    break; 
+  114:         case '*':  Str++;  lval *= expr();    break; 
+  115:         case '/':  Str++;  lval /= expr();    break; 
+  116:         default :                             break; 
+  117:         } 
+  118: 
+  119:         return( lval ); 
+  120: } 
+  121: 
+  122: /*------------------------------------------------------------------*/ 
+  123: 
+  124: static int factor() 
+  125: { 
+  126:         int    rval = 0 , sign = 1 ; 
+  127: 
+  128:         if ( *Str == '-' ) 
+  129:         { 
+  130:                 sign = -1 ; 
+  131:                 Str++; 
+  132:         } 
+  133: 
+  134:         if ( *Str != '(' ) 
+  135:                 rval = constant(); 
+  136:         else 
+  137:         { 
+  138:                 Str++; 
+  139:                 rval = expr(); 
+  140: 
+  141:                 if ( *Str ==')') 
+  142:                         Str++; 
+  143:                 else 
+  144:                 { 
+  145:                         printf(&quot;Mis-matched parenthesis\n&quot;); 
+  146:                         Error++ ; 
+  147:                 } 
+  148:         } 
+  149: 
+  150:         return (rval * sign); 
+  151: } 
+  152: 
+  153: /*------------------------------------------------------------------*/ 
+  154: 
+  155: static int constant() 
+  156: { 
+  157:         int    rval = 0; 
+  158: 
+  159:         if( !isdigit( *Str )) 
+  160:                 Error++; 
+  161: 
+  162:         while ( *Str &amp;&amp; isdigit(*Str) ) 
+  163:         { 
+  164:                  rval = (rval * 10) + (*Str - '0'); 
+  165:                  Str++; 
+  166:         } 
+  167: 
+  168:         return( rval ); 
+  169: } 
+</PRE> 
+<P>
+<CENTER>Return to <a href="../toc.htm">Table of Contents</a>
+
+</CENTER>
+<P>
+</HTML>

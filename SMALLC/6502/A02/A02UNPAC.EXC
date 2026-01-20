@@ -1,0 +1,58 @@
+drive 0
+shar -x :1.tcc1
+
+dehex crt_x crt
+delete crt_x
+
+dehex swcrt_x swcrt
+delete swcrt_x
+
+dehex as65_x as65
+delete as65_x
+
+dehex cmp_x cmp
+delete cmp_x
+
+dehex diff_x diff
+delete diff_x
+
+dehex hex_x hex
+delete hex_x
+
+dehex ld_x ld
+delete ld_x
+
+dehex lpr_x lpr
+delete lpr_x
+
+dehex optab_x optab
+delete optab_x
+
+compact
+shar -x :1.tcc2
+
+dehex rm_x rm
+delete rm_x
+
+dehex sfa_x sfa
+delete sfa_x
+
+dehex tcc_x tcc
+delete tcc_x
+
+dehex tccom_x tccom
+delete tccom_x
+
+dehex tcpp_x tcpp
+delete tcpp_x
+
+copy 1 0 unpack
+compact
+
+drive 2
+
+shar -x :3.tcc3
+shar -x :3.tcc4
+
+drive 0
+

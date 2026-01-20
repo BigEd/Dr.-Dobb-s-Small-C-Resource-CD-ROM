@@ -1,0 +1,2816 @@
+        You could shorten the source, and make  it  easier  to  follow,  by
+     replacing  each  occurrence  with  a  macro  call:  you might set up a
+     suitable macro with the statements
+     
+                    ADDTWO  MACRO
+                            LDA   VAR
+                            CLC
+                            ADC   #2
+                            STA   VAR
+                            ENDM
+                    
+                    
+        Then, instead of writing the four lines of code, simply  write  one
+     line
+     
+                            ADDTWO
+     
+        The   Assembler   will   expand  the  macro  definition,  and  will
+     automatically generate the four lines for you.
+     
+     
+     9.1 Using macro parameters
+     
+     
+        Although this is useful in itself, the  macro  as  shown  above  is
+     rather  limited.  It  couldn't,  for instance, be used to add 2 to the
+     variable COUNT instead of VAR.
+     
+        In order  to  provide  this  sort  of  flexibility,  you  can  pass
+     information  to  macros  as "parameters". You could re-write the macro
+     above to read
+     
+     
+
+
+
+
+
+
+
+                                      42
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                    ADDTWO  MACRO
+                            LDA   @P1
+                            CLC
+                            ADC   #2
+                            STA   @P1
+                            ENDM
+                    
+        Here we have replaced the occurrences of VAR by the  string  "@P1".
+     Now,  when  the  Assembler  expands  the  macro,  it  will replace all
+     occurrences of "@P1" with parameter number 1 of the macro call. To add
+     2 to VAR, you would then write
+     
+                            ADDTWO  VAR
+     
+     and to add 2 to COUNT, you would write
+     
+                            ADDTWO  COUNT
+     
+     
+        You can supply up to 9 parameters when you call a macro,  and  they
+     are  indicated  in  the  body of the macro by @P1, @P2, @P3 and so on.
+     (Note that you can also specify the parameters as @1, @2,  @3  and  so
+     on, omitting the "P". This is adequate for existing code; however, for
+     new  programs you should use the "@P1" form, as this is necessary when
+     you come to use the Macro Programming Language)
+     
+     
+     9.2 Specifying macro parameters
+     
+     
+        You can specify anything you want as parameters to macros. A  macro
+     can have up to 9 parameters, separated by a comma and optional spaces.
+     
+        A macro with 3 parameters could be called with lines like
+     
+                            CHECK  1,FRED,27
+                            CHECK  1 ,  FRED  , 27
+     
+     and so on.
+     
+        Normally,  the  Assembler  will  remove leading and trailing spaces
+     from each parameter. If you require leading or trailing spaces, or  if
+     the parameter has to include a comma, you will need to specify it as a
+     string, delimited by single- or double-quote characters. Thus, a macro
+     call might look like
+     
+                            THING  'Here, is a comma'
+     
+     and "@P1" will be replaced in the macro body with the characters
+     
+                                Here, is a comma
+     
+        Note  that  the  string  delimiters  are  not  taken as part of the
+     parameter proper.
+
+
+                                      43
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     
+     
+     
+     9.3 Nesting macros
+     
+        You can call macros from within macros, up to a depth of 5. If  you
+     attempt to nest deeper than that the Assembler will flag an error.
+     
+     
+     
+     9.4 Redefining opcodes and directives
+     
+        The Assembler allows you to set up macros to redefine any opcode or
+     directive.   For   example,   you  might  want  to  redefine  the  JSR
+     (Jump-to-Subroutine) opcode to automatically save the registers before
+     entering the subroutine. You could do this by declaring a macro called
+     JSR thus:
+     
+                         JSR   MACRO
+                               PHA
+                               TXA
+                               PHA
+                               TYA
+                               PHA
+                               JSR   @P1
+                               ENDM
+                         
+        Now, whenever the Assembler comes across a line  with  JSR  in  the
+     opcode  field,  it  will  expand the macro JSR rather than obeying the
+     opcode. It will plant the code to save the registers,  and  then  will
+     come to the line
+     
+                               JSR  @P1
+     
+     in the macro.
+     
+        Here,  because it is already in a macro, the Assembler will not use
+     the macro JSR. Instead it will assemble the opcode JSR,  planting  the
+     code to enter the subroutine.
+     
+     
+     9.5 Labels within macros
+     
+     
+        Suppose  you  wish  to write a macro that includes a branch of some
+     sort. You might write the macro definition as:
+     
+     
+
+
+
+
+
+
+
+
+                                      44
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                         THING  MACRO
+                                LDA    @P1
+                                BEQ    ZERO
+                                EOR    #$FF
+                         ZERO   STA    @P2
+                                ENDM
+                         
+        The first time the macro is called, it plants the code  bytes,  and
+     defines the label ZERO as the destination of the BEQ instruction. On a
+     subsequent  call,  though,  the  macro will produce the same code, and
+     will attempt to define the value of ZERO again. This  of  course  will
+     fail, since it already exists from the first macro call.
+     
+        The  Assembler  provides  a way round this problem, by giving you a
+     way of generating unique labels. Every time a  macro  is  called,  the
+     Assembler  sets  up what you can regard as a special parameter on your
+     behalf, which contains a string that  is  different  for  every  macro
+     call.  This  string  is  substituted,  in  the  same  way  as ordinary
+     parameters, by writing "@$MC" in the line.
+     
+        Thus, the above macro could be changed to be:
+     
+                         THING     MACRO
+                                   LDA    @P1
+                                   BEQ    ZERO@$MC
+                                   EOR    #$FF
+                         ZERO@$MC  STA    @P1
+                                   ENDM
+                         
+        Then, on the first macro call, every occurrence of  ZERO@$MC  might
+     be  changed to ZERO1X1. On the next call, they become ZERO2X1, so that
+     there is no clash between the macros.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      45
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     10. THE MACRO PROGRAMMING LANGUAGE
+     
+     
+     
+        A very powerful feature of the Assembler is its  Macro  Programming
+     Language.  This  allows  you  considerable  control  in how macros are
+     expanded - you can construct loops, manipulate  macro  parameters  and
+     perform  several  other  functions  that  allow you to build macros of
+     great power.
+     
+        Although this facility is mostly intended for  use  within  macros,
+     many  of  its  facilities  can  also  be  used outside macros to great
+     effect, as this section will explain.
+     
+        The Macro Programming Language's facilities  build  on  two  source
+     language  features  known  as  Assembly  Time  Variables  and Sequence
+     Symbols.
+     
+     
+     10.1 Sequence Symbols
+     
+     
+        These are "place markers" within your source files or within macros
+     that the Macro Programming Language uses in  loops.  Using  directives
+     such as AGO and AIF, you can make the Assembler move up or down within
+     a  file  or a macro, letting you repeatedly assemble some parts of the
+     source or totally omit others.
+     
+        Sequence Symbols are very similar to the labels that  are  part  of
+     the  source  proper,  and  they  can  contain  the same characters. To
+     distinguish them, Sequence Symbols always begin within a "%"  sign  in
+     the  first  character  of  the line. The Sequence Symbol should be the
+     only thing on  the  line:  if  you do  put  anything  else  there  the
+     Assembler will ignore it.
+     
+        To  take  an example of how Sequence Symbols could be used, suppose
+     your source file contained the lines
+     
+     
+                               AGO    %SKIP
+                               ASC    'These lines will never '
+                               ASC    'get assembled'
+                         %SKIP
+                               ASC    'But this one will'
+                         
+                         
+        The Assembler will encounter  the  AGO  directive,  and  will  then
+     ignore  everything  in  the  source  file  until it finds the Sequence
+     Symbol %SKIP. It will then resume its normal processing.
+     
+        Although this example  will  actually  work,  the  technique  isn't
+     greatly  useful,  as  ignoring source lines can be done just as easily
+     with the IF..ELSE..FI construction.  However,  AGO  (and  the  various
+     conditional  skips such as AIF) also allows you to go backwards in the
+
+
+                                      46
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     source or macro - there is no other way of achieving this.
+     
+        The  Sequence  Symbols  used  in  any  file  or  macro  are   quite
+     independent of those in any other; thus you can safely use ones of the
+     same name in every file and macro, if you wish.
+     
+     
+     10.2 Assembly Time Variables
+     
+     
+        Assembly  Time  Variables,  or  ATVs, are string variables that the
+     Assembler itself uses while assembling your source files. As it  reads
+     the  program  source  (either  from a file or from the definition of a
+     macro) the Assembler continually looks for references to  ATVs.  These
+     are replaced - before the line is assembled - with the contents of the
+     ATV, thus allowing you to vary the source that is actually processed.
+     
+        You  can  use  ATVs  in many ways. For example, the first line of a
+     source might set an ATV string to  hold  the  version  number  of  the
+     program  you  are  assembling;  the  Assembler will then automatically
+     replace every reference to that name with the string.  Some  ATVs  are
+     created  by  the Assembler itself, and let you incorporate such things
+     as the name of the source file into the source itself.
+     
+        The main use, though, is in controlling  loops  within  macros  and
+     within source files.
+     
+     
+          10.2.1 Creating Assembly Time Variables
+          
+          
+           ATVs  have  names similar to the variables that form part of the
+          source  proper,  and  you  can  manipulate  them   with   various
+          directives.
+          
+          
+          10.2.1.1 Local and Global ATVs
+          
+          There are two types of ATV: local and global ones. 
+          
+            a. Global  ATVs exist for the whole of the assembly, and can be
+               used anywhere. They are created  and  manipulated  with  the
+               ASTR,  ASET,  ASTRIP  and ALEN directives, which you can use
+               even inside macros - the ATVs they create will  continue  to
+               exist after the macro finishes.
+               
+            b. Local  ATVs  are  created and manipulated by the MSTR, MSET,
+               MSTRIP and MLEN directives. These  directives  can  only  be
+               used inside macros, and the ATVs thy create can be used only
+               within  the same  macro  - they cease to exist at the end of
+               the macro expansion. You would use these,  for  example,  in
+               controlling loops within a macro.
+               
+               In  fact, you have already seen local ATVs in use in section
+
+
+                                      47
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+               9.1 on "Simple Macros". Whenever you  invoke  a  macro,  the
+               Assembler  creates  local  ATVs with names P1, P2, P3 and so
+               on, each holding one of the parameters you supplied  on  the
+               macro call.
+               
+               For example, the source line
+               
+                              NAME  ASET  'OSWRCH'
+               
+               will  set  up  an  ATV  called  NAME, whose contents are the
+               string 'OSWRCH'. Since the ASET directive has been used, the
+               ATV is global, and can be used anywhere in the assembly.
+               
+               
+               You can create local and global ATVs of the same name if you
+               wish. However, if you wish to refer to the  local  ATV,  you
+               should  be  careful  to always  use  the  "M"  form  of  the
+               directives. The "A" forms will always  create  global  ATVs,
+               even if local ones of the same name already exist.
+               
+               
+          10.2.1.2 String and Numeric Values
+          
+          
+          All  ATVs  are  stored  by  the  Assembler as printable character
+          strings. However, in many cases you will find  you  use  them  as
+          counters  for controlling loops: to make this easy, the Assembler
+          will automatically convert ATVs from numbers to strings  whenever
+          necessary.
+          
+          The  rule  used  is  quite  simple.  When processing ASET or MSET
+          directives the Assembler examines  the  first  character  of  the
+          operand  field. If it is a string delimiter, the operand is taken
+          as a string and is not evaluated. If it is any  other  character,
+          the  Assembler  treats  the  operand  as  a  numeric  expression,
+          evaluates it, and converts the result into a string for storage.
+          
+          Thus, the line
+          
+                              COUNT  ASET  15+3  
+          
+          will set up the ATV COUNT, containing the string "18", but
+          
+                              COUNT  ASET  '15+3'
+          
+          sets up the string "15+3".
+          
+          The operand can be any expression, provided it does  not  contain
+          any forward references: thus
+          
+                            COUNT  ASET  ADDRESS+10
+          
+          sets  COUNT to hold the string form of the result of adding 10 to
+          the address label ADDRESS.
+
+
+                                      48
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          
+          If you use expressions that mix  numeric  and  character  literal
+          values,  some  caution  is needed to make sure that the Assembler
+          does what you want: for example,
+          
+                               VALUE  ASET  'A'+3
+          
+          would produce an error, rather than adding 3 to the code for  the
+          character  'A'. This is because the Assembler, seeing the operand
+          field beginning with a "'"  character,  will  treat  the  operand
+          field  as a string and find that it is invalid. To overcome this,
+          you may be able to re-order  the  operand  expression:  thus  you
+          could write the above example as
+          
+                               VALUE  ASET  3+'A'
+          
+          Now  the  Assembler  will  treat  the  operand field as a numeric
+          expression, since it does not begin with a string delimiter.
+          
+          In some cases, though (particularly in macros where you  may  not
+          know  beforehand what the expression may look like) it may not be
+          possible to re-order things safely. Here you  can  simply  put  a
+          dummy number in front of the expression: thus
+          
+                             VALUE  ASET  0+'A'+'B'
+          
+          would  add  the  character  values  'A'  and 'B', the leading "0"
+          character forcing the Assembler to treat the operand as a numeric
+          expression.
+          
+          The ALEN and MLEN directives similarly  convert  from  number  to
+          string for you. Here the operand must be a string: for example,
+          
+                          SIZE  ALEN  'A short string'
+          
+          sets  SIZE  to  hold  the string "14" - the length of the operand
+          string, converted from a number into a string.
+          
+          
+          10.2.1.3 String slicing
+          
+          The ASET and  MSET  directives  also  allow  to  you  to  "slice"
+          strings, or extract characters from inside them. You perform this
+          by adding some parameters in the operand field: for example
+          
+                         SLICE  ASET   'abcdefghij',3,2
+          
+          will  set  SLICE  to  hold  the  string  "cd". The second operand
+          parameter specifies the position of the  first  character  to  be
+          sliced  out  (the  string  starts  at character 1), and the third
+          parameter specifies the number of characters to be sliced.
+          
+          If you omit the third parameter, exactly one character is sliced:
+          thus
+
+
+                                      49
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          
+                          SLICE  ASET   'abcdefghij',3
+          
+          will set SLICE to hold the string "c".
+          
+          Occasionally, string manipulations such as slicing may result  in
+          strings  that have leading or trailing spaces, and you may not be
+          able  to  tell  beforehand  how  many.  The  ASTRIP  and   MSTRIP
+          directives remove all leading and trailing spaces, so that
+          
+                          NEW   ASTRIP   '  abcd    '
+          
+          would set the string NEW to be "abcd".
+          
+          
+          10.2.1.4 Efficient use of memory
+          
+          The  strings  contained  by ATVs are held by the Assembler in the
+          symbol table, and so compete for memory with other  symbols.  You
+          can change the contents of an ATV to a string of different length
+          as  often  as  you  wish:  however, every time the string becomes
+          longer the Assembler will allocate a new block of memory for  it.
+          The   previous   block  cannot  be  used  again,  so  continually
+          increasing the size of  an  ATV  can  be  extremely  wasteful  of
+          memory.
+          
+          To   overcome   this,  the  ASTR  and  MSTR  directives  let  you
+          pre-declare a block of memory big enough to hold the maximum size
+          string you will use. For example,
+          
+                                 NAME  ASTR  50
+          
+          sets up a block long enough to hold a 50-byte string without  the
+          need to get more memory.
+          
+          The minimum  amount  of  memory  the Assembler will allocate is 5
+          bytes: this is enough to hold the largest possible numeric value,
+          so that loop counters will not  cause  memory  wastage  as  their
+          values grow - you need not use ASTR and MSTR for them.
+          
+          
+     10.2.2 Simple Substitution of Assembly Time Variables
+     
+     
+        Once  you  have  set  up  ATVs, you can use them to create variable
+     source lines. We have already come across this concept in section  9.1
+     on "Simple Macros", in the discussion of macro parameter substitution.
+     There, we saw that if the source of the macro contained the line
+     
+     
+                                   LDA  #@P1
+     
+     
+     the  Assembler  would replace "@P1" with whatever you had specified as
+
+
+                                      50
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     the first parameter of the macro when you called it.
+     
+        ATVs are substituted into source lines in exactly the same way, and
+     as we saw, macro parameters are in fact local ATVs.
+     
+        The rule the Assembler uses is quite simple: whenever it detects an
+     "@" sign in the source (other than in a comment line)  it  expects  an
+     ATV  name  to  follow. The "@" and the name itself are replaced by the
+     contents of the ATV before the line is assembled.
+     
+        For example, you might keep the version number of a  program  in  a
+     small,  quickly-editable  file that is INCLUDEd into the source at the
+     start of an assembly. This might contain the line
+     
+                             VERSION  ASET  "3.45"
+     
+     which sets the ATV VERSION to hold the string  "3.45".  Then,  at  any
+     point  in  the  source  where  you needed to insert the version number
+     (such as in a screen message) you could write, for example
+     
+                        TITLE  ASC  "SuperGame @VERSION"
+     
+        The Assembler  would  replace  "@VERSION"  with  "3.45"  before  it
+     assembled the line, so the string actually planted would be
+     
+                                "SuperGame 3.45"
+     
+        This   technique   lets   you   keep  the  version  number  in  one
+     easily-alterable place, and lets the Assembler take  care  of  putting
+     the  up-to-date  value  (or parts of the value) into the source at the
+     appropriate places.
+     
+     
+        There are some more complex uses of ATV substitution, and we  shall
+     discuss these later in section 10.3 on "Writing Complex Macros".
+     
+     
+        Some useful points to note on substitution are:
+     
+       a. If you want the "@" character to appear in the line the Assembler
+          processes,  your  source  must  contain two of them. Thus, if the
+          line you really want to assemble is
+          
+                               ASC  'VAT @ 15%' 
+          
+          write it in the source file  as
+          
+                               ASC  'VAT @@ 15%'
+          
+          
+       b. Once the Assembler finds an  "@"  character  in  the  source,  it
+          assumes that what follows is an ATV name. The end of this name is
+          assumed to be the first non-alphanumeric character that it meets,
+          or  the  end of the line. In almost all cases, this will cause no
+
+
+                                      51
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          difficulty, but occasionally will, usually in complex macros.
+          
+          As an example, suppose you  had  declared  at  ATV  called  EXPR,
+          holding  the  string  "10+".  A subsequent source line might then
+          read
+          
+                                  LDA  #@EXPR3
+          
+          and the intention is for this to be transformed into
+          
+                                   LDA  #10+3
+          
+          In  this  case,  though,  the  substitution  will  fail,  as  the
+          Assembler will look for an ATV called EXPR3. To force it to do as
+          you want, write the source line as
+          
+                                 LDA  #@EXPR/3
+          
+          The  "/" character enables the Assembler to detect the end of the
+          ATV name, so it will look for EXPR as it should. The "/" will  be
+          discarded, so that the resulting line will be
+          
+                                   LDA  #10+3
+          
+          as  intended.  If you need a "/" character in the resulting line,
+          write it as "//".
+          
+          There is another techniques you might use in these circumstances.
+          The Assembler does not regard spaces as  significant  in  numeric
+          expressions, so that you could write
+          
+                                 LDA  #@EXPR 3
+          
+          to achieve the same result.
+          
+       c. No  ATV  substitution  is  performed  in  comment lines, in lines
+          containing Sequence Symbols, or in the definition of macros (i.e.
+          between the MACRO and ENDM directives). Apart from these, though,
+          substitutions can be made at any  place  in  a  line  -  you  can
+          substitute for labels, opcodes, operands or any parts of them.
+     
+     
+     
+     10.3 Writing Complex Macros
+     
+     
+     10.3.1 Programming macro loops
+     
+        Mostly,  you  will  use  the  Macro Programming Language to program
+     macro loops, controlled by various conditions.
+     
+     
+
+
+
+
+                                      52
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          10.3.1.1 Simple loops controlled by counter
+          
+          
+          The simplest form of loop is one which is executed a fixed number
+          of times, and needs only a counter to control it.
+          
+          As an example, suppose that we need a macro to plant a number  of
+          bytes  containing  $FF  with  the DFB directive, the number being
+          specified by the first parameter. (There are much easier ways  of
+          doing  this  than  with  a  macro,  of course - this only shows a
+          general technique).
+          
+          The macro definition might then be:
+          
+                         PLANT  MACRO
+                         COUNT  MSET    0
+                         %LOOP
+                                DFB     $FF
+                         COUNT  MSET    @COUNT+1
+                                AIF     @COUNT<@P1,%LOOP
+                                ENDM
+                         
+          To see how this works, we can examine each line in turn, assuming
+          that the macro was called with a line
+          
+                                    PLANT  7
+          
+          
+          Line 1 : This is the macro definition line.
+                   
+          Line 2 : This line sets up a local ATV called COUNT, and gives it
+                   a string value of "0".
+                   
+          Line 3 : This is a Sequence Symbol marking the top of  the  loop.
+                   Note that there is nothing else on the line with it.
+                   
+          Line 4 : This is the DFB line that plants the $FF byte required.
+                   
+          Line 5 : This   line  increments  the  value  of  COUNT.  As  the
+                   Assembler reads the line, it encounters "@COUNT",  which
+                   it  replaces  with  the current string value of the ATV.
+                   Thus the  first  time  this  line  is  encountered,  the
+                   Assembler will generate
+                   
+                                COUNT  MSET  0+1
+                   
+                   The second time, it generates
+                   
+                                COUNT  MSET  1+1
+                   
+                   and so on.
+                   
+          Line 6 : This  tests  whether the Assembler is to loop round once
+                   more.  As  with  line  4,  the  Assembler  will  replace
+
+
+                                      53
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                   "@COUNT" with the current value of the ATV. "@P1" is, of
+                   course,  replaced  by  the first parameter of the macro.
+                   The first time round, the line processed is
+                   
+                                AIF   0<7,%LOOP
+                   
+                   which is true, so the Assembler skips backwards  in  the
+                   macro to line 4 and resumes processing from there.
+                   
+                   
+                   
+          
+          10.3.1.2 Loops accessing macro parameters
+          
+          
+          Another  frequently-needed  form  of loop is one in which all the
+          parameters of the  macro  are  accessed  in  turn.  Suppose,  for
+          example,  you  need to write a macro THINGS, whose parameters are
+          all numbers. Each number is to be planted in a byte in the object
+          file with a DFB directive: to make THINGS interesting, the number
+          of parameters must be variable.
+          
+          Such a  macro  is  fairly  simple  to  write,  but  uses  an  ATV
+          substitution  technique  that  can,  at  first sight, be somewhat
+          daunting. If the job were simply to plant the value of  parameter
+          1, the line in the macro that does it would simply be
+          
+                                   DFB   @P1
+          
+          However,  we need to access each parameter in turn: the Assembler
+          must somehow be made to see "@P1" the first time round the  loop,
+          "@P2"  in  the  second,  and  so on. Effectively, then, we need a
+          substitution technique that lets us  have  a variable  ATV  name:
+          i.e.  one  that first  substitutes the number ("1", "2", "3" etc)
+          then substitutes for the ATV name so formed.
+          
+          The Assembler can do this easily, since ATV substitution operates
+          in a hierarchic fashion. For example, suppose that a source  line
+          contains
+          
+                                   @(P@COUNT)
+          
+          somewhere.
+          
+          On  seeing  the  first  "@"  character, the Assembler prepares to
+          substitute an ATV. It finds, though, that the next character is a
+          "(", so that it now expects a bracketed expression rather than an
+          ATV name. It notes where it has got to in the  source  line,  and
+          explores within the brackets.
+          
+          Now,  though,  it  stores  the  characters  it finds (rather than
+          passing them on to be assembled), and expects to end  up  with  a
+          valid ATV name by the time it gets to the ")" character. It notes
+          the  "P",  then  finds the second "@". This makes it try again to
+
+
+                                      54
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          substitute an ATV, and this time  it  finds  a  real  ATV  called
+          COUNT,  which  we  shall  suppose  contains the string "1". After
+          "COUNT" it finds the ")" ending the bracketed  expression;  thus,
+          within the brackets the string it has built is now "P1".
+          
+          Having ended the bracketed expression, the Assembler goes back to
+          where  it  was.The  "(P@COUNT)" has provided the string "P1", and
+          this now is a valid ATV name. So it proceeds  to  substitute  the
+          value of ATV P1, the first macro parameter, as we intended.
+          
+          
+          To  see  how  we  might  use  this  technique,  we can consider a
+          definition of THINGS:
+          
+          
+                         THINGS  MACRO
+                         COUNT  MSET    1
+                         %LOOP
+                                AIF     '@(P@COUNT)'='',%ALL.DONE
+                                DFB     @(P@COUNT)
+                         COUNT  MSET    @COUNT+1
+                                AIF     @COUNT<10,%LOOP
+                         %ALL.DONE
+                                ENDM
+                         
+          To see how this works, we can examine each line in turn.
+          
+          Line 1 : This is the macro definition line.
+                   
+          Line 2 : This line sets up a local ATV called COUNT, and gives it
+                   a string value of "1".
+                   
+          Line 3 : This is a Sequence Symbol marking the top of the loop.
+                   
+          Line 4 : Since the number of parameters must be variable, we need
+                   to test whether we've processed them all.  You  can  see
+                   the  substitution  technique discussed above in use here
+                   to check if the next parameter is null - any  parameters
+                   that  you  don't  supply  in a macro call are strings of
+                   zero size. If the parameter is null, the Assembler skips
+                   forwards in the macro until  it  gets  to  the  Sequence
+                   Symbol %ALL.DONE.
+                   
+          Line 5 : This  is  the  DFB  line  that  plants the current macro
+                   parameter as a byte.
+                   
+          Line 6 : This line increments the  value  of  COUNT,  as  in  the
+                   previous example.
+                   
+          Line 7 : This  tests  whether the Assembler is to loop round once
+                   more. The final macro parameter is  P9,  so  once  COUNT
+                   reaches 10 the macro is finished.
+                   
+          Line 8 : This  is  the Sequence Symbol that line 4 skips to if it
+
+
+                                      55
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                   finds a null parameter.
+                   
+          Thus, if the macro was called with a line
+          
+                              THINGS  1,$FE,FRED-1
+          
+          the loop would be traversed three times, and the  lines  actually
+          assembled would be
+          
+                                DFB     1
+                                DFB     $FE
+                                DFB     FRED-1
+                         
+                         
+                         
+          The  technique  of  hierarchical  substitution, though most often
+          used to access macro parameters in turn,  can  be  used  in  many
+          other  applications: you can nest substitutions to as deep as you
+          are likely  to  need,  so  that  you  might  write  something  as
+          horrendous looking as
+          
+                           LDA   #@(XX@(COUNT@PTR)B)
+          
+          if you really needed to.
+          
+          
+          
+          10.3.2 Changing macro parameters
+          
+          
+           Macro  parameters  are  in fact local ATVs with names P1, P2, P3
+          and so on. This means that you can change them within a macro  as
+          you wish.
+          
+           One  example  of this might be to allow the use of default macro
+          parameters (although section 10.3.3 below shows an automatic  way
+          to  do  this). Suppose that a macro parameter should be a number,
+          whose default value is 1. You could define it as:
+          
+          
+                         TEST  MACRO
+                               AIF    '@P1'#'',%NEXT
+                         P1    MSET   1
+                         %NEXT
+                               LDA    #@P1
+                               ENDM
+                         
+          Within this example, we have:
+          
+          Line 1 : The macro definition line.
+                   
+          Line 2 : This tests if parameter 1 has been supplied. If  so,  it
+                   will  not  be  a  null string, so the Assembler skips to
+                   %NEXT.
+
+
+                                      56
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                   
+          Line 3 : This line sets parameter 1 to the default value.
+                   
+          Line 4 : This is the Sequence Symbol skipped to if the  parameter
+                   is not defaulted.
+                   
+          Line 5 : This  line actually uses the parameter. It will assemble
+                   correctly even if the parameter was not given, since  in
+                   that  case  line 3 will have set it up to be the default
+                   value.
+                   
+                   
+          10.3.3 Setting default macro parameters
+          
+          
+           The example above showed one way of establishing a default value
+          of a macro parameter, but in fact  the  Assembler  gives  you  an
+          automatic and easy way of doing this with the DEFPARS directive.
+          
+           The  effect  of  this directive, which you can issue at any time
+          inside a macro, is  to  set  the  values  of  any  of  the  macro
+          parameters P1, P2, P3 and so on, unless they are already defined.
+          
+           For example, you might call a macro with a line
+          
+                                  FRED    1,,3
+          
+          where  you  have defined parameters 1 and 3, but not parameter 2.
+          If the macro now executes, say,
+          
+                              DEFPARS  100,200,300
+          
+          the Assembler will check the parameters in turn. Parameters 1 and
+          3 are already defined, so the "100"  and  "300"  values  are  not
+          used.  Parameter  2,  though, is not yet defined, so it is set to
+          "200" from this point on.
+          
+           If you wished, say, to establish a default for only some of  the
+          parameters  of  a  macro, simply specify only those parameters in
+          the DEFPARS directive and default the others. Thus
+          
+                                 DEFPARS ,,,44
+          
+          sets a default for parameter 4, but has no effect  whatsoever  on
+          parameters 1, 2, 3, 5, 6, 7, 8 and 9.
+          
+          
+          
+          10.3.4 Listing control for macros
+          
+          
+           If  you  write  complex macros with lots of loops, you will find
+          that the Assembler actually executes a large number of lines that
+          just contain the AIF, MSET directives, etc. This  can  swamp  the
+
+
+                                      57
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          listing, and make it hard to see the actual directives that plant
+          data or code (as well as using up a large amount of paper).
+          
+           To  overcome this, list level 2 will not list directives such as
+          MSET, AIF, etc, unless they contain errors. In order  to  see all
+          the  lines  of  a  macro  expansion, use list level 3. (Note that
+          outside macros, ASET and other similar directives  will  list  at
+          level 2).
+          
+          
+          10.3.5 Exiting a macro prematurely
+          
+          
+           You  may  sometimes  need to exit a macro as a result of a test.
+          Depending on circumstances, you may be able to use AIF or AGO  to
+          skip  to the physical end of the macro; however, you can also use
+          the MEXIT directive. This exits the macro  immediately,  wherever
+          in the macro body it is encountered.
+          
+          
+          10.3.6 Comment lines within macros
+          
+           You  can include comment lines within the definitions of macros,
+          just as in normal code. For  example,  a  short  macro  might  be
+          defined as
+          
+          
+                         TEST   MACRO
+                         *
+                         * Adjust value in PTR0
+                         *
+                                INC    PTR0
+                                ENDM
+                         
+          The  three  comment lines will be stored in the macro definition,
+          and (if the listing level is set to 2 or higher) will  be  listed
+          whenever  you  call  the  macro. This lets you output comments to
+          describe the actions of the macro. 
+          
+          The disadvantage of this technique is that the comment lines  are
+          stored  in  their  entirety  in memory when the macro is defined,
+          giving you correspondingly less space for the symbol table.
+          
+          When you come to writing complex macros making great use of ATV's
+          and loops, you will find it most advantageous to include  liberal
+          amounts  of  comment.  In order that these comments, which purely
+          document how the macro works rather than the code  it  generates,
+          shouldn't  use  memory,  comment lines beginning with "!" are not
+          stored. Thus, you could write a macro as
+          
+                         TEST  MACRO
+                         !
+                         ! See if first parameter is null
+                         !
+
+
+                                      58
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                               AIF    '@P1'#'',%NEXT
+                         !
+                         ! It is null, so reset it to "1"
+                         !
+                         P1    MSET   1
+                         %NEXT
+                         !
+                         ! Parameter 1 now definitely has a value,
+                         ! so we can use it
+                         !
+                               LDA    #@P1
+                               ENDM
+                         
+          The lines beginning "!" will  appear  in  the  listing  when  you
+          define the macro, but will not be stored and will not appear when
+          the macro is called.
+          
+          
+          
+     10.4 System ATVs
+     
+        The  Assembler  provides  a  number  of read-only ATVs that you can
+     substitute.  They  provide  information  on  the  Assembler  and   the
+     environment that you can use to control assembly. Each system ATV name
+     starts with a "$" character: they are
+     
+     
+                    
+          $CLST     The current code listing level.
+                    
+          $DEFCLST  The default code listing level.
+                    
+          $DEFLST   The default listing level.
+                    
+          $FLEVEL   "1"  if  the current file is an INCLUDE file; "0" if it
+                    is not.
+                    
+          $FS       The number of the filing system in use, as returned  by
+                    OSARGS with A=0, Y=0. The Acorn DFS returns "4", Econet
+                    returns "5" and ADFS returns "8".
+                    
+          $LINE     The number of the current source line.
+                    
+          $LST      The current listing level.
+                    
+          $MC       The  macro call counter, used to generate unique labels
+                    within macros (see section 9.5)
+                    
+          $MLEVEL   The current macro nesting level. If not in a macro, the
+                    value is "0".
+                    
+          $OBJECT   The name of the current object file, which may  include
+                    leading or trailing spaces.
+                    
+
+
+                                      59
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          $OS       The  version  of  the MOS in use, as returned by OSBYTE
+                    with A=0.
+                    
+          $OSHWM    The primary OSHWM value  of  the  machine  running  the
+                    Assembler.
+                    
+          $PLENGTH  The current page depth used in the assembly listing, as
+                    set by the PAGE directive.
+                    
+          $PWIDTH   The  current  line width of the asembly listing, as set
+                    by the PAGE directive.
+                    
+          $PRINTING Indicates whether the assembly listing is being sent to
+                    the screen or to a printer or file. The value  returned
+                    is  "0" if the listing is being sent to the screen, and
+                    "-1" if it is being sent to a printer or a file.
+                    
+          $SOURCE   The name of the current source file, which may  include
+                    leading or trailing spaces.
+                    
+          $TIME     The  currently-set  timestamp string, which may include
+                    leading or trailing spaces.
+                    
+          $TTL      The currently-set page title string, which may  include
+                    leading or trailing spaces.
+                    
+          $VERSION  The  version  of the Assembler in use. This is returned
+                    as a numeric string, so  that  version  1.60  sets  the
+                    string to be "160".
+                    
+                    
+        For example, the line
+                                  ORG  @$OSHWM
+     
+     could  be  used to set the base address of the code to the OSHWM value
+     of the machine being used, without the need to know  what  that  value
+     was.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      60
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     Appendix 1 : OPCODES AND ADDRESSING MODES
+     
+     
+        The  Assembler  supports  all  the  opcodes  of  the 6502 and 65C02
+     processor families, using standard MOSTEK mnemonics. For  descriptions
+     of  the  opcodes, see for example "The Advanced User Guide for the BBC
+     Micro" (for 6502-compatible opcodes) and the "Master Reference  Manual
+     Part   2"  (both  6502-  and  65C02-compatible  opcodes,  although  it
+     describes the BBC BASIC Assembler syntax which  cannot  be  used  with
+     this Assembler.)
+     
+        The 6502-compatible opcode mnemonics available are:
+      
+      ADC  AND  ASL  BCC  BCS  BEQ  BIT  BMI  BNE  BPL  BRK  BVC  BVS  CLC
+      CLD  CLI  CLV  CMP  CPX  CPY  DEC  DEX  DEY  EOR  INC  INX  INY  JMP
+      JSR  LDA  LDX  LDY  LSR  NOP  ORA  PHA  PHP  PLA  PLP  ROL  ROR  RTI
+      RTS  SBC  SEC  SED  SEI  STA  STX  STY  TAX  TAY  TSX  TXS  TYA
+      
+        The 65C02-only mnemonics are:
+     
+      BRA  DEA  INA  PHX  PHY  PLX  PLY  STZ  TRB  TSB
+      
+        The opcode CLR can be used as a synonym for STZ.
+      
+        The  addressing  modes common to both the 6502 and 65C02 processors
+     are:
+     
+                  Mode                            Syntax
+               
+               Implied                            op
+               Accumulator                        op A  or  op
+               Immediate                          op #expr8
+                 Low byte                         op #>expr
+                 High byte                        op #<expr
+               Zero page                          op expr8
+                 Indexed by X                     op expr8,X
+                 Indexed by Y                     op expr8,Y
+               Absolute                           op expr16
+                 Indexed by X                     op expr16,X
+                 Indexed by Y                     op expr16,Y
+               Indirect pre-indexed               op (expr8,X)
+               Indirect post-indexed              op (expr8),Y
+               Absolute indirect                  op (expr)
+               
+               
+        The addressing modes usable with the 65C02 processor only are:
+     
+                  Mode                            Syntax
+               
+               Zero-page indexed                  op (expr8)
+               Absolute indirect pre-indexed      op (expr16,X)
+               
+               
+        In these definitions, "expr8" represents an 8 bit number;  "expr16"
+
+
+                                      61
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     a 16-bit number; and "expr" a value that is either 8 or 16 bits long.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      62
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     Appendix 2: ASSEMBLER DIRECTIVES
+     
+     
+        The Assembler supports a large number of directives, or pseudo-ops.
+     This  section  gives  a  detailed  definition  of  each,  arranged  in
+     alphabetical order.
+     
+        Directives follow the normal syntax of opcodes. All can be followed
+     by comment fields started with  a  ";"  character;  however,  not  all
+     directives may have labels.
+     
+        In the specification, items enclosed in "[]" brackets are optional,
+     and can be omitted.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      63
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     AGO     Skips to a Sequence Symbol.
+             
+             Syntax:
+             
+                                AGO  <sequence>
+             
+             Example:
+             
+                                   AGO  %LOOP
+             
+             
+     AIF     Skips to a Sequence Symbol if a condition is true.
+             
+             Syntax:
+             
+                          AIF  <expr>,<sequence>      
+                or
+                          AIF  <stringexpr>,<sequence>
+             
+             If <condition> is false assembly continues in the next line.
+             
+             Example:
+             
+                           AIF  'FREDA'>'FRED',%LOOP
+             
+             
+     AIFDEF  Skips to a Sequence Symbol if a symbol has been defined.
+             
+             Syntax:
+             
+                          AIFDEF  <symbol>,<sequence>
+             
+             Example:
+             
+                          AIFDEF  RAM.CODE,%DOING.RAM
+             
+             
+     AIFNDEF Skips  to  a Sequence Symbol if a symbol has not been defined.
+             The syntax is as for AIFDEF.
+             
+             
+     ALEN    Sets a global ATV to the length of the operand string.
+             
+             Syntax:
+             
+                            <label>  ALEN  <string>
+             
+             Example:
+             
+                         SIZE  ALEN  'This is a string'
+             
+             
+             
+
+
+
+                                      64
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     ASC     Defines an ASCII string.
+             
+             Syntax:
+             
+                            [<label>]  ASC  <string>
+             
+             Within <string> you can use the techniques of section 4.3.3 to
+             plant control characters or characters with bit 7  set.  If  a
+             label is specified, it is set to the address of the first byte
+             of the string.
+             
+             Example:
+             
+                          TITLE  ASC  'SuperGame 3.45'
+             
+             
+     ASET    Sets a global ATV to contain a string.
+             
+             Syntax:
+             
+                  <label>  ASET  <string>[,<expr1>[,<expr2>]]
+                or
+                  <label>  ASET  <expr>                      
+             
+             The final two parameters in the operand field allow the string
+             parameter  to  be  sliced.  Both are expressions that must not
+             involve forward references. <expr1> specifies the  first  byte
+             to  be sliced from the string (the first byte in the string is
+             byte 1). <expr2> defines the size of the  slice;  if  omitted,
+             one byte is extracted.
+             
+             Example:
+             
+                                COUNT  ASET  100
+             
+             
+     ASTR    Allocates space for a global ATV.
+             
+             Syntax:
+             
+                             <label>  ASTR  <expr>
+             
+             <expr>, which must not contain forward references, defines the
+             space needed. The value can be up to 255 bytes.
+             
+             Example:
+             
+                                NAME  ASTR  150
+             
+             
+     ASTRIP  Sets  a  global  ATV  to  a string value, removing leading and
+             trailing spaces in the process.
+             
+             
+
+
+                                      65
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             Syntax:
+             
+                           <label>  ASTRIP  <string>
+             
+             Example:
+             
+                        MIDDLE  ASTRIP  '   aardvark   '
+             
+             
+     CASC    This is similar in action  to  ASC,  but  will  plant  a  byte
+             containing  the  number of characters within the string before
+             the string itself.
+             
+             
+             
+     CHN     Closes the current source file and starts another.
+             
+             Syntax:
+             
+                           [<label>]  CHN  <filename>
+             
+             The directive is not allowed in an INCLUDE file.
+             
+             Example:
+             
+                                CHN  :2.NEXTBIT
+             
+             
+     CHR     Defines the character used by the REP directive.
+             
+             Syntax:
+             
+                           [<label>]  CHR  character
+             
+             The character is specified literally, and not as  a  character
+             constant.
+             
+             Example:
+             
+                                     CHR  #
+             
+             
+     CLST    Sets the code listing level.
+             
+             Syntax:
+             
+                           [<label>]  CLST  [<expr>]
+             
+             <expr>,  which  must not contain forward references, gives the
+             new listing level. If omitted,  the  level  is  reset  to  the
+             default from the command line. The values allowed are:
+             
+                          0 List  only  the  first  3 bytes produced by any
+                            line.
+
+
+                                      66
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                            
+                          1 List all the bytes planted by any line except a
+                            CODE directive.
+                            
+                          2 List all the bytes planted by all lines.
+                            
+             Example:
+             
+                                    CLST  2
+             
+             
+     CODE    Includes a file (such as a  screen  dump)  directly  into  the
+             object file.
+             
+             Syntax:
+             
+                          [<label>]  CODE  <filename>
+             
+             The specified file is copied, with no interpretation, directly
+             to  the  object file. If <label> is specified it is set to the
+             address of  the  first  byte  copied.  The  address  count  is
+             increased by the size of the file.
+             
+             Example:
+             
+                                 CODE  SCRDUMP
+             
+             
+     CSTR    Similar  to  STR,  but this directive plants a byte containing
+             the number of characters  in  the  string  before  the  string
+             itself.  The count includes the $0D byte that is automatically
+             added at the end of the string.
+             
+             
+     DB      This is identical to DFB.
+             
+     DDB     Defines a number of two-byte values, output in high-low order.
+             
+             Syntax:
+             
+                       [<label>]  DDB  <expr>[,<expr>...]
+             
+             Each expression in the operand field is evaluated  and  stored
+             as  a  two-byte value. If <label> is present, it is set to the
+             address of the high-order byte of the first expression.
+             
+             Each expression can be preceded by a repeat count as described
+             in section 4.2.3.
+             
+             Example:
+             
+                         TABLE  DDB  28,32105,[10]$FFFF
+             
+             
+
+
+                                      67
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     DEFPARS Sets up default parameters for a macro. See section 10.3.3 for
+             full details of this directive.
+             
+             
+     DEND    Terminates a DSECT. 
+             
+             Syntax:
+             
+                                [<label>]  DEND
+             
+             The address that  was  saved  when  the  DSECT  directive  was
+             encountered is reset.
+             
+             Example:
+             
+                                      DEND
+             
+             
+     DFB     Defines a number of single-byte values.
+             
+             Syntax:
+             
+                       [<label>]  DFB  <expr>[,<expr>...]
+             
+             Each  expression  in the operand field is evaluated and stored
+             as a byte value. If <label> is  present,  it  is  set  to  the
+             address of the first expression.
+             
+             Each expression can be preceded by a repeat count as described
+             in section 4.2.3.
+             
+             Example:
+             
+                           TABLE  DFB  0,[27]1,FRED+2
+             
+             
+     DFDB    This is identical to DDB.
+             
+             
+     DFS     This is identical to DS.
+             
+     DFW     This is identical to DW.
+             
+             
+     DISP    Displays a message on both pass 1 and pass 2.
+             
+             Syntax:
+             
+                           [<label>]  DISP  <string>
+             
+             <string>  may contain references to variables: for details see
+             section 8.1.
+             
+             Example:
+
+
+                                      68
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             
+                      DISP  'Program size is %D(*-$8000)'
+             
+             
+     DISP1   As for DISP, except that the message is displayed only on pass
+             1.
+             
+             
+     DISP2   As for DISP, except that the message is displayed only on pass
+             2.
+             
+             
+     DO      A synonym for IF.
+             
+             
+     DS      Reserves space in  the  object  file,  setting  the  bytes  so
+             affected to zero.
+             
+             Syntax:
+             
+                             [<label>]  DS  <expr>
+             
+             <expr>, which must not include forward references, defines the
+             amount  of  space  to be reserved. If <label> is present it is
+             set to the address of the first byte reserved.
+             
+             Example:
+             
+                           DS  $C000-PROG.TOP.ADDRESS
+             
+             
+     DSECT   Opens a "dummy section" that allows an area of  memory  to  be
+             defined without generating any object code.
+             
+             Syntax:
+             
+                                [<label>]  DSECT
+             
+             When  the DSECT directive is processed, the current address is
+             noted by the Assembler, and the value is reset to that at  the
+             end  of  the  previous  dummy  section  (or  0, if this is the
+             first). An ORG directive can be used to change  the  value  if
+             required.
+             
+             When  the  dummy section is terminated by a DEND directive the
+             old value of the address is restored.
+             
+             Example:
+             
+                                     DSECT
+             
+             
+     DW      Defines a number of two-byte values output in low-high order.
+             
+
+
+                                      69
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             Syntax:
+             
+                       [<label>]  DW  <expr>[,<expr>...]
+             
+             Each expression in the operand field is evaluated  and  stored
+             as  a  two-byte value. If <label> is present, it is set to the
+             address of the low-order byte of the first expression.
+             
+             Each expression can be preceded by a repeat count as described
+             in section 4.2.3.
+             
+             Example:
+             
+                              TABLE  DW FRED,BERT
+             
+             
+     ELSE    Marks the end of the TRUE branch  of  a  conditional  assembly
+             block  begun  by IF, IFDEF and IFNDEF. For details see section
+             7.
+             
+             
+             
+     ENDM    Terminates the definition  of  a  macro  begun  by  the  MACRO
+             directive.
+             
+             Syntax:
+             
+                                      ENDM
+             
+             
+     EQU     Assigns a value to a symbol.
+             
+             Syntax:
+             
+                              <label>  EQU  <expr>
+             
+             <expr> must not contain forward references.
+             
+             Example:
+             
+                               OSWRCH  EQU  $FFEE
+             
+             
+     EXEC    Specifies  the  bottom 16 bits of the 32 bit execution address
+             of the object code.
+             
+             Syntax:
+             
+                            [<label>]  EXEC  <expr>
+             
+             The catalogue entry of the object file will be updated to show
+             the specified execution address. <expr> can only be  a  16-bit
+             quantity:  the  value  of the two top bytes of the address are
+             set by the MSW directive.
+
+
+                                      70
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             
+             If this directive is not used, the execution address is set to
+             the address defined by the first ORG that is not  in  a  dummy
+             section.
+             
+             Example:
+             
+                                 EXEC  START+3
+             
+             
+     FI      Terminates  a conditional assembly block begun by IF, IFDEF or
+             IFNDEF. For details, see section 7.
+             
+             
+     FIN     This is identical to FI.
+             
+             
+     HEX     Defines a series of bytes in the  object  program,  the  bytes
+             being specified as a hexadecimal string.
+             
+             Syntax:
+             
+                            [<label>]  HEX  <string>
+             
+             <string>  must  contain  hexadecimal  digits (i.e. '0'..'9' or
+             'A'..'F'), and each pair of digits is output as one byte.
+             
+             If <label> is present it is set to the address  of  the  first
+             byte from the string.
+             
+             Example:
+             
+                          BYTE.LIST  HEX  'AB34FF2E7E'
+             
+             
+     IF      Begins a conditional assembly block.
+             
+             Syntax:
+             
+                             [<label>]  IF  <expr>
+             
+             If   <expr>,  which  cannot  contain  forward  references,  is
+             non-zero, the condition is TRUE, otherwise it  is  FALSE.  For
+             details, see section 7.1.
+             
+             
+     IFDEF   Begins a conditional assembly block.
+             
+             Syntax:
+             
+                           [<label>]  IFDEF  <symbol>
+             
+             If <symbol> has been defined, the condition is TRUE, otherwise
+             it is FALSE. For details, see section 7.2
+
+
+                                      71
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             
+             
+     IFNDEF  Begins a conditional assembly block.
+             
+             Syntax:
+             
+                          [<label>]  IFNDEF  <symbol>
+             
+             If  <symbol>  has  not  been  defined,  the condition is TRUE,
+             otherwise it is FALSE. For details, see section 7.2.
+             
+             
+     INCLUDE Begins assembly from a new source  file,  afterwards  resuming
+             with the current file.
+             
+             Syntax:
+             
+                         [<label>]  INCLUDE  <filename>
+             
+             The  Assembler  will  process  lines  from the specified file.
+             Lines in the listing file will begin with an "I"  to  indicate
+             their  origin.  At  end-of-file,  it resumes after the INCLUDE
+             directive.
+             
+             The directive may not be used within  an  INCLUDE  file  or  a
+             macro.
+             
+             Example:
+             
+                              INCLUDE  :3.DEFINES
+             
+             
+     INFO    This is identical to DISP2.
+             
+             
+     LFCOND  Specifies  that  lines  skipped  in  a  conditional  are to be
+             listed.
+             
+             Syntax:
+             
+                               [<label>]  LFCOND
+             
+             For details, see section 7.4.
+             
+             
+     LOAD    Specifies the bottom 16 bits of the 32 bit load address of the
+             object code.
+             
+             Syntax:
+             
+                            [<label>]  LOAD  <expr>
+             
+             The catalogue entry of the object file will be updated to show
+             the specified load  address.  <expr>  can  only  be  a  16-bit
+
+
+                                      72
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             quantity:  the  value  of the two top bytes of the address are
+             set by the MSW directive.
+             
+             If this directive is not used, the load address is set to  the
+             address  defined  by  the  first  ORG  that  is not in a dummy
+             section.
+             
+             Example:
+             
+                                  LOAD  $1902
+             
+             
+     LST     Sets the source listing level.
+             
+             Syntax:
+             
+                            [<label>]  LST  [<expr>]
+             
+             <expr>, which must not contain forward  references,  give  the
+             new  level.  If  omitted,  the  level  is reset to the default
+             specified in the command line.
+             
+             The allowed values are:
+             
+                    0 No lines are listed.
+                      
+                    1 List lines from files, but not from macros.
+                      
+                    2 List all lines, but not directives such as AIF within
+                      macros.
+                      
+                    3 List all lines.
+                      
+             Lines containing errors are always listed.
+             
+             
+     MACRO   Defines a macro.
+             
+             Syntax:
+             
+                                 <label>  MACRO
+             
+             The following lines are stored as the definition of the macro.
+             No ATV substitution is performed on the lines. The  definition
+             is  terminated  by  an  ENDM directive. Within the definition,
+             comment lines starting with "!" will be listed but not  stored
+             in memory.
+             
+             The macro name may not be more than 8 characters long.
+             
+             The MACRO directive may not be used within a macro.
+             
+             Example:
+             
+
+
+                                      73
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+                                  THING  MACRO
+             
+             
+     MEXIT   Causes a macro to terminate immediately.
+             
+             Syntax:
+             
+                                     MEXIT
+             
+             
+     MLEN    As  for  ALEN,  but  this  can be used only within a macro and
+             creates a local ATV rather than a global one.
+             
+             
+     MSET    As for ASET, but this can be used  only  within  a  macro  and
+             creates a local ATV rather than a global one.
+             
+             
+     MSTR    As  for  ASTR,  but  this  can be used only within a macro and
+             creates a local ATV rather than a global one.
+             
+             
+     MSTRIP  As for ASTRIP, but this can be used only within  a  macro  and
+             creates a local ATV rather than a global one.
+             
+             
+     MSW     Sets the two top bytes of the load and execution addresses.
+             
+             Syntax:
+             
+                             [<label>]  MSW  <expr>
+             
+             By default the bytes used are $FFFF, but if you are assembling
+             code to run on a second processor you will need to change them
+             to the appropriate value.
+             
+             Example:
+             
+                                     MSW  0
+             
+             
+     ORG     Sets the value of the address counter.
+             
+             Syntax:
+             
+                             [<label>]  ORG  <expr>
+             
+             <expr>,  which  must not contain forward references, gives the
+             new  value.  The  first  ORG  directive  that  is  not  in   a
+             DSECT..DEND  block also defines the default load and execution
+             addresses.
+             
+             The object file is not affected in any way; thus  if  you  use
+             ORG to advance the address value, the Assembler will not plant
+
+
+                                      74
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             any  bytes  in  the object file to fill the gap. To accomplish
+             this effect, you can use the DS directive.
+             
+             Example:
+             
+                                   ORG  $1900
+             
+             
+     PAGE    Defines the page length and width of the listing.
+             
+             Syntax:
+             
+                       [<label>]  PAGE  <expr1>[,<expr2>]
+             
+             <expr1> is the physical number of lines on the paper  (default
+             66). The Assembler leaves a small gap at the end of each page,
+             to avoid the perforations.
+             
+             <expr2>  is the number of characters to print on each line. If
+             omitted, the value is set to 80.
+             
+             PAGE has no effect on the screen display.
+             
+             Example:
+             
+                                  PAGE  88,132
+             
+             
+             
+     QUERY   Displays a question and reads in a reply, which  is  evaluated
+             as an expression and used to define a label.
+             
+             Syntax:
+             
+                            <label>  QUERY  <string>
+             
+             For details, see section 8.3
+             
+             
+             
+     REP     Outputs  a  comment  line  to  the  listing  to  mark a source
+             division.
+             
+             Syntax:
+             
+                            [<label>]  REP  [<expr>]
+             
+             <expr> must not  exceed  132  and  must  not  contain  forward
+             references. If you omit the value, the Assembler will fill the
+             output line to its full width.
+             
+             For details, see section 3.5.4
+             
+             
+
+
+                                      75
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     SFCOND  Specifies  that  lines  skipped in a conditional should not be
+             listed.
+             
+             Syntax:
+             
+                               [<label>]  SFCOND
+             
+             For details, see section 7.4
+             
+             
+     SKP     Leaves a gap in the listing or starts a new page.
+             
+             Syntax:
+             
+                             [<label>]  SKP  <expr>
+                or
+                             [<label>]  SKP  H     
+             
+             In the first form, <expr> gives the number of lines to be left
+             blank. In the second, a new page is started.
+             
+             The SKP directive itself is not listed.
+             
+             Example:
+             
+                                     SKP  5
+             
+             
+     STOP    Aborts the assembly on pass 1, outputting a message.
+             
+             Syntax:
+             
+                           [<label>]  STOP  <string>
+             
+             The Assembler will display <string>, then abort with the error
+             message "Stopped".
+             
+             Example:
+             
+                         STOP  'Too much in page zero'
+             
+             
+     STR     This is  similar  to  ASC,  except  that  the  Assembler  will
+             automatically  add  a  $0D byte (Carriage Return) to the bytes
+             generated.
+             
+             
+     SYSCLI  Issues a MOS command, allowing you, for example, to change the
+             default disc drive.
+             
+             Syntax:
+             
+                          [<label>]  SYSCLI  <string>
+             
+
+
+                                      76
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             You need not begin the string to be issued as  a  MOS  command
+             with a "*", but it doesn't matter if you do. Note that care is
+             needed  over  the  commands  you try to execute. Anything that
+             uses memory will  almost  certainly  corrupt  the  Assembler's
+             workspace and cause assembly to go horribly wrong.
+             
+             Example:
+             
+                               SYSCLI  'DRIVE 2'
+             
+             
+     SYSVDU  Outputs one or more bytes to the screen and printer.
+             
+             Syntax:
+             
+                     [<label>]  SYSVDU  <expr>[,<expr>...]
+             
+             The  directive  is  similar  to  the  BASIC  VDU  command. The
+             low-byte of each <expr> is written with a call to OSWRCH. This
+             gives you a means of sending control codes to a printer to set
+             page formats, etc.
+             
+             SYSVDU will send all the bytes you specify to the  screen.  If
+             you  have used the "-P" command-line option, they will also be
+             sent to the printer. To send the bytes only  to  the  printer,
+             precede  each  with  a  "1" value. The bytes are not sent to a
+             listing file selected with the "-F" option.
+             
+             SYSVDU operates on both passes of the Assembler.
+             
+             Example:
+             
+                               SYSVDU  1,27,1,'E'
+             
+             
+     SYSVDU1 This directive is identical to SYSVDU, but  operates  only  on
+             pass 1.
+             
+             
+     SYSVDU2 This  directive  is  identical to SYSVDU, but operates only on
+             pass 2.
+             
+     TABS    This directive allows you to redefine the  TAB  positions  the
+             Assembler will use when listing source lines.
+             
+             Syntax:
+             
+                      [<label>]  TABS  <expr>[,<expr>...]
+             
+             You may specify up to 14 TAB positions: any excess values will
+             be  ignored.  Specifying  the  directive with no operand filed
+             will reset the built-in defaults.
+             
+             See section 3.2 for more details.
+
+
+                                      77
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+             
+             
+     TTL     Defines the title string on the top of each listing page.
+             
+             Syntax:
+             
+                            [<label>]  TTL  <string>
+             
+             The Assembler uses the first 20 bytes of  the  string  as  the
+             page title, and also starts a new page.
+             
+             Example:
+             
+                              TTL  'Screen Dumper'
+             
+             
+     TIME    Defines the timestamp string output on each listing page.
+             
+             Syntax:
+             
+                           [<label>]  TIME  <string>
+             
+             The  Assembler  uses  the first 24 bytes of the string for the
+             new timestamp. The value need not be a time; you can use it as
+             a subsidiary page title.
+             
+             On a Master 128 the directive is ignored, as the timestamp  is
+             read  from  the  real-time  clock.  The  Assembler can also be
+             configured to read a third-party  real-time  clock  fitted  to
+             other models.
+             
+             Example:
+             
+                          TIME  '25-August-1986 13:00'
+             
+             
+     WAIT    This  displays  a  string  (see  under  DISP), then pauses the
+             assembly until you press a key.
+             
+             
+     WAIT1   As for WAIT, but operates only on pass 1.
+             
+             
+     WAIT2   As for WAIT, but operates only on pass 2.
+     
+
+
+
+
+
+
+
+
+
+
+
+                                      78
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     Appendix 3. DIFFERENCES FROM THE ADE ASSEMBLER
+     
+        The 65C02 Assembler contains a number of similar directives to  the
+     ADE Assembler, and in almost all cases it will be possible to assemble
+     programs written for ADE with it.
+     
+        A  few  directives,  though, have some minor differences, and there
+     are also some small points on source format that must be considered.
+     
+       - Only single- and double-quote characters may delimit strings.
+         
+       - The second delimiter must not be omitted from character constants.
+         
+       - Character constants obey the same rule as strings in the  ASC  and
+         STR  directives  for  control characters and those with bit 7 set.
+         Thus the "|" and "^" characters need to be  doubled  if  they  are
+         being defined as constants.
+         
+       - Strings  containing  commas  or  leading  or  trailing  spaces are
+         specified as macro  parameters  within  normal  string  delimiters
+         rather than in [] brackets.
+         
+       - Macro parameters must always be separated by commas.
+         
+       - The  SYSFX directive is ignored: to achieve the desired effect you
+         should use the SYSCLI directive to issue a *FX command.
+         
+       - Macro libraries are not implemented.
+         
+       - Local labels within macros are not implemented. The system ATV $MC
+         should be used to construct unique labels as described in  section
+         9.5.
+         
+       - Expressions   are   evaluated  fully  hierarchically  rather  than
+         left-to-right.
+         
+       - The "#" arithmetic operator is used for "inequality", returning -1
+         if unequal and 0 if equal, rather than "modulus".
+         
+       - The LST directive has a numeric operand rather  than  the  strings
+         OFF,  ON  and  FULL. For ADE compatibility, define symbols OFF, ON
+         and FULL with the EQU directive to have values 0, 1  and  2.  List
+         level 3 has no equivalent in ADE.
+         
+       - The  load  and  execution  addresses  are  set  by  the  first ORG
+         directive only. To set them to different values use the  LOAD  and
+         EXEC directives.
+         
+
+
+
+
+
+
+
+
+                                      79
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     Appendix 4. DIFFERENCES FROM PREVIOUS RELEASES
+     
+        Version 1.60 of the 65C02 Assembler includes several new facilities
+     and  a  number of corrections from the previous 1.52 release. The most
+     important changes made are as follows:
+     
+       
+     - A new directive, TABS, allows the layout  of  listing  lines  to  be
+       configured.  A  patch  facility  allows  the  default settings to be
+       configured.
+       
+     - New directives SYSVDU1 and SYSVDU2 perform the same action as SYSVDU
+       but only on pass 1 and pass 2 respectively.
+       
+     - Comment lines can be started with a "!" character; such lines within
+       macro definitions are not stored  in  memory  and  can  be  used  to
+       annotate the macro itself.
+       
+     - Printer  handling  has  been extensively rewritten to avoid problems
+       when using Econet print servers.
+       
+     - Assembly  listings  can  be  directed  to  a  file  with  the   "-F"
+       command-line option.
+       
+     - String  slicing  operations in the ASET and MSET directives now work
+       exactly as documented. In version 1.52, the string start  and  slice
+       size  parameters were reversed, and the first byte of the string was
+       numbered 0 and not 1.
+       
+     - A new MOS command, *CLI, allows  the  Assembler's  CLI  mode  to  be
+       explicitly entered from any language.
+       
+     - A  REP  directive  with  no operand now fills the output line to its
+       defined width.
+       
+     - System ATVs $PWIDTH and $PLENGTH allow the values set  by  the  PAGE
+       directive to be read.
+       
+     - System  ATV  $PRINTING  allows  the source to determine if an output
+       listing is being sent to printer or file, or to the screen only.
+       
+     - A repeat count of zero in directives such as DB causes no  bytes  to
+       be  written  to  the  object file, rather than repeating the operand
+       65536 times.
+       
+     - A zero operand in the DS directive causes a gap size of zero  rather
+       than 65536.
+       
+     - Patch  facilities  allow the Assembler's translation of source bytes
+       in the range 128..255 to be configured.
+       
+     - Patch facilities force the Assembler to read a  real-time  clock  on
+       machines other than a Master 128.
+       
+
+
+                                      80
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     - Patch  facilities  enable  the "~" character to be used in character
+       constants and strings to plant the following character as a  control
+       character with bit 7 set.
+       
+     - Patch  facilities  allow the Form Feeds sent to a printer at the end
+       of a listing to be suppressed.
+       
+     - Source file repositioning (in directives such as AGO, AIF) no longer
+       causes random failures with files larger than 14kbytes on  a  second
+       processor.
+       
+     - The  DB  directive  now accepts negative operands in the range -1 to
+       -127.
+       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      81
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+     Appendix 5. CUSTOMISING THE ASSEMBLER
+     
+        Version 1.60 of the Assembler contains a number of options that can
+     be configured or activated by changes to the ROM image. Typically  the
+     facilities  controlled  in  this way are highly specific to particular
+     hardware or modes of working, rather than of general use.
+     
+        In order to configure the Assembler you will  need  to  alter  some
+     bytes  within  it,  using  a  machine  code  monitor  such as Exmon or
+     Beebmon. The things you need to do a simple and  straightforward,  but
+     as  with  all  such  operations,  you  should  make  sure  you have an
+     unaltered copy of the Assembler stored safely on  a  disc  before  you
+     begin.  You will  need  to  be  careful  that  you  alter  the correct
+     locations and put  in  the  correct  values:  the  Assembler  will  be
+     unlikely  to work correctly, and probably will not work at all, if you
+     make a mistake.
+     
+     A5.1 The patch area
+     
+        In order to patch the Assembler, you will first need to locate  the
+     patch table. This is an area of memory that either contains the actual
+     locations  you  alter,  or  contains the addresses of the locations in
+     other parts of the ROM.
+     
+        The patch area is not held at a fixed absolute  address,  but  will
+     always follow the standard sideways ROM header. To find it, look first
+     at  byte  $8007  in  the ROM (in this section, all addresses are given
+     from the base of $8000, which is the memory address the Assembler runs
+     at. To get the offset within a file for the  bytes  concerned,  simply
+     subtract $8000 from all values). Add the value of byte $8007 to $8000,
+     to  obtain  the  address  of  the copyright string (in version 1.60 it
+     reads "(C)1987 Alan Phillips").
+     
+        At the end of the copyright string you will find a byte  containing
+     the  value  of  zero;  the  patch  area starts at the byte immediately
+     following this one.
+     
+        Athough the absolute position  of  the  patch  area  is  not  fixed
+     between  releases, the format of it is, so that the following sections
+     apply to 1.60 and any future releases.
+     
+     
+          A5.1.1 The default TAB position list
+          
+          Bytes 0 and 1 of the patch table are the address of  the  default
+          TAB  table used by the Assembler when listing source lines. (Note
+          that, as usual, the address is stored with the least  significant
+          byte first).
+          
+          The  address  in the patch table takes you to the area of the ROM
+          where the default TAB positions are held.  To  change  them,  you
+          should alter the first byte of the table to contain the number of
+          TAB  positions  you  wish  to  define (the number you use must be
+          between 1 and 14).  Following  this  you  should  place  the  TAB
+
+
+                                      82
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          positions themselves; they must be in ascending numeric order.
+          
+          For  example, to define 5 default TAB positions at columns 8, 17,
+          25, 32 and 40, you would change the bytes in the TAB table to be
+          
+                              5  8  17  25  32  40
+          
+          
+          A5.1.2 Source character translation
+          
+          Byte 2 of the  patch  area  controls  how  the  Assembler  treats
+          characters  in the source file with bit 7 set. Normally the value
+          is zero, instructing the Assembler to ignore such bytes. Changing
+          it to some other value makes  the  Assembler replace  such  bytes
+          with the value you supply.
+          
+          Thus,  for  example, you could change the byte in the patch table
+          to the value $40 (the code for  a  space  character)  to  replace
+          source characters with bit 7 set with a space).
+          
+          It  is up to you to make sure that the value you use is sensible:
+          you should set the byte either to a space or to a TAB character.
+          
+          
+          A5.1.3 Real time clock handling
+          
+          Byte 3 of the patch area controls  how  the  Assembler  uses  any
+          real-time clock you may have fitted. By default the value is $FF,
+          and  the Assembler will attempt to read a real-time clock only on
+          a Master 128. You may, though, have fitted a third-party clock to
+          another model:  setting  the  byte  value  to  0  will  make  the
+          Assembler try to read the time on all models.
+          
+          Note,  though,  that your real-time clock must respond to exactly
+          the same *FX calls as used on the Master 128: the  Assembler  has
+          no  means  of  knowing  how to read the time from clocks that are
+          operated in other ways.
+          
+          
+          A5.1.4 Character constant and string options
+          
+          Byte 4 of the patch  area  controls  how  the  "~"  character  is
+          treated  in character constants and strings. By default the value
+          of the byte is zero, and the character  has  no  special  effect.
+          Changing  the  value  to  $FF causes the "~" character to take on
+          special meaning: it will now cause the following character to  be
+          planted  as  a  control  character with bit 7 set. Naturally, you
+          would need to write '~~' in a character constant  to  obtain  the
+          "~" character itself if you turn this option on.
+          
+          
+          
+
+
+
+
+                                      83
+
+
+
+
+
+                           USING THE 65C02 ASSEMBLER
+
+
+
+          A5.1.5 Page throws at the end of a listing
+          
+          Byte  5  of the patch area controls whether the Assembler outputs
+          Form Feed characters to a printer or listing file at the end of a
+          listing. By default the value of the byte is $FF: this makes  the
+          Assembler  output  a Form Feed both before and after the lines of
+          statistics that tell you the number of errors, etc. Changing  the
+          byte   to   0  suppresses  the  Form  Feeds,  so  the  statistics
+          immediately follow the symbol table listing,  with  no  throw  to
+          head-of-form following them.
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      84
+
+
+
